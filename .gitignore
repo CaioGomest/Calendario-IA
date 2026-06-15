@@ -1,0 +1,6 @@
+.env
+.env.*
+*.log
+vendor/
+node_modules/
+escopo
