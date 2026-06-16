@@ -24,14 +24,27 @@ $proximos_eventos = array_map(function ($evento) use ($meses) {
 }, listaProximosEventos($usuario['id_usuario']));
 
 $eventos_semana = contaEventosSemana($usuario['id_usuario']);
-$dias_restantes_trial = $usuario['plano_expira_em']
-    ? max(0, (new DateTime())->diff(new DateTime($usuario['plano_expira_em']))->days)
+$agora = new DateTime();
+$expirado = $usuario['plano_expira_em'] && new DateTime($usuario['plano_expira_em']) < $agora;
+$dias_restantes_trial = (!$expirado && $usuario['plano_expira_em'])
+    ? (int) $agora->diff(new DateTime($usuario['plano_expira_em']))->days
     : 0;
 
+if ($expirado) {
+    $badge_plano = traduz('badge_expirado');
+    $badge_cor   = 'vermelho';
+} elseif ($usuario['plano'] === 'trial') {
+    $badge_plano = str_replace('5', (string) $dias_restantes_trial, traduz('badge_prueba_dias'));
+    $badge_cor   = 'ambar';
+} elseif ($usuario['plano'] === 'ativo') {
+    $badge_plano = traduz('badge_ativo');
+    $badge_cor   = 'verde';
+} else {
+    $badge_plano = '—';
+    $badge_cor   = 'ambar';
+}
+
 $saudacao = str_replace('Mariana', $usuario['nome'], traduz('home_saludo'));
-$badge_plano = $usuario['plano'] === 'trial'
-    ? str_replace('5', (string) $dias_restantes_trial, traduz('badge_prueba_dias'))
-    : '✅ ' . ucfirst($usuario['plano']);
 
 $google_conectado = !empty($usuario['token_acesso_google']);
 $whatsapp_conectado = !empty($usuario['telefone']);
@@ -52,7 +65,7 @@ $whatsapp_conectado = !empty($usuario['telefone']);
 <div class="vista-mobile">
   <div class="barra-topo">
     <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> CalendarioIA</div>
-    <span class="selo ambar"><?= htmlspecialchars($badge_plano) ?></span>
+    <span class="selo <?= $badge_cor ?>"><?= htmlspecialchars($badge_plano) ?></span>
   </div>
   <div class="conteudo-pagina espacado">
     <div>
@@ -112,7 +125,7 @@ $whatsapp_conectado = !empty($usuario['telefone']);
       <header class="barra-superior">
         <div><h1 class="saudacao" style="margin:0;"><?= htmlspecialchars($saudacao) ?></h1><div class="barra-superior-subtitulo"><?= traduz('home_subtitulo') ?></div></div>
         <div class="espaco"></div>
-        <span class="selo ambar"><?= htmlspecialchars($badge_plano) ?></span>
+        <span class="selo <?= $badge_cor ?>"><?= htmlspecialchars($badge_plano) ?></span>
       </header>
       <div class="conteudo-area">
         <div class="grid-duas-colunas">

@@ -72,11 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <?php endif; ?>
       <div class="campo">
         <label><?= traduz('campo_email') ?></label>
-        <div class="input"><span class="input-icone">✉️</span><input type="email" name="email" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" placeholder="tu@correo.com" required /></div>
+        <div class="input"><span class="input-icone">✉️</span><input type="email" name="email" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" placeholder="<?= traduz('email_placeholder') ?>" required /></div>
       </div>
       <div class="campo">
         <label><?= traduz('campo_senha') ?></label>
-        <div class="input"><span class="input-icone">🔒</span><input type="password" name="senha" placeholder="<?= traduz('senha_placeholder') ?>" required /></div>
+        <div class="input"><span class="input-icone">🔒</span><input type="password" name="senha" placeholder="<?= traduz('senha_placeholder') ?>" required /><button type="button" class="input-olho" data-toggle-senha aria-label="<?= traduz('senha_mostrar') ?>">👁️</button></div>
       </div>
       <a class="link esqueci-senha" href="recuperar.php"><?= traduz('link_esqueceu_senha') ?></a>
       <button type="submit" class="botao botao-primario botao-espaco"><?= traduz('botao_entrar') ?></button>
@@ -86,5 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 </div>
 <script src="../assets/js/mascote.js"></script>
+<script src="../assets/js/senha.js"></script>
 </body>
 </html>

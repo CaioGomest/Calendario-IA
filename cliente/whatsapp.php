@@ -52,6 +52,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <button type="submit" class="botao botao-whatsapp" style="width:100%;"><?= traduz('botao_conectar_whatsapp') ?></button>
     </form>
 
+    <?php if (MODO_DEV): ?>
+      <a class="dica" style="text-align:center;display:block;margin-top:4px;" href="home.php">🧪 Modo desarrollo: pular sem conectar</a>
+    <?php endif; ?>
     <div class="divisor" style="width:100%;"><?= traduz('whatsapp_sep') ?></div>
 
     <div class="cartao" style="width:100%;">
@@ -92,6 +95,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="input"><span class="input-prefixo">🇲🇽 +52</span><input inputmode="tel" name="whatsapp" placeholder="55 1234 5678" required /></div>
           </div>
           <button type="submit" class="botao botao-whatsapp botao-espaco"><?= traduz('botao_conectar_whatsapp') ?></button>
+          <?php if (MODO_DEV): ?>
+            <a class="dica" style="text-align:center;display:block;margin-top:8px;" href="home.php">🧪 Modo desarrollo: pular sem conectar</a>
+          <?php endif; ?>
         </form>
         <div class="divisor"><?= traduz('whatsapp_sep') ?></div>
         <div class="cartao">

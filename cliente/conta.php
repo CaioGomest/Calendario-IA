@@ -40,12 +40,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $usuario = buscaUsuarioPorId(usuarioLogadoId());
 $inicial_nome = mb_strtoupper(mb_substr($usuario['nome'], 0, 1));
 
-$dias_restantes_trial = $usuario['plano_expira_em']
-    ? max(0, (new DateTime())->diff(new DateTime($usuario['plano_expira_em']))->days)
+$agora = new DateTime();
+$expirado = $usuario['plano_expira_em'] && new DateTime($usuario['plano_expira_em']) < $agora;
+$dias_restantes_trial = (!$expirado && $usuario['plano_expira_em'])
+    ? (int) $agora->diff(new DateTime($usuario['plano_expira_em']))->days
     : 0;
-$badge_plano = $usuario['plano'] === 'trial'
-    ? str_replace('5', (string) $dias_restantes_trial, traduz('badge_prueba_dias'))
-    : '✅ ' . ucfirst($usuario['plano']);
+
+if ($expirado) {
+    $badge_plano = traduz('badge_expirado');
+    $badge_cor   = 'vermelho';
+} elseif ($usuario['plano'] === 'trial') {
+    $badge_plano = str_replace('5', (string) $dias_restantes_trial, traduz('badge_prueba_dias'));
+    $badge_cor   = 'ambar';
+} elseif ($usuario['plano'] === 'ativo') {
+    $badge_plano = traduz('badge_ativo');
+    $badge_cor   = 'verde';
+} else {
+    $badge_plano = '—';
+    $badge_cor   = 'ambar';
+}
 
 $google_conectado = !empty($usuario['token_acesso_google']);
 $whatsapp_conectado = !empty($usuario['telefone']);
@@ -68,7 +81,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
 <div class="vista-mobile">
   <div class="barra-topo">
     <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> CalendarioIA</div>
-    <span class="selo ambar"><?= htmlspecialchars($badge_plano) ?></span>
+    <span class="selo <?= $badge_cor ?>"><?= htmlspecialchars($badge_plano) ?></span>
   </div>
   <div class="conteudo-pagina espacado">
     <h1 class="tela-titulo"><?= traduz('conta_titulo') ?></h1>
@@ -123,11 +136,13 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
       <div class="conexao">
         <span class="conexao-icone whatsapp">💬</span>
         <div class="conexao-info"><b><?= traduz('home_whatsapp_label') ?></b><span><?= $whatsapp_conectado ? htmlspecialchars($usuario['telefone']) : '—' ?></span></div>
+        <?php if (!$whatsapp_conectado): ?><span class="selo ambar"><span class="ponto"></span> <?= traduz('home_pendiente') ?></span><?php endif; ?>
         <a class="botao botao-contorno botao-pequeno" href="whatsapp.php"><?= traduz('botao_cambiar') ?></a>
       </div>
       <div class="conexao">
         <span class="conexao-icone google">📅</span>
         <div class="conexao-info"><b><?= traduz('home_google_label') ?></b><span><?= $google_conectado ? htmlspecialchars($usuario['email']) : '—' ?></span></div>
+        <?php if (!$google_conectado): ?><span class="selo ambar"><span class="ponto"></span> <?= traduz('home_pendiente') ?></span><?php endif; ?>
         <?php if ($google_conectado): ?>
         <form method="post" action="conta.php">
           <input type="hidden" name="acao" value="desconectar_google" />
@@ -143,7 +158,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
       <div class="secao-rotulo"><?= traduz('sesion_titulo') ?></div>
       <form method="post" action="conta.php">
         <input type="hidden" name="acao" value="sair" />
-        <button type="submit" class="botao botao-branco" style="width:100%;"><?= traduz('botao_cerrar_sesion') ?></button>
+        <button type="submit" class="botao botao-perigo" style="width:100%;"><?= traduz('botao_cerrar_sesion') ?></button>
       </form>
     </div>
 
@@ -184,7 +199,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
             <div class="secao-rotulo-desktop"><?= traduz('sesion_titulo') ?></div>
             <form method="post" action="conta.php">
         <input type="hidden" name="acao" value="sair" />
-        <button type="submit" class="botao botao-branco" style="width:100%;"><?= traduz('botao_cerrar_sesion') ?></button>
+        <button type="submit" class="botao botao-perigo" style="width:100%;"><?= traduz('botao_cerrar_sesion') ?></button>
       </form>
           </div>
 
@@ -216,11 +231,13 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
             <div class="conexao">
               <span class="conexao-icone whatsapp">💬</span>
               <div class="conexao-info"><b><?= traduz('home_whatsapp_label') ?></b><span><?= $whatsapp_conectado ? htmlspecialchars($usuario['telefone']) : '—' ?></span></div>
+        <?php if (!$whatsapp_conectado): ?><span class="selo ambar"><span class="ponto"></span> <?= traduz('home_pendiente') ?></span><?php endif; ?>
               <a class="botao botao-contorno botao-pequeno" href="whatsapp.php"><?= traduz('botao_cambiar') ?></a>
             </div>
             <div class="conexao">
               <span class="conexao-icone google">📅</span>
               <div class="conexao-info"><b><?= traduz('home_google_label') ?></b><span><?= $google_conectado ? htmlspecialchars($usuario['email']) : '—' ?></span></div>
+        <?php if (!$google_conectado): ?><span class="selo ambar"><span class="ponto"></span> <?= traduz('home_pendiente') ?></span><?php endif; ?>
               <?php if ($google_conectado): ?>
               <form method="post" action="conta.php">
                 <input type="hidden" name="acao" value="desconectar_google" />

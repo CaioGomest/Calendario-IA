@@ -220,6 +220,31 @@ body {
     display: flex;
 }
 
+.input-olho {
+    position: relative;
+    color: #9aa6b8;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 17px;
+    line-height: 1;
+}
+
+.input-olho.ativo::after {
+    content: '';
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    top: 50%;
+    height: 1.8px;
+    background: var(--red);
+    transform: rotate(-45deg);
+}
+
 .input-prefixo {
     font-size: 14px;
     font-weight: 700;
@@ -755,6 +780,11 @@ body {
 .selo.verde {
     background: #e1f5ea;
     color: var(--wa-d);
+}
+
+.selo.vermelho {
+    background: #fdecea;
+    color: var(--red);
 }
 
 .selo .ponto {
@@ -1402,6 +1432,24 @@ body {
 
 .sidebar-perfil .perfil-info {
     min-width: 0;
+    flex: 1;
+}
+
+.sidebar-perfil .perfil-logout {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    color: var(--red);
+    text-decoration: none;
+    transition: background 0.15s;
+}
+
+.sidebar-perfil .perfil-logout:hover {
+    background: rgba(255, 0, 0, 0.08);
 }
 
 .sidebar-perfil .perfil-info b,
