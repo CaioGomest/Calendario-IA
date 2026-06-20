@@ -17,3 +17,26 @@ function contaEventosSemana($id_usuario) {
     $stmt->execute([$id_usuario]);
     return (int) $stmt->fetchColumn();
 }
+
+function contaTotalEventos() {
+    $pdo = conexao();
+    return (int) $pdo->query('SELECT COUNT(*) FROM eventos')->fetchColumn();
+}
+
+function contaEventosHoje() {
+    $pdo = conexao();
+    return (int) $pdo->query('SELECT COUNT(*) FROM eventos WHERE DATE(data_inicio) = CURDATE()')->fetchColumn();
+}
+
+function contaTotalMensagens() {
+    $pdo = conexao();
+    return (int) $pdo->query('SELECT COUNT(*) FROM logs_mensagens')->fetchColumn();
+}
+
+function listaEventosRecentes($limite = 10) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT e.*, u.nome AS nome_usuario FROM eventos e JOIN usuarios u ON e.id_usuario = u.id_usuario ORDER BY e.criado_em DESC LIMIT ?');
+    $stmt->bindValue(1, $limite, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}

@@ -56,3 +56,61 @@ function atualizaAntecedenciaLembrete($id_usuario, $antecedencia_min) {
     $stmt = $pdo->prepare('UPDATE usuarios SET antecedencia_lembrete_min = ? WHERE id_usuario = ?');
     $stmt->execute([$antecedencia_min, $id_usuario]);
 }
+
+function listaUsuarios($filtro = []) {
+    $pdo = conexao();
+    $sql = 'SELECT * FROM usuarios';
+    $params = [];
+    $condicoes = [];
+
+    if (!empty($filtro['plano'])) {
+        $condicoes[] = 'plano = ?';
+        $params[] = $filtro['plano'];
+    }
+    if (isset($filtro['ativo'])) {
+        $condicoes[] = 'ativo = ?';
+        $params[] = (int) $filtro['ativo'];
+    }
+    if (!empty($filtro['busca'])) {
+        $condicoes[] = '(nome LIKE ? OR email LIKE ? OR telefone LIKE ?)';
+        $termo = '%' . $filtro['busca'] . '%';
+        $params[] = $termo;
+        $params[] = $termo;
+        $params[] = $termo;
+    }
+
+    if ($condicoes) {
+        $sql .= ' WHERE ' . implode(' AND ', $condicoes);
+    }
+    $sql .= ' ORDER BY criado_em DESC';
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function contaUsuariosPorPlano() {
+    $pdo = conexao();
+    $stmt = $pdo->query('SELECT plano, COUNT(*) as total FROM usuarios GROUP BY plano');
+    $resultado = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $resultado[$row['plano']] = (int) $row['total'];
+    }
+    return $resultado;
+}
+
+function contaTotalUsuarios() {
+    $pdo = conexao();
+    return (int) $pdo->query('SELECT COUNT(*) FROM usuarios')->fetchColumn();
+}
+
+function contaUsuariosAtivos() {
+    $pdo = conexao();
+    return (int) $pdo->query('SELECT COUNT(*) FROM usuarios WHERE ativo = 1')->fetchColumn();
+}
+
+function atualizaAtivoUsuario($id_usuario, $ativo) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('UPDATE usuarios SET ativo = ? WHERE id_usuario = ?');
+    $stmt->execute([$ativo ? 1 : 0, $id_usuario]);
+}

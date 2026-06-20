@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../config/conexao.php';
+
 function iniciaSessao() {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
@@ -29,4 +31,43 @@ function exigeLoginCliente() {
         header('Location: login.php');
         exit;
     }
+}
+
+function fazLoginAdmin($admin) {
+    iniciaSessao();
+    $_SESSION['id_admin'] = $admin['id_admin'];
+    $_SESSION['nome_admin'] = $admin['nome'];
+    $_SESSION['email_admin'] = $admin['email'];
+}
+
+function fazLogoutAdmin() {
+    iniciaSessao();
+    $_SESSION = [];
+    session_destroy();
+}
+
+function adminLogadoId() {
+    iniciaSessao();
+    return $_SESSION['id_admin'] ?? null;
+}
+
+function exigeLoginAdmin() {
+    if (adminLogadoId() === null) {
+        header('Location: login.php');
+        exit;
+    }
+}
+
+function buscaAdminPorEmail($email) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM administradores WHERE email = ?');
+    $stmt->execute([$email]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function buscaAdminPorId($id_admin) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM administradores WHERE id_admin = ?');
+    $stmt->execute([$id_admin]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 }
