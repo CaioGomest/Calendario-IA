@@ -46,6 +46,23 @@ CREATE TABLE sessoes_conversa (
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
 );
 
+CREATE TABLE planos (
+    id_plano INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(120) NOT NULL,
+    descricao VARCHAR(255) NULL,
+    ciclo ENUM('mensal', 'trimestral', 'anual') NOT NULL DEFAULT 'mensal',
+    preco DECIMAL(10,2) NOT NULL DEFAULT 0,
+    dias_teste INT NOT NULL DEFAULT 0,
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE configuracoes (
+    chave VARCHAR(100) PRIMARY KEY,
+    valor VARCHAR(255) NOT NULL,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 CREATE TABLE administradores (
     id_admin INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(120) NOT NULL,

@@ -114,3 +114,41 @@ function atualizaAtivoUsuario($id_usuario, $ativo) {
     $stmt = $pdo->prepare('UPDATE usuarios SET ativo = ? WHERE id_usuario = ?');
     $stmt->execute([$ativo ? 1 : 0, $id_usuario]);
 }
+
+function atualizaUsuario($id_usuario, $dados) {
+    $pdo = conexao();
+    $campos = [];
+    $params = [];
+
+    foreach (['nome', 'email', 'telefone', 'plano', 'fuso_horario'] as $campo) {
+        if (array_key_exists($campo, $dados)) {
+            $campos[] = "$campo = ?";
+            $params[] = $dados[$campo];
+        }
+    }
+
+    if (isset($dados['plano_expira_em'])) {
+        $campos[] = 'plano_expira_em = ?';
+        $params[] = $dados['plano_expira_em'] ?: null;
+    }
+
+    if (empty($campos)) return;
+
+    $params[] = $id_usuario;
+    $sql = 'UPDATE usuarios SET ' . implode(', ', $campos) . ' WHERE id_usuario = ?';
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+}
+
+function insereUsuarioAdmin($dados) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, telefone, plano) VALUES (?, ?, ?, ?, ?)');
+    $stmt->execute([
+        $dados['nome'],
+        $dados['email'],
+        password_hash($dados['senha'], PASSWORD_DEFAULT),
+        $dados['telefone'] ?: null,
+        $dados['plano'] ?? 'trial',
+    ]);
+    return (int) $pdo->lastInsertId();
+}
