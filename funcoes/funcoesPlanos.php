@@ -13,6 +13,8 @@ function garanteTabelaPlanos() {
         ciclo ENUM('mensal', 'trimestral', 'anual') NOT NULL DEFAULT 'mensal',
         preco DECIMAL(10,2) NOT NULL DEFAULT 0,
         dias_teste INT NOT NULL DEFAULT 0,
+        etiqueta_texto VARCHAR(100) NULL,
+        etiqueta_cor VARCHAR(20) NOT NULL DEFAULT 'amarelo',
         ativo TINYINT(1) NOT NULL DEFAULT 1,
         criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )");
@@ -22,13 +24,15 @@ function garanteTabelaPlanos() {
 function inserePlano($dados) {
     garanteTabelaPlanos();
     $pdo = conexao();
-    $stmt = $pdo->prepare('INSERT INTO planos (nome, descricao, ciclo, preco, dias_teste, ativo) VALUES (?, ?, ?, ?, ?, ?)');
+    $stmt = $pdo->prepare('INSERT INTO planos (nome, descricao, ciclo, preco, dias_teste, etiqueta_texto, etiqueta_cor, ativo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     $stmt->execute([
         $dados['nome'],
         $dados['descricao'] ?: null,
         $dados['ciclo'],
         $dados['preco'],
         (int) $dados['dias_teste'],
+        $dados['etiqueta_texto'] ?: null,
+        $dados['etiqueta_cor'] ?? 'amarelo',
         isset($dados['ativo']) ? (int) $dados['ativo'] : 1,
     ]);
     return (int) $pdo->lastInsertId();
@@ -37,13 +41,15 @@ function inserePlano($dados) {
 function atualizaPlano($id_plano, $dados) {
     garanteTabelaPlanos();
     $pdo = conexao();
-    $stmt = $pdo->prepare('UPDATE planos SET nome = ?, descricao = ?, ciclo = ?, preco = ?, dias_teste = ? WHERE id_plano = ?');
+    $stmt = $pdo->prepare('UPDATE planos SET nome = ?, descricao = ?, ciclo = ?, preco = ?, dias_teste = ?, etiqueta_texto = ?, etiqueta_cor = ? WHERE id_plano = ?');
     $stmt->execute([
         $dados['nome'],
         $dados['descricao'] ?: null,
         $dados['ciclo'],
         $dados['preco'],
         (int) $dados['dias_teste'],
+        $dados['etiqueta_texto'] ?: null,
+        $dados['etiqueta_cor'] ?? 'amarelo',
         $id_plano,
     ]);
 }

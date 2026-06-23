@@ -126,11 +126,21 @@ $sufixo_ciclo = [
 
   <div class="grade-planos">
     <?php foreach ($planos_ativos as $plano): ?>
+    <?php
+      $cor_mapa = [
+          'amarelo' => 'background:var(--gold);color:#5a3d00;box-shadow:0 8px 16px -8px rgba(244,183,64,.9)',
+          'azul' => 'background:#3b82f6;color:#fff;box-shadow:0 8px 16px -8px rgba(59,130,246,.6)',
+          'verde' => 'background:#22c55e;color:#fff;box-shadow:0 8px 16px -8px rgba(34,197,94,.6)',
+          'vermelho' => 'background:#ef4444;color:#fff;box-shadow:0 8px 16px -8px rgba(239,68,68,.6)',
+          'roxo' => 'background:#a855f7;color:#fff;box-shadow:0 8px 16px -8px rgba(168,85,247,.6)',
+      ];
+      $cor_etiqueta = $plano['etiqueta_cor'] ?? 'amarelo';
+      $estilo_etiqueta = $cor_mapa[$cor_etiqueta] ?? $cor_mapa['amarelo'];
+      $texto_etiqueta = trim($plano['etiqueta_texto'] ?? '');
+    ?>
     <div class="plano revelar d1">
-      <?php if ((int)$plano['dias_teste'] > 0): ?>
-      <div class="etiqueta"><?= sprintf(traduz('lp_price_tag_trial'), (int)$plano['dias_teste']) ?></div>
-      <?php else: ?>
-      <div class="etiqueta"><?= traduz('lp_price_tag_launch') ?></div>
+      <?php if ($texto_etiqueta): ?>
+      <div class="etiqueta" style="<?= $estilo_etiqueta ?>"><?= htmlspecialchars($texto_etiqueta) ?></div>
       <?php endif; ?>
       <div class="nome-plano"><?= htmlspecialchars($plano['nome']) ?></div>
       <div class="montante">
@@ -148,7 +158,11 @@ $sufixo_ciclo = [
         <div><span class="check">✓</span> <?= traduz('lp_feat4') ?></div>
         <div><span class="check">✓</span> <?= traduz('lp_feat5') ?></div>
       </div>
+      <?php if ((int)$plano['dias_teste'] > 0): ?>
       <a href="cliente/cadastro.php" class="botao botao-primario"><?= traduz('lp_price_cta') ?></a>
+      <?php else: ?>
+      <a href="cliente/cadastro.php" class="botao botao-primario"><?= traduz('lp_price_cta_sem_teste') ?></a>
+      <?php endif; ?>
       <?php if ((int)$plano['dias_teste'] > 0): ?>
       <div class="garantia"><?= sprintf(traduz('lp_price_guarantee'), (int)$plano['dias_teste']) ?></div>
       <?php endif; ?>
@@ -200,8 +214,8 @@ $sufixo_ciclo = [
     CalendarioIA
   </div>
   <div class="links-rodape">
-    <a href="#"><?= traduz('lp_privacy') ?></a>
-    <a href="#"><?= traduz('lp_terms') ?></a>
+    <a href="privacidade.php"><?= traduz('lp_privacy') ?></a>
+    <a href="termos.php"><?= traduz('lp_terms') ?></a>
     <a href="#"><?= traduz('lp_support') ?></a>
     <a href="#"><?= traduz('lp_contact') ?></a>
   </div>

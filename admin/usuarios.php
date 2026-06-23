@@ -14,12 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     $acao = $_POST['acao'];
     $id = (int) ($_POST['id_usuario'] ?? 0);
 
-    if ($acao === 'ativar') {
-        atualizaAtivoUsuario($id, true);
-        $msg_sucesso = traduz('admin_usuario_ativado');
-    } elseif ($acao === 'desativar') {
-        atualizaAtivoUsuario($id, false);
-        $msg_sucesso = traduz('admin_usuario_desativado');
+    if ($acao === 'apagar') {
+        deletaUsuario($id);
+        $msg_sucesso = traduz('admin_usuario_apagado');
     } elseif ($acao === 'criar') {
         $nome = trim($_POST['nome'] ?? '');
         $email = trim($_POST['email'] ?? '');
@@ -33,6 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
             $msg_erro = traduz('admin_erro_senha_curta');
         } elseif (buscaUsuarioPorEmail($email)) {
             $msg_erro = traduz('admin_erro_email_existe');
+        } elseif ($telefone !== '' && buscaUsuarioPorTelefone($telefone)) {
+            $msg_erro = traduz('admin_erro_telefone_existe');
         } else {
             insereUsuarioAdmin([
                 'nome' => $nome,
@@ -56,7 +55,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
             $existente = buscaUsuarioPorEmail($email);
             if ($existente && (int)$existente['id_usuario'] !== $id) {
                 $msg_erro = traduz('admin_erro_email_outro');
-            } else {
+            } elseif ($telefone !== '') {
+                $tel_existente = buscaUsuarioPorTelefone($telefone);
+                if ($tel_existente && (int)$tel_existente['id_usuario'] !== $id) {
+                    $msg_erro = traduz('admin_erro_telefone_outro');
+                }
+            }
+            if (!$msg_erro) {
                 atualizaUsuario($id, [
                     'nome' => $nome,
                     'email' => $email,
@@ -180,13 +185,9 @@ $usuarios = listaUsuarios($filtro);
               <td><?= date('d/m/Y', strtotime($u['criado_em'])) ?></td>
               <td style="text-align:right;display:flex;gap:4px;justify-content:flex-end;">
                 <button type="button" class="botao-acao" onclick="abrirEditar(<?= htmlspecialchars(json_encode($u, JSON_HEX_APOS | JSON_HEX_TAG)) ?>)"><?= traduz('admin_editar') ?></button>
-                <form method="post" action="usuarios.php?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? ''])) ?>" style="display:inline;">
+                <form method="post" action="usuarios.php?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? ''])) ?>" style="display:inline;" onsubmit="return confirm('<?= traduz('admin_confirmar_apagar') ?>')">
                   <input type="hidden" name="id_usuario" value="<?= $u['id_usuario'] ?>" />
-                  <?php if ($u['ativo']): ?>
-                    <button type="submit" name="acao" value="desativar" class="botao-acao perigo"><?= traduz('admin_desativar') ?></button>
-                  <?php else: ?>
-                    <button type="submit" name="acao" value="ativar" class="botao-acao"><?= traduz('admin_ativar') ?></button>
-                  <?php endif; ?>
+                  <button type="submit" name="acao" value="apagar" class="botao-acao perigo"><?= traduz('admin_apagar') ?></button>
                 </form>
               </td>
             </tr>

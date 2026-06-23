@@ -7,12 +7,19 @@ require_once __DIR__ . '/../config/config.php';
 iniciaSessao();
 exigeLoginCliente();
 
+$erro_whatsapp = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $whatsapp = trim($_POST['whatsapp'] ?? '');
     if ($whatsapp !== '') {
-        atualizaTelefoneUsuario(usuarioLogadoId(), '+52' . preg_replace('/\D+/', '', $whatsapp));
-        header('Location: home.php');
-        exit;
+        $telefone_formatado = '+52' . preg_replace('/\D+/', '', $whatsapp);
+        $existente = buscaUsuarioPorTelefone($telefone_formatado);
+        if ($existente && (int)$existente['id_usuario'] !== usuarioLogadoId()) {
+            $erro_whatsapp = traduz('erro_telefone_existe');
+        } else {
+            atualizaTelefoneUsuario(usuarioLogadoId(), $telefone_formatado);
+            header('Location: home.php');
+            exit;
+        }
     }
 }
 ?>
@@ -42,6 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="icone-grande">💬</div>
     <h1 class="tela-titulo"><?= traduz('whatsapp_titulo') ?></h1>
     <p class="tela-subtitulo" style="max-width:30ch;"><?= traduz('whatsapp_subtitulo') ?></p>
+
+    <?php if ($erro_whatsapp): ?>
+    <div class="erro-msg" style="margin-bottom:10px;"><?= htmlspecialchars($erro_whatsapp) ?></div>
+    <?php endif; ?>
 
     <form method="post" action="whatsapp.php" style="width:100%;">
       <div class="campo">
@@ -89,6 +100,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <h2 class="form-titulo"><?= traduz('whatsapp_titulo') ?></h2>
         <p class="form-subtitulo"><?= traduz('whatsapp_aviso') ?></p>
+        <?php if ($erro_whatsapp): ?>
+        <div class="erro-msg" style="margin-bottom:10px;"><?= htmlspecialchars($erro_whatsapp) ?></div>
+        <?php endif; ?>
         <form method="post" action="whatsapp.php">
           <div class="campo">
             <label><?= traduz('campo_whatsapp') ?></label>

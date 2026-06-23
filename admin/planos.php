@@ -20,6 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         $ciclo = $_POST['ciclo'] ?? 'mensal';
         $preco = (float) ($_POST['preco'] ?? 0);
         $dias_teste = (int) ($_POST['dias_teste'] ?? 0);
+        $etiqueta_texto = trim($_POST['etiqueta_texto'] ?? '');
+        $etiqueta_cor = $_POST['etiqueta_cor'] ?? 'amarelo';
 
         if (!$nome || $preco <= 0) {
             $msg_erro = traduz('admin_erro_nome_preco');
@@ -30,6 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
                 'ciclo' => $ciclo,
                 'preco' => $preco,
                 'dias_teste' => $dias_teste,
+                'etiqueta_texto' => $etiqueta_texto,
+                'etiqueta_cor' => $etiqueta_cor,
             ]);
             $msg_sucesso = traduz('admin_plano_criado');
         }
@@ -39,6 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         $ciclo = $_POST['ciclo'] ?? 'mensal';
         $preco = (float) ($_POST['preco'] ?? 0);
         $dias_teste = (int) ($_POST['dias_teste'] ?? 0);
+        $etiqueta_texto = trim($_POST['etiqueta_texto'] ?? '');
+        $etiqueta_cor = $_POST['etiqueta_cor'] ?? 'amarelo';
 
         if (!$nome || $preco <= 0) {
             $msg_erro = traduz('admin_erro_nome_preco');
@@ -49,6 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
                 'ciclo' => $ciclo,
                 'preco' => $preco,
                 'dias_teste' => $dias_teste,
+                'etiqueta_texto' => $etiqueta_texto,
+                'etiqueta_cor' => $etiqueta_cor,
             ]);
             $msg_sucesso = traduz('admin_plano_atualizado');
         }
@@ -252,6 +260,25 @@ $nomes_ciclo = [
           </div>
           <span style="font-size:11px;color:var(--ink-4);margin-top:2px;"><?= traduz('admin_dias_teste_hint') ?></span>
         </div>
+        <div class="campo">
+          <label><?= traduz('admin_etiqueta_texto') ?></label>
+          <div class="campo-entrada">
+            <input type="text" name="etiqueta_texto" placeholder="<?= traduz('admin_etiqueta_placeholder') ?>" />
+          </div>
+          <span style="font-size:11px;color:var(--ink-4);margin-top:2px;"><?= traduz('admin_etiqueta_hint') ?></span>
+        </div>
+        <div class="campo">
+          <label><?= traduz('admin_etiqueta_cor') ?></label>
+          <div class="campo-entrada">
+            <select name="etiqueta_cor">
+              <option value="amarelo"><?= traduz('admin_cor_amarelo') ?></option>
+              <option value="azul"><?= traduz('admin_cor_azul') ?></option>
+              <option value="verde"><?= traduz('admin_cor_verde') ?></option>
+              <option value="vermelho"><?= traduz('admin_cor_vermelho') ?></option>
+              <option value="roxo"><?= traduz('admin_cor_roxo') ?></option>
+            </select>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="botao-pequeno botao-fantasma" onclick="this.closest('.modal-overlay').classList.remove('aberto')"><?= traduz('admin_cancelar') ?></button>
@@ -309,6 +336,25 @@ $nomes_ciclo = [
           </div>
           <span style="font-size:11px;color:var(--ink-4);margin-top:2px;"><?= traduz('admin_dias_teste_hint') ?></span>
         </div>
+        <div class="campo">
+          <label><?= traduz('admin_etiqueta_texto') ?></label>
+          <div class="campo-entrada">
+            <input type="text" name="etiqueta_texto" id="editar-etiqueta-texto" placeholder="<?= traduz('admin_etiqueta_placeholder') ?>" />
+          </div>
+          <span style="font-size:11px;color:var(--ink-4);margin-top:2px;"><?= traduz('admin_etiqueta_hint') ?></span>
+        </div>
+        <div class="campo">
+          <label><?= traduz('admin_etiqueta_cor') ?></label>
+          <div class="campo-entrada">
+            <select name="etiqueta_cor" id="editar-etiqueta-cor">
+              <option value="amarelo"><?= traduz('admin_cor_amarelo') ?></option>
+              <option value="azul"><?= traduz('admin_cor_azul') ?></option>
+              <option value="verde"><?= traduz('admin_cor_verde') ?></option>
+              <option value="vermelho"><?= traduz('admin_cor_vermelho') ?></option>
+              <option value="roxo"><?= traduz('admin_cor_roxo') ?></option>
+            </select>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="botao-pequeno botao-fantasma" onclick="this.closest('.modal-overlay').classList.remove('aberto')"><?= traduz('admin_cancelar') ?></button>
@@ -326,6 +372,8 @@ function abrirEditar(p) {
     document.getElementById('editar-ciclo').value = p.ciclo;
     document.getElementById('editar-preco').value = parseFloat(p.preco).toFixed(2);
     document.getElementById('editar-dias-teste').value = p.dias_teste;
+    document.getElementById('editar-etiqueta-texto').value = p.etiqueta_texto || '';
+    document.getElementById('editar-etiqueta-cor').value = p.etiqueta_cor || 'amarelo';
     document.getElementById('modal-editar').classList.add('aberto');
 }
 

@@ -9,6 +9,13 @@ function buscaUsuarioPorEmail($email) {
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 
+function buscaUsuarioPorTelefone($telefone) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM usuarios WHERE telefone = ? AND deletado = 0');
+    $stmt->execute([$telefone]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
 function buscaUsuarioPorId($id_usuario) {
     $pdo = conexao();
     $stmt = $pdo->prepare('SELECT * FROM usuarios WHERE id_usuario = ?');
@@ -61,7 +68,7 @@ function listaUsuarios($filtro = []) {
     $pdo = conexao();
     $sql = 'SELECT * FROM usuarios';
     $params = [];
-    $condicoes = [];
+    $condicoes = ['deletado = 0'];
 
     if (!empty($filtro['plano'])) {
         $condicoes[] = 'plano = ?';
@@ -79,9 +86,7 @@ function listaUsuarios($filtro = []) {
         $params[] = $termo;
     }
 
-    if ($condicoes) {
-        $sql .= ' WHERE ' . implode(' AND ', $condicoes);
-    }
+    $sql .= ' WHERE ' . implode(' AND ', $condicoes);
     $sql .= ' ORDER BY criado_em DESC';
 
     $stmt = $pdo->prepare($sql);
@@ -89,9 +94,15 @@ function listaUsuarios($filtro = []) {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+function deletaUsuario($id_usuario) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('UPDATE usuarios SET deletado = 1 WHERE id_usuario = ?');
+    $stmt->execute([$id_usuario]);
+}
+
 function contaUsuariosPorPlano() {
     $pdo = conexao();
-    $stmt = $pdo->query('SELECT plano, COUNT(*) as total FROM usuarios GROUP BY plano');
+    $stmt = $pdo->query('SELECT plano, COUNT(*) as total FROM usuarios WHERE deletado = 0 GROUP BY plano');
     $resultado = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $resultado[$row['plano']] = (int) $row['total'];
@@ -101,12 +112,12 @@ function contaUsuariosPorPlano() {
 
 function contaTotalUsuarios() {
     $pdo = conexao();
-    return (int) $pdo->query('SELECT COUNT(*) FROM usuarios')->fetchColumn();
+    return (int) $pdo->query('SELECT COUNT(*) FROM usuarios WHERE deletado = 0')->fetchColumn();
 }
 
 function contaUsuariosAtivos() {
     $pdo = conexao();
-    return (int) $pdo->query('SELECT COUNT(*) FROM usuarios WHERE ativo = 1')->fetchColumn();
+    return (int) $pdo->query('SELECT COUNT(*) FROM usuarios WHERE ativo = 1 AND deletado = 0')->fetchColumn();
 }
 
 function atualizaAtivoUsuario($id_usuario, $ativo) {

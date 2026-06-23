@@ -192,6 +192,8 @@ return [
     'admin_inativo' => 'Inactivo',
     'admin_ativar' => 'Activar',
     'admin_desativar' => 'Desactivar',
+    'admin_apagar' => 'Eliminar',
+    'admin_confirmar_apagar' => '¿Estás seguro de que deseas eliminar este usuario?',
     'admin_editar' => 'Editar',
     'admin_buscar' => 'Buscar por nombre, correo...',
     'admin_todos_planos' => 'Todos los planes',
@@ -207,11 +209,15 @@ return [
     'admin_usuario_atualizado' => 'Usuario actualizado exitosamente.',
     'admin_usuario_ativado' => 'Usuario activado.',
     'admin_usuario_desativado' => 'Usuario desactivado.',
+    'admin_usuario_apagado' => 'Usuario eliminado exitosamente.',
     'admin_erro_campos' => 'Nombre, correo y contraseña son obligatorios.',
     'admin_erro_senha_curta' => 'La contraseña debe tener al menos 6 caracteres.',
     'admin_erro_email_existe' => 'Ya existe un usuario con este correo.',
     'admin_erro_email_outro' => 'Ya existe otro usuario con este correo.',
     'admin_erro_nome_email' => 'Nombre y correo son obligatorios.',
+    'admin_erro_telefone_existe' => 'Ya existe un usuario con este número de teléfono.',
+    'admin_erro_telefone_outro' => 'Ya existe otro usuario con este número de teléfono.',
+    'erro_telefone_existe' => 'Este número de WhatsApp ya está registrado en otra cuenta.',
 
     // Admin — Configuración
     'admin_config_subtitulo' => 'Variables de entorno y estado del sistema',
@@ -249,6 +255,15 @@ return [
     'admin_preco' => 'Precio',
     'admin_dias_teste' => 'Días de prueba',
     'admin_dias_teste_hint' => '0 = sin período de prueba',
+    'admin_etiqueta_texto' => 'Etiqueta',
+    'admin_etiqueta_placeholder' => 'Ej: Popular, Precio de lanzamiento',
+    'admin_etiqueta_hint' => 'Texto del sello en la tarjeta. Vacío = predeterminado automático.',
+    'admin_etiqueta_cor' => 'Color de la etiqueta',
+    'admin_cor_amarelo' => 'Amarillo',
+    'admin_cor_azul' => 'Azul',
+    'admin_cor_verde' => 'Verde',
+    'admin_cor_vermelho' => 'Rojo',
+    'admin_cor_roxo' => 'Morado',
     'admin_todos_ciclos' => 'Todos los ciclos',
     'admin_nenhum_plano' => 'Ningún plan registrado.',
     'admin_criar_plano' => 'Crear plan',
@@ -315,6 +330,7 @@ return [
     'lp_price_tag_launch' => '🏆 Precio de lanzamiento',
     'lp_price_tag_trial' => '🎁 %d días gratis',
     'lp_price_cta' => 'Comenzar prueba gratis',
+    'lp_price_cta_sem_teste' => 'Suscribirse ahora',
     'lp_price_guarantee' => '🛡️ %d días gratis · sin compromiso',
     'lp_feat1' => 'Agendamiento por WhatsApp ilimitado',
     'lp_feat2' => 'Sincronización con Google Calendar',
@@ -371,4 +387,105 @@ return [
     'modal_todo_del_plan' => 'Todo lo del plan mensual',
     'modal_meses_gratis' => '2 meses gratis',
     'modal_precio_fijo' => 'Precio fijo todo el año',
+
+    // Política de Privacidadr
+    'lang_code' => 'es-MX',
+    'priv_titulo' => 'Aviso de Privacidad',
+    'priv_atualizado' => 'Última actualización: 22 de junio de 2026',
+
+    'priv_s1_titulo' => 'Introducción',
+    'priv_s1_texto' => 'CalendarioIA ("nosotros", "nuestro") es un servicio de agendamiento personal que integra WhatsApp y Google Calendar. Este aviso describe cómo recopilamos, usamos, almacenamos y protegemos sus datos personales, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP, México) y la Lei Geral de Proteção de Dados (LGPD — Ley 13.709/2018, Brasil).',
+
+    'priv_s2_titulo' => 'Datos que recopilamos',
+    'priv_s2_texto' => 'Recopilamos únicamente los datos necesarios para prestar el servicio:',
+    'priv_s2_item1' => '<strong>Datos de registro:</strong> nombre, correo electrónico, contraseña (almacenada con hash criptográfico) y número telefónico.',
+    'priv_s2_item2' => '<strong>Datos de agenda:</strong> eventos creados, editados o cancelados por usted vía WhatsApp, sincronizados con Google Calendar.',
+    'priv_s2_item3' => '<strong>Tokens de autenticación:</strong> tokens OAuth de Google, utilizados exclusivamente para acceder a su calendario con su autorización.',
+    'priv_s2_item4' => '<strong>Mensajes en WhatsApp:</strong> registramos el contenido de los mensajes intercambiados con el asistente para procesamiento y registro de atención.',
+    'priv_s2_item5' => '<strong>Datos de pago:</strong> procesados directamente por Stripe. No almacenamos número de tarjeta, CVV ni datos bancarios en nuestros servidores.',
+
+    'priv_s3_titulo' => 'Finalidades del tratamiento',
+    'priv_s3_texto' => 'Utilizamos sus datos para:',
+    'priv_s3_item1' => 'Crear y administrar su cuenta y suscripción.',
+    'priv_s3_item2' => 'Procesar comandos de agendamiento recibidos vía WhatsApp y sincronizar con Google Calendar.',
+    'priv_s3_item3' => 'Enviar recordatorios y notificaciones sobre sus eventos.',
+    'priv_s3_item4' => 'Mejorar el servicio y corregir problemas técnicos.',
+
+    'priv_s4_titulo' => 'Fundamento legal',
+    'priv_s4_texto' => 'En México, el tratamiento se fundamenta en su consentimiento otorgado al crear su cuenta y autorizar el acceso a Google Calendar, conforme a la LFPDPPP (arts. 8 y 17). En Brasil, las bases legales son el consentimiento (art. 7º, I de la LGPD), la ejecución de contrato (art. 7º, V) y el interés legítimo (art. 7º, IX) para el envío de recordatorios, los cuales puede desactivar en cualquier momento en la configuración de su cuenta.',
+
+    'priv_s5_titulo' => 'Sus derechos',
+    'priv_s5_texto' => 'Conforme a la LFPDPPP (México) y la LGPD (Brasil), usted tiene derecho a:',
+    'priv_s5_item1' => '<strong>Acceso:</strong> solicitar una copia de los datos personales que mantenemos sobre usted.',
+    'priv_s5_item2' => '<strong>Rectificación:</strong> corregir datos incompletos o inexactos.',
+    'priv_s5_item3' => '<strong>Cancelación / Eliminación:</strong> solicitar la supresión de sus datos personales.',
+    'priv_s5_item4' => '<strong>Oposición:</strong> oponerse al tratamiento de sus datos para determinada finalidad.',
+    'priv_s5_item5' => '<strong>Portabilidad:</strong> recibir sus datos en formato estructurado e interoperable (LGPD).',
+    'priv_s5_item6' => '<strong>Revocación del consentimiento:</strong> retirar el consentimiento en cualquier momento, sin afectar la licitud del tratamiento previo.',
+
+    'priv_s6_titulo' => 'Transferencia de datos',
+    'priv_s6_texto' => 'Compartimos datos únicamente con los servicios necesarios para la operación: Google (sincronización de calendario vía OAuth), Stripe (procesamiento de pagos), Evolution API / WhatsApp (envío y recepción de mensajes) y n8n (orquestación de automatizaciones). No vendemos, alquilamos ni cedemos sus datos a terceros con fines de mercadotecnia.',
+
+    'priv_s7_titulo' => 'Almacenamiento y seguridad',
+    'priv_s7_texto' => 'Sus datos se almacenan en servidores con acceso restringido. Las contraseñas se protegen con hash criptográfico (bcrypt). Los tokens de Google se almacenan de forma cifrada. Adoptamos medidas técnicas y organizacionales para proteger sus datos contra acceso no autorizado, destrucción, pérdida o alteración.',
+
+    'priv_s8_titulo' => 'Retención de datos',
+    'priv_s8_texto' => 'Mantenemos sus datos mientras su cuenta esté activa. Al solicitar la eliminación de la cuenta, sus datos personales serán removidos en un plazo de 30 días, excepto cuando exista obligación legal de conservación (como registros fiscales de pago).',
+
+    'priv_s9_titulo' => 'Transferencia internacional',
+    'priv_s9_texto' => 'Sus datos pueden ser procesados en servidores ubicados fuera de México o Brasil (ej: Google Cloud, Stripe). En estos casos, garantizamos que los destinatarios ofrezcan un nivel adecuado de protección, conforme a lo exigido por la LFPDPPP (art. 36) y la LGPD (art. 33).',
+
+    'priv_s10_titulo' => 'Contacto y oficial de datos',
+    'priv_s10_texto' => 'Para ejercer sus derechos ARCO (Acceso, Rectificación, Cancelación y Oposición) o aclarar dudas sobre este aviso, contáctenos por correo electrónico: contacto@calendarioia.com. Las solicitudes ARCO serán respondidas en el plazo de 20 días establecido por la LFPDPPP. Para usuarios en Brasil, el encargado de protección de datos puede ser contactado en la misma dirección.',
+
+    // Términos de Uso
+    'termos_titulo' => 'Términos y Condiciones de Uso',
+    'termos_atualizado' => 'Última actualización: 22 de junio de 2026',
+
+    'termos_s1_titulo' => 'Aceptación de los términos',
+    'termos_s1_texto' => 'Al crear una cuenta o utilizar CalendarioIA, usted acepta estos Términos y Condiciones de Uso y nuestro Aviso de Privacidad. Si no está de acuerdo, no utilice el servicio.',
+
+    'termos_s2_titulo' => 'Descripción del servicio',
+    'termos_s2_texto' => 'CalendarioIA es un servicio de agendamiento personal que le permite crear, listar, editar y cancelar eventos a través de mensajes en lenguaje natural por WhatsApp, con sincronización automática a Google Calendar. El servicio incluye:',
+    'termos_s2_item1' => 'Asistente de agendamiento vía WhatsApp con inteligencia artificial.',
+    'termos_s2_item2' => 'Sincronización bidireccional con Google Calendar.',
+    'termos_s2_item3' => 'Recordatorios automáticos de eventos.',
+
+    'termos_s3_titulo' => 'Registro y cuenta',
+    'termos_s3_texto' => 'Para utilizar el servicio, usted debe:',
+    'termos_s3_item1' => 'Tener al menos 18 años de edad o la mayoría de edad legal en su jurisdicción.',
+    'termos_s3_item2' => 'Proporcionar información veraz y actualizada en el registro.',
+    'termos_s3_item3' => 'Mantener la confidencialidad de su contraseña. Usted es responsable de toda actividad realizada con su cuenta.',
+    'termos_s3_item4' => 'Notificarnos de inmediato en caso de uso no autorizado de su cuenta.',
+
+    'termos_s4_titulo' => 'Planes y pago',
+    'termos_s4_texto' => 'CalendarioIA ofrece planes de pago con ciclos mensual, trimestral o anual, y puede ofrecer un período de prueba gratuito. Los precios se muestran en pesos mexicanos (MXN) y se cobran a través de Stripe. La renovación es automática al final de cada ciclo. Puede cancelar en cualquier momento desde el panel del cliente; el acceso permanece activo hasta el fin del ciclo ya pagado. No se realizan reembolsos por períodos parciales, excepto cuando lo exija la ley aplicable, incluyendo la Ley Federal de Protección al Consumidor.',
+
+    'termos_s5_titulo' => 'Uso aceptable',
+    'termos_s5_texto' => 'Usted se compromete a no utilizar el servicio para:',
+    'termos_s5_item1' => 'Enviar mensajes automatizados masivos (spam) vía WhatsApp.',
+    'termos_s5_item2' => 'Intentar acceder a cuentas de otros usuarios o sistemas internos.',
+    'termos_s5_item3' => 'Utilizar el servicio para cualquier finalidad ilegal o que viole derechos de terceros.',
+    'termos_s5_item4' => 'Revender, sublicenciar o redistribuir el acceso al servicio sin autorización.',
+
+    'termos_s6_titulo' => 'Propiedad intelectual',
+    'termos_s6_texto' => 'Todo el contenido, marca, código y diseño de CalendarioIA son de nuestra propiedad o están licenciados a nosotros. Usted mantiene la propiedad de los datos y eventos que ingrese en el servicio. Al utilizar el servicio, nos otorga una licencia limitada para procesar sus datos exclusivamente para la prestación del servicio contratado.',
+
+    'termos_s7_titulo' => 'Integraciones con terceros',
+    'termos_s7_texto' => 'El servicio depende de plataformas de terceros (Google, WhatsApp/Meta, Stripe). No nos responsabilizamos por indisponibilidades, cambios de política o interrupciones en dichos servicios. En caso de descontinuación de una integración esencial, notificaremos a los usuarios con anticipación razonable.',
+
+    'termos_s8_titulo' => 'Limitación de responsabilidad',
+    'termos_s8_texto' => 'CalendarioIA se proporciona "tal cual". Nos esforzamos por mantener el servicio estable y seguro, pero no garantizamos disponibilidad ininterrumpida. No nos responsabilizamos por compromisos perdidos por falla de notificación, sincronización o por indisponibilidad de los servicios de terceros. Nuestra responsabilidad total se limita al monto pagado por usted en los últimos 12 meses.',
+
+    'termos_s9_titulo' => 'Suspensión y cancelación',
+    'termos_s9_texto' => 'Nos reservamos el derecho de suspender o cancelar su cuenta en caso de violación de estos términos, uso abusivo o falta de pago. Usted puede cancelar su cuenta en cualquier momento desde el panel o contactándonos. Al cancelar, sus datos serán tratados conforme al Aviso de Privacidad.',
+
+    'termos_s10_titulo' => 'Modificaciones a los términos',
+    'termos_s10_texto' => 'Podemos actualizar estos términos periódicamente. Los cambios relevantes serán comunicados por correo electrónico o notificación en el servicio con al menos 15 días de anticipación. El uso continuado del servicio después de los cambios constituye aceptación de los nuevos términos.',
+
+    'termos_s11_titulo' => 'Ley aplicable y jurisdicción',
+    'termos_s11_texto' => 'Para usuarios en México, estos términos se rigen por las leyes federales de los Estados Unidos Mexicanos, incluyendo la LFPDPPP y la Ley Federal de Protección al Consumidor, con jurisdicción en los tribunales competentes de la Ciudad de México. Para usuarios en Brasil, se aplican la LGPD, el Marco Civil de Internet (Ley 12.965/2014) y el Código de Defensa del Consumidor (Ley 8.078/1990), con fuero en el domicilio del consumidor.',
+
+    'termos_s12_titulo' => 'Contacto',
+    'termos_s12_texto' => 'Para dudas sobre estos términos, contáctenos por correo electrónico: contacto@calendarioia.com.',
 ];
