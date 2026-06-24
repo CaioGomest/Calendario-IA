@@ -223,6 +223,14 @@ function contaCanceladosEsteMes() {
     return (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE plano = 'cancelado' AND deletado = 0 AND criado_em >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetchColumn();
 }
 
+function insereUsuarioGoogle($nome, $email) {
+    $pdo = conexao();
+    $senha_random = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
+    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash) VALUES (?, ?, ?)');
+    $stmt->execute([$nome, $email, $senha_random]);
+    return (int) $pdo->lastInsertId();
+}
+
 function insereUsuarioAdmin($dados) {
     $pdo = conexao();
     $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, telefone, plano) VALUES (?, ?, ?, ?, ?)');

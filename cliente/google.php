@@ -2,17 +2,25 @@
 require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
+require_once __DIR__ . '/../funcoes/funcoesGoogle.php';
 require_once __DIR__ . '/../config/config.php';
 
 iniciaSessao();
 exigeLoginCliente();
+
+$usuario = buscaUsuarioPorId(usuarioLogadoId());
+if (!empty($usuario['token_acesso_google'])) {
+    header('Location: whatsapp.php');
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conectar') {
     if (MODO_DEV) {
         header('Location: whatsapp.php');
         exit;
     }
-    // fora do MODO_DEV falta fazer o fluxo real do OAuth do Google
+    header('Location: ' . geraUrlAutorizacaoGoogle());
+    exit;
 }
 ?>
 <!DOCTYPE html>
