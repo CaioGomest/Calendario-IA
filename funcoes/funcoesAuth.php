@@ -2,6 +2,11 @@
 
 require_once __DIR__ . '/../config/conexao.php';
 
+function validaSecretInterno() {
+    $secret = $_SERVER['HTTP_X_INTERNAL_SECRET'] ?? '';
+    return $secret !== '' && $secret === INTERNAL_SECRET;
+}
+
 function iniciaSessao() {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();

@@ -34,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
                 'dias_teste' => $dias_teste,
                 'etiqueta_texto' => $etiqueta_texto,
                 'etiqueta_cor' => $etiqueta_cor,
+
             ]);
             $msg_sucesso = traduz('admin_plano_criado');
         }
@@ -57,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
                 'dias_teste' => $dias_teste,
                 'etiqueta_texto' => $etiqueta_texto,
                 'etiqueta_cor' => $etiqueta_cor,
+
             ]);
             $msg_sucesso = traduz('admin_plano_atualizado');
         }
@@ -102,7 +104,7 @@ $nomes_ciclo = [
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CalendarioIA — <?= traduz('admin_planos') ?></title>
+<title><?= htmlspecialchars(nomeApp()) ?> — <?= traduz('admin_planos') ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -175,7 +177,7 @@ $nomes_ciclo = [
                 ?>
                 <span class="selo <?= $cor_ciclo ?>"><?= htmlspecialchars($nomes_ciclo[$p['ciclo']] ?? $p['ciclo']) ?></span>
               </td>
-              <td style="font-weight:600;">MX$<?= number_format((float)$p['preco'], 2, '.', ',') ?></td>
+              <td style="font-weight:600;"><?= simboloMoeda() ?><?= number_format((float)$p['preco'], 2, '.', ',') ?></td>
               <td>
                 <?php if ((int)$p['dias_teste'] > 0): ?>
                   <span class="selo ambar"><?= $p['dias_teste'] ?> <?= traduz('admin_dias') ?></span>

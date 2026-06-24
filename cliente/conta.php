@@ -3,6 +3,7 @@ require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
+require_once __DIR__ . '/../funcoes/funcoesStripe.php';
 
 iniciaSessao();
 exigeLoginCliente();
@@ -35,21 +36,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($acao === 'cancelar_plano') {
+        $usuario_cancel = buscaUsuarioPorId(usuarioLogadoId());
+        if (!MODO_DEV && !empty($usuario_cancel['stripe_subscription_id'])) {
+            cancelaAssinaturaStripe($usuario_cancel['stripe_subscription_id']);
+        }
         atualizaPlanoUsuario(usuarioLogadoId(), 'cancelado', null);
+        atualizaStripeUsuario(usuarioLogadoId(), $usuario_cancel['stripe_customer_id'] ?? null, null);
+    }
+
+    if ($acao === 'portal_stripe') {
+        $usuario_portal = buscaUsuarioPorId(usuarioLogadoId());
+        if (!empty($usuario_portal['stripe_customer_id'])) {
+            $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
+                . '://' . $_SERVER['HTTP_HOST']
+                . dirname($_SERVER['SCRIPT_NAME']);
+            $portal = criaPortalSession($usuario_portal['stripe_customer_id'], $base_url . '/conta.php');
+            if (!isset($portal['error'])) {
+                header('Location: ' . $portal['url']);
+                exit;
+            }
+        }
     }
 
     if ($acao === 'cambiar_plano' && !empty($_POST['id_plano'])) {
         $plano_escolhido = buscaPlanoPorId((int) $_POST['id_plano']);
         if ($plano_escolhido && $plano_escolhido['ativo']) {
-            $expira = null;
-            if ($plano_escolhido['ciclo'] === 'mensal') {
-                $expira = date('Y-m-d H:i:s', strtotime('+1 month'));
-            } elseif ($plano_escolhido['ciclo'] === 'trimestral') {
-                $expira = date('Y-m-d H:i:s', strtotime('+3 months'));
-            } elseif ($plano_escolhido['ciclo'] === 'anual') {
-                $expira = date('Y-m-d H:i:s', strtotime('+1 year'));
+            if (MODO_DEV) {
+                $expira = null;
+                if ($plano_escolhido['ciclo'] === 'mensal') {
+                    $expira = date('Y-m-d H:i:s', strtotime('+1 month'));
+                } elseif ($plano_escolhido['ciclo'] === 'trimestral') {
+                    $expira = date('Y-m-d H:i:s', strtotime('+3 months'));
+                } elseif ($plano_escolhido['ciclo'] === 'anual') {
+                    $expira = date('Y-m-d H:i:s', strtotime('+1 year'));
+                }
+                atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira);
             }
-            atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira);
         }
     }
 
@@ -59,6 +81,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $usuario = buscaUsuarioPorId(usuarioLogadoId());
 $inicial_nome = mb_strtoupper(mb_substr($usuario['nome'], 0, 1));
+$plano_conta = buscaPlanoSugerido();
+$sufixo_conta = [
+    'mensal' => traduz('upgrade_ciclo_mensal'),
+    'trimestral' => traduz('upgrade_ciclo_trimestral'),
+    'anual' => traduz('upgrade_ciclo_anual'),
+];
+$preco_plano_texto = $plano_conta
+    ? simboloMoeda() . number_format((float)$plano_conta['preco'], 0) . ' ' . ($sufixo_conta[$plano_conta['ciclo']] ?? '')
+    : '';
 
 $agora = new DateTime();
 $expirado = $usuario['plano_expira_em'] && new DateTime($usuario['plano_expira_em']) < $agora;
@@ -101,7 +132,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CalendarioIA — <?= traduz('conta_titulo') ?></title>
+<title><?= htmlspecialchars(nomeApp()) ?> — <?= traduz('conta_titulo') ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -111,7 +142,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
 
 <div class="vista-mobile">
   <div class="barra-topo">
-    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> CalendarioIA</div>
+    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
     <span class="selo <?= $badge_cor ?>"><?= htmlspecialchars($badge_plano) ?></span>
   </div>
   <div class="conteudo-pagina espacado">
@@ -127,7 +158,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
       <div class="assinatura-cartao">
         <div class="assinatura-cabecalho">
           <b><?= traduz('plan_mensual') ?></b>
-          <span class="selo verde"><?= traduz('plan_mensual_precio') ?></span>
+          <span class="selo verde"><?= htmlspecialchars($preco_plano_texto) ?></span>
         </div>
         <div class="assinatura-datas"><?= traduz('sub_dates') ?></div>
         <div class="assinatura-acoes">
@@ -218,14 +249,14 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
             <div class="assinatura-cartao">
               <div class="assinatura-cabecalho">
                 <b><?= traduz('plan_mensual') ?></b>
-                <span class="selo verde"><?= traduz('plan_mensual_precio') ?></span>
+                <span class="selo verde"><?= htmlspecialchars($preco_plano_texto) ?></span>
               </div>
               <div class="assinatura-datas"><?= traduz('sub_dates') ?></div>
               <div class="assinatura-acoes">
                 <?php if ($planos_disponiveis): ?>
                 <button type="button" class="botao botao-contorno botao-pequeno" onclick="abrirModal('modal-plano')" style="color:var(--primary);"><?= traduz('modal_cambiar_plan') ?></button>
                 <?php endif; ?>
-                <button type="button" class="botao botao-contorno botao-pequeno" onclick="abrirModal('modal-tarjeta')"><?= traduz('botao_cambiar_tarjeta') ?></button>
+                <form method="post" action="conta.php" style="display:inline;"><input type="hidden" name="acao" value="portal_stripe" /><button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_cambiar_tarjeta') ?></button></form>
                 <button type="button" class="botao botao-perigo botao-pequeno" onclick="abrirModal('modal-cancelar')"><?= traduz('botao_cancelar_plan') ?></button>
               </div>
             </div>
@@ -340,47 +371,6 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
     </form>
     <div class="modal-trust"><?= traduz('modal_trust_plan') ?></div>
     <?php endif; ?>
-  </div>
-</div>
-
-<!-- Modal: Trocar cartão -->
-<div id="modal-tarjeta" class="modal-fundo" onclick="if(event.target===this)fecharModal(this.id)">
-  <div class="modal-caixa">
-    <button type="button" class="modal-fechar" onclick="fecharModal('modal-tarjeta')">✕</button>
-    <div class="modal-icone">💳</div>
-    <h2 class="modal-titulo"><?= traduz('modal_cambiar_tarjeta') ?></h2>
-    <p class="modal-sub"><?= traduz('modal_cambiar_tarjeta_sub') ?></p>
-    <div class="modal-campo">
-      <label><?= traduz('modal_num_tarjeta') ?></label>
-      <div class="modal-input">
-        <span class="icone-campo">💳</span>
-        <input type="text" placeholder="1234 5678 9012 3456" maxlength="19" data-mask="card" />
-      </div>
-    </div>
-    <div class="modal-campo">
-      <div class="campo-row">
-        <div>
-          <label><?= traduz('modal_vencimiento') ?></label>
-          <div class="modal-input">
-            <input type="text" placeholder="MM/AA" maxlength="5" data-mask="expiry" />
-          </div>
-        </div>
-        <div>
-          <label>CVC</label>
-          <div class="modal-input">
-            <input type="text" placeholder="123" maxlength="4" data-mask="cvc" />
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-campo">
-      <label><?= traduz('modal_nombre_tarjeta') ?></label>
-      <div class="modal-input">
-        <input type="text" placeholder="Mariana López" />
-      </div>
-    </div>
-    <button type="button" class="botao-primario-grande" onclick="fecharModal('modal-tarjeta')"><?= traduz('modal_guardar_tarjeta') ?></button>
-    <div class="modal-trust"><?= traduz('modal_trust_tarjeta') ?></div>
   </div>
 </div>
 

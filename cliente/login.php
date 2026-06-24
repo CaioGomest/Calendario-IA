@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CalendarioIA — <?= traduz('login_titulo') ?></title>
+<title><?= htmlspecialchars(nomeApp()) ?> — <?= traduz('login_titulo') ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="login-estrutura">
 
   <div class="login-marca">
-    <div class="marca"><span class="logo"><span data-bot="white" data-size="20"></span></span> CalendarioIA</div>
+    <div class="marca"><span class="logo"><span data-bot="white" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
     <div class="login-titulo login-titulo-mobile">
       <div class="login-icone"><span data-bot="ink" data-size="56"></span></div>
       <h1><?= traduz('login_saudacao') ?></h1>

@@ -25,8 +25,8 @@
   }
 
   var MODES = {
-    ink:    { stroke: '#1f2733', eye: '#2f6bd6', pupil: null,      blush: '#9ec3ff' },
-    onblue: { stroke: '#ffffff', eye: '#ffffff', pupil: '#2f6bd6', blush: 'rgba(255,255,255,.35)' },
+    ink:    { stroke: '#1f2733', eye: '#2f6bd6', pupil: null,      blush: null },
+    onblue: { stroke: '#ffffff', eye: '#ffffff', pupil: '#2f6bd6', blush: null },
     white:  { stroke: '#ffffff', eye: '#9ec3ff', pupil: '#2f6bd6', blush: null }
   };
 

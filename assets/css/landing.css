@@ -599,7 +599,7 @@ section { position: relative; }
 
 .pergunta.aberto .mais-menos { transform: rotate(45deg); }
 .pergunta .resposta { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
-.pergunta .resposta p { margin: 0; padding: 0 20px 18px; font-size: 14px; color: var(--ink-soft); font-weight: 600; line-height: 1.6; }
+.pergunta .resposta p { margin: 0; padding: 0 20px 18px; font-size: 14px; color: var(--ink-soft); font-weight: 600; line-height: 1.6; text-align: left; }
 
 /* CHAMADA FINAL */
 .secao-cta {
@@ -644,6 +644,9 @@ section { position: relative; }
 .rodape-landing .links-rodape { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-size: 13.5px; font-weight: 600; }
 .rodape-landing .links-rodape a { color: #9fb0c6; text-decoration: none; }
 .rodape-landing .links-rodape a:hover { color: #fff; }
+.rodape-landing .redes-rodape { display: flex; gap: 16px; margin-top: 10px; }
+.rodape-landing .redes-rodape a { color: #9fb0c6; transition: color .2s; }
+.rodape-landing .redes-rodape a:hover { color: #fff; }
 .rodape-landing .copyright { font-size: 12px; margin-top: 18px; color: #65788f; }
 
 /* ANIMAÇÃO DE ROLAGEM */

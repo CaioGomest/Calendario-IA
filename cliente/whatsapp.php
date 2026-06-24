@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CalendarioIA — <?= traduz('whatsapp_titulo') ?></title>
+<title><?= htmlspecialchars(nomeApp()) ?> — <?= traduz('whatsapp_titulo') ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="vista-mobile">
   <div class="barra-topo">
-    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> CalendarioIA</div>
+    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
     <a class="botao botao-contorno botao-pequeno" href="google.php"><?= traduz('botao_atras') ?></a>
   </div>
   <div class="conteudo-pagina espacado centralizado">
@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="vista-desktop">
   <div class="cadastro-estrutura">
     <div class="cadastro-marca">
-      <div class="marca"><span class="logo"><span data-bot="white" data-size="22"></span></span> CalendarioIA</div>
+      <div class="marca"><span class="logo"><span data-bot="white" data-size="22"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
       <div class="login-icone" style="font-size:46px;">💬</div>
       <h2><?= traduz('whatsapp_titulo_desktop') ?></h2>
       <p><?= traduz('whatsapp_subtitulo_desktop') ?></p>

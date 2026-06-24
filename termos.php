@@ -6,7 +6,7 @@ require_once __DIR__ . '/funcoes/funcoesIdioma.php';
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title><?= traduz('termos_titulo') ?> — CalendarioIA</title>
+<title><?= traduz('termos_titulo') ?> — <?= htmlspecialchars(nomeApp()) ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -18,7 +18,7 @@ require_once __DIR__ . '/funcoes/funcoesIdioma.php';
 <nav class="barra-nav">
   <a class="marca" href="landpage.php">
     <span class="logo"><span data-bot="ink" data-size="24"></span></span>
-    CalendarioIA
+    <?= htmlspecialchars(nomeApp()) ?>
   </a>
   <a href="cliente/login.php" class="entrar"><?= traduz('lp_login') ?></a>
 </nav>
@@ -108,7 +108,7 @@ require_once __DIR__ . '/funcoes/funcoesIdioma.php';
 <footer class="rodape-landing">
   <div class="marca-rodape">
     <span class="logo"><span data-bot="white" data-size="20"></span></span>
-    CalendarioIA
+    <?= htmlspecialchars(nomeApp()) ?>
   </div>
   <div class="links-rodape">
     <a href="privacidade.php"><?= traduz('lp_privacy') ?></a>

@@ -507,6 +507,53 @@ body {
     letter-spacing: -.5px;
 }
 
+.sub-estatistica {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-4);
+    margin-top: 4px;
+}
+
+.cartao-estatistica.destaque {
+    border-left: 3px solid #22c55e;
+}
+
+.resumo-linha {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.resumo-linha:last-child { border-bottom: none; }
+.resumo-linha span { color: var(--ink-3); }
+.resumo-linha b { color: var(--ink); font-size: 15px; }
+
+.grade-graficos {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.grafico-container {
+    padding: 8px 16px 12px;
+    height: 280px;
+}
+
+.grafico-doughnut {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 900px) {
+    .grade-graficos { grid-template-columns: 1fr; }
+}
+
 /* ─────────────────────────────────────
    TABELA
    ───────────────────────────────────── */
@@ -959,24 +1006,45 @@ table tr:hover td { background: var(--line-soft); }
 
 .config-form-item .config-item-info { flex: 1; min-width: 0; }
 
+.config-form-item input[type="text"],
+.config-form-item input[type="email"],
+.config-form-item input[type="url"],
 .config-form-item select {
     appearance: none;
     -webkit-appearance: none;
-    background: var(--page) url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+    background: var(--page);
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
-    padding: 7px 28px 7px 10px;
+    padding: 8px 12px;
     font-family: var(--font-body);
     font-size: 13px;
     font-weight: 600;
     color: var(--ink-2);
     outline: none;
-    cursor: pointer;
-    transition: border-color .15s;
-    min-width: 180px;
+    transition: border-color .15s, box-shadow .15s;
+    min-width: 220px;
 }
 
-.config-form-item select:focus { border-color: var(--primary); }
+.config-form-item select {
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    cursor: pointer;
+}
+
+.config-form-item input[type="text"]:focus,
+.config-form-item input[type="email"]:focus,
+.config-form-item input[type="url"]:focus,
+.config-form-item select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(47, 107, 214, .1);
+}
+
+.config-form-item input::placeholder {
+    color: var(--ink-4);
+    font-weight: 500;
+}
 
 .config-form-footer {
     padding: 12px 20px;

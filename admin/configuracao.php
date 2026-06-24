@@ -28,6 +28,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         header('Location: configuracao.php?sucesso=1');
         exit;
     }
+
+    if ($_POST['acao'] === 'salvar_geral') {
+        $nome_app = trim($_POST['nome_app'] ?? '');
+        if ($nome_app !== '') {
+            salvaConfiguracao('nome_app', $nome_app);
+        }
+        $moeda_post = $_POST['moeda'] ?? 'BRL';
+        if (in_array($moeda_post, ['BRL', 'USD', 'MXN'], true)) {
+            salvaConfiguracao('moeda', $moeda_post);
+        }
+        header('Location: configuracao.php?sucesso=1');
+        exit;
+    }
+
+    if ($_POST['acao'] === 'salvar_contato') {
+        $email_suporte = trim($_POST['email_suporte'] ?? '');
+        $instagram = trim($_POST['instagram'] ?? '');
+        $tiktok = trim($_POST['tiktok'] ?? '');
+        $link_suporte = trim($_POST['link_suporte'] ?? '');
+
+        salvaConfiguracao('email_suporte', $email_suporte);
+        salvaConfiguracao('instagram', $instagram);
+        salvaConfiguracao('tiktok', $tiktok);
+        salvaConfiguracao('link_suporte', $link_suporte);
+
+        header('Location: configuracao.php?sucesso=1');
+        exit;
+    }
 }
 
 $msg_sucesso = !empty($_GET['sucesso']) ? traduz('admin_prefs_salvas') : '';
@@ -36,6 +64,13 @@ $idioma_atual = buscaConfiguracao('idioma_padrao') ?? IDIOMA_PADRAO;
 $fuso_atual = buscaConfiguracao('fuso_horario_padrao') ?? 'America/Mexico_City';
 $idiomas_disponiveis = listaIdiomasDisponiveis();
 $fusos_disponiveis = listaFusosHorariosComuns();
+
+$nome_app = buscaConfiguracao('nome_app') ?? nomeApp();
+$moeda_atual = moedaSistema();
+$email_suporte = buscaConfiguracao('email_suporte') ?? '';
+$instagram = buscaConfiguracao('instagram') ?? '';
+$tiktok = buscaConfiguracao('tiktok') ?? '';
+$link_suporte = buscaConfiguracao('link_suporte') ?? '';
 
 $nomes_idioma = [
     'pt-BR' => 'Português (Brasil)',
@@ -54,7 +89,7 @@ $variaveis = [
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CalendarioIA — <?= traduz('admin_configuracao') ?></title>
+<title><?= htmlspecialchars(nomeApp()) ?> — <?= traduz('admin_configuracao') ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -75,6 +110,40 @@ $variaveis = [
       <?php if ($msg_sucesso): ?>
       <div class="sucesso-msg"><?= htmlspecialchars($msg_sucesso) ?></div>
       <?php endif; ?>
+
+      <!-- Nome do app -->
+      <form method="post" action="configuracao.php">
+        <input type="hidden" name="acao" value="salvar_geral" />
+        <div class="config-card" style="margin-bottom:16px;">
+          <div class="config-card-header">
+            <span class="icone-titulo">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </span>
+            <h2><?= traduz('admin_geral') ?></h2>
+          </div>
+          <div class="config-form-item">
+            <div class="config-item-info">
+              <b><?= traduz('admin_nome_app') ?></b>
+              <span><?= traduz('admin_nome_app_desc') ?></span>
+            </div>
+            <input type="text" name="nome_app" value="<?= htmlspecialchars($nome_app) ?>" placeholder="<?= htmlspecialchars(nomeApp()) ?>" required />
+          </div>
+          <div class="config-form-item">
+            <div class="config-item-info">
+              <b><?= traduz('admin_moeda') ?></b>
+              <span><?= traduz('admin_moeda_desc') ?></span>
+            </div>
+            <select name="moeda">
+              <option value="BRL" <?= $moeda_atual === 'BRL' ? 'selected' : '' ?>>R$ — Real (BRL)</option>
+              <option value="USD" <?= $moeda_atual === 'USD' ? 'selected' : '' ?>>US$ — Dólar (USD)</option>
+              <option value="MXN" <?= $moeda_atual === 'MXN' ? 'selected' : '' ?>>MX$ — Peso (MXN)</option>
+            </select>
+          </div>
+          <div class="config-form-footer">
+            <button type="button" class="botao-pequeno botao-primario-pequeno btn-confirmar"><?= traduz('admin_salvar_prefs') ?></button>
+          </div>
+        </div>
+      </form>
 
       <!-- Preferências editáveis -->
       <form method="post" action="configuracao.php">
@@ -113,7 +182,51 @@ $variaveis = [
             </select>
           </div>
           <div class="config-form-footer">
-            <button type="submit" class="botao-pequeno botao-primario-pequeno"><?= traduz('admin_salvar_prefs') ?></button>
+            <button type="button" class="botao-pequeno botao-primario-pequeno btn-confirmar"><?= traduz('admin_salvar_prefs') ?></button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Contato e Redes Sociais -->
+      <form method="post" action="configuracao.php">
+        <input type="hidden" name="acao" value="salvar_contato" />
+        <div class="config-card" style="margin-bottom:16px;">
+          <div class="config-card-header">
+            <span class="icone-titulo">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </span>
+            <h2><?= traduz('admin_contato_redes') ?></h2>
+          </div>
+          <div class="config-form-item">
+            <div class="config-item-info">
+              <b><?= traduz('admin_link_suporte') ?></b>
+              <span><?= traduz('admin_link_suporte_desc') ?></span>
+            </div>
+            <input type="url" name="link_suporte" value="<?= htmlspecialchars($link_suporte) ?>" placeholder="https://wa.me/5215512345678" />
+          </div>
+          <div class="config-form-item">
+            <div class="config-item-info">
+              <b><?= traduz('admin_email_suporte') ?></b>
+              <span><?= traduz('admin_email_suporte_desc') ?></span>
+            </div>
+            <input type="email" name="email_suporte" value="<?= htmlspecialchars($email_suporte) ?>" placeholder="contato@<?= strtolower(nomeApp()) ?>.com" />
+          </div>
+          <div class="config-form-item">
+            <div class="config-item-info">
+              <b>Instagram</b>
+              <span><?= traduz('admin_instagram_desc') ?></span>
+            </div>
+            <input type="text" name="instagram" value="<?= htmlspecialchars($instagram) ?>" placeholder="@<?= strtolower(nomeApp()) ?>" />
+          </div>
+          <div class="config-form-item">
+            <div class="config-item-info">
+              <b>TikTok</b>
+              <span><?= traduz('admin_tiktok_desc') ?></span>
+            </div>
+            <input type="text" name="tiktok" value="<?= htmlspecialchars($tiktok) ?>" placeholder="@<?= strtolower(nomeApp()) ?>" />
+          </div>
+          <div class="config-form-footer">
+            <button type="button" class="botao-pequeno botao-primario-pequeno btn-confirmar"><?= traduz('admin_salvar_prefs') ?></button>
           </div>
         </div>
       </form>
@@ -172,5 +285,63 @@ $variaveis = [
     </div>
   </div>
 </div>
+<!-- Modal de confirmação -->
+<div id="modal-confirmar" class="modal-overlay" onclick="if(event.target===this)fecharConfirmar()">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h2><?= traduz('admin_confirmar_titulo') ?></h2>
+      <button type="button" class="modal-fechar" onclick="fecharConfirmar()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13.5px;color:var(--ink-2);margin:0 0 14px;"><?= traduz('admin_confirmar_texto') ?></p>
+      <div class="campo">
+        <label style="font-size:12px;font-weight:700;color:var(--ink-4);text-transform:uppercase;"><?= traduz('admin_confirmar_label') ?></label>
+        <div class="campo-entrada">
+          <input type="text" id="input-confirmar" placeholder="<?= traduz('admin_confirmar_placeholder') ?>" autocomplete="off" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="botao-pequeno botao-fantasma" onclick="fecharConfirmar()"><?= traduz('admin_cancelar') ?></button>
+      <button type="button" id="btn-confirmar-final" class="botao-pequeno botao-primario-pequeno" disabled><?= traduz('admin_confirmar_salvar') ?></button>
+    </div>
+  </div>
+</div>
+
+<script>
+var formAtual = null;
+
+document.querySelectorAll('.btn-confirmar').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        formAtual = btn.closest('form');
+        document.getElementById('input-confirmar').value = '';
+        document.getElementById('btn-confirmar-final').disabled = true;
+        document.getElementById('modal-confirmar').classList.add('aberto');
+        setTimeout(function() { document.getElementById('input-confirmar').focus(); }, 100);
+    });
+});
+
+document.getElementById('input-confirmar').addEventListener('input', function() {
+    var val = this.value.trim().toUpperCase();
+    document.getElementById('btn-confirmar-final').disabled = (val !== '<?= mb_strtoupper(traduz('admin_confirmar_palavra')) ?>');
+});
+
+document.getElementById('btn-confirmar-final').addEventListener('click', function() {
+    if (formAtual) formAtual.submit();
+});
+
+document.getElementById('input-confirmar').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !document.getElementById('btn-confirmar-final').disabled) {
+        if (formAtual) formAtual.submit();
+    }
+});
+
+function fecharConfirmar() {
+    document.getElementById('modal-confirmar').classList.remove('aberto');
+    formAtual = null;
+}
+</script>
 </body>
 </html>

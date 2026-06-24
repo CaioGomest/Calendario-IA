@@ -61,6 +61,27 @@ function buscaConfiguracao($chave) {
     return $row ? $row['valor'] : null;
 }
 
+function moedaSistema() {
+    static $moeda = null;
+    if ($moeda === null) {
+        $moeda = buscaConfiguracao('moeda') ?? 'BRL';
+    }
+    return $moeda;
+}
+
+function simboloMoeda($codigo = null) {
+    $mapa = ['BRL' => 'R$', 'USD' => 'US$', 'MXN' => 'MX$'];
+    return $mapa[$codigo ?? moedaSistema()] ?? $codigo;
+}
+
+function nomeApp() {
+    static $nome = null;
+    if ($nome === null) {
+        $nome = buscaConfiguracao('nome_app') ?? 'CalendarioIA';
+    }
+    return $nome;
+}
+
 function salvaConfiguracao($chave, $valor) {
     garanteTabelaConfiguracoes();
     $pdo = conexao();

@@ -151,6 +151,78 @@ function atualizaUsuario($id_usuario, $dados) {
     $stmt->execute($params);
 }
 
+function contaUsuariosNovosEsteMes() {
+    $pdo = conexao();
+    return (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE deletado = 0 AND criado_em >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetchColumn();
+}
+
+function contaUsuariosNovosEstaSemana() {
+    $pdo = conexao();
+    return (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE deletado = 0 AND criado_em >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)")->fetchColumn();
+}
+
+function contaUsuariosPorDia($dias = 30) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare(
+        "SELECT DATE(criado_em) AS dia, COUNT(*) AS total
+         FROM usuarios WHERE deletado = 0 AND criado_em >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+         GROUP BY DATE(criado_em) ORDER BY dia ASC"
+    );
+    $stmt->execute([$dias]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function contaUsuariosPorPlanoDetalhado() {
+    $pdo = conexao();
+    $stmt = $pdo->query(
+        "SELECT plano, ativo, COUNT(*) AS total FROM usuarios WHERE deletado = 0 GROUP BY plano, ativo"
+    );
+    $resultado = ['trial' => 0, 'ativo' => 0, 'cancelado' => 0, 'inativos' => 0];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        if (!(int)$row['ativo']) {
+            $resultado['inativos'] += (int)$row['total'];
+        } else {
+            $resultado[$row['plano']] = (int)$row['total'];
+        }
+    }
+    return $resultado;
+}
+
+function atualizaStripeUsuario($id_usuario, $stripe_customer_id, $stripe_subscription_id) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('UPDATE usuarios SET stripe_customer_id = ?, stripe_subscription_id = ? WHERE id_usuario = ?');
+    $stmt->execute([$stripe_customer_id, $stripe_subscription_id, $id_usuario]);
+}
+
+function buscaUsuarioPorStripeCustomer($stripe_customer_id) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM usuarios WHERE stripe_customer_id = ? AND deletado = 0');
+    $stmt->execute([$stripe_customer_id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function contaCancelamentosPorDia($dias = 30) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare(
+        "SELECT DATE(criado_em) AS dia, COUNT(*) AS total
+         FROM usuarios WHERE plano = 'cancelado' AND deletado = 0
+         AND criado_em >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+         GROUP BY DATE(criado_em) ORDER BY dia ASC"
+    );
+    $stmt->execute([$dias]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function contaCancelados() {
+    $pdo = conexao();
+    return (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE plano = 'cancelado' AND deletado = 0")->fetchColumn();
+}
+
+function contaCanceladosEsteMes() {
+    $pdo = conexao();
+    return (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE plano = 'cancelado' AND deletado = 0 AND criado_em >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetchColumn();
+}
+
 function insereUsuarioAdmin($dados) {
     $pdo = conexao();
     $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, telefone, plano) VALUES (?, ?, ?, ?, ?)');

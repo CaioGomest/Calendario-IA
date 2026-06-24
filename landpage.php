@@ -1,9 +1,21 @@
 <?php
 require_once __DIR__ . '/funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/funcoes/funcoesPlanos.php';
+require_once __DIR__ . '/funcoes/funcoesConfiguracao.php';
 
 $planos_ativos = listaPlanos(['ativo' => 1]);
-$moeda = traduz('lp_moeda');
+$moeda = simboloMoeda();
+$max_dias_teste = 0;
+foreach ($planos_ativos as $p) {
+    $d = (int)$p['dias_teste'];
+    if ($d > $max_dias_teste) $max_dias_teste = $d;
+}
+$tem_teste_gratis = $max_dias_teste > 0;
+
+$email_suporte = buscaConfiguracao('email_suporte') ?? '';
+$instagram = buscaConfiguracao('instagram') ?? '';
+$tiktok = buscaConfiguracao('tiktok') ?? '';
+$link_suporte = buscaConfiguracao('link_suporte') ?? '';
 
 $sufixo_ciclo = [
     'mensal' => traduz('lp_ciclo_mensal'),
@@ -27,7 +39,7 @@ $sufixo_ciclo = [
 <nav class="barra-nav">
   <a class="marca" href="landpage.php">
     <span class="logo"><span data-bot="ink" data-size="24"></span></span>
-    CalendarioIA
+    <?= htmlspecialchars(nomeApp()) ?>
   </a>
   <a class="entrar" href="cliente/login.php"><?= traduz('lp_login') ?></a>
 </nav>
@@ -40,8 +52,8 @@ $sufixo_ciclo = [
     <p class="subtexto revelar d1"><?= traduz('lp_hero_lead') ?></p>
   </div>
   <div class="destaque-acoes">
-    <a href="cliente/cadastro.php" class="botao botao-primario revelar d1"><?= traduz('lp_hero_cta') ?></a>
-    <div class="micro revelar d2"><?= traduz('lp_hero_micro') ?></div>
+    <a href="cliente/cadastro.php" class="botao botao-primario revelar d1"><?= $tem_teste_gratis ? sprintf(traduz('lp_hero_cta'), $max_dias_teste) : traduz('lp_hero_cta_sem_teste') ?></a>
+    <div class="micro revelar d2"><?= $tem_teste_gratis ? traduz('lp_hero_micro') : traduz('lp_hero_micro_sem_teste') ?></div>
     <div class="social revelar d3">
       <span class="avatares">
         <i style="background:#f4b740"></i>
@@ -83,7 +95,7 @@ $sufixo_ciclo = [
     <div class="demo-barra">
       <span class="seta-voltar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span>
       <span class="avatar"><span data-bot="white" data-size="24"></span></span>
-      <span class="quem"><b>CalendarioIA</b><span><?= traduz('lp_demo_online') ?></span></span>
+      <span class="quem"><b><?= htmlspecialchars(nomeApp()) ?></b><span><?= traduz('lp_demo_online') ?></span></span>
       <span class="icones-wa">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.81.36 1.6.68 2.36a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.76.32 1.55.55 2.36.68A2 2 0 0 1 22 16.92z"/></svg>
@@ -204,20 +216,38 @@ $sufixo_ciclo = [
   <div class="adesivo mascote-flutua acenando"><span data-bot="ink" data-size="54"></span></div>
   <h2 class="titulo-fonte revelar"><?= traduz('lp_final_title') ?></h2>
   <p class="revelar d1"><?= traduz('lp_final_text') ?></p>
-  <a href="cliente/cadastro.php" class="botao botao-cta-branco revelar d1"><?= traduz('lp_final_cta') ?></a>
-  <div class="micro-rodape revelar d2"><?= traduz('lp_final_micro') ?></div>
+  <a href="cliente/cadastro.php" class="botao botao-cta-branco revelar d1"><?= $tem_teste_gratis ? traduz('lp_final_cta') : traduz('lp_final_cta_sem_teste') ?></a>
+  <div class="micro-rodape revelar d2"><?= $tem_teste_gratis ? sprintf(traduz('lp_final_micro'), $max_dias_teste) : traduz('lp_final_micro_sem_teste') ?></div>
 </section>
 
 <footer class="rodape-landing">
   <div class="marca-rodape">
     <span class="logo"><span data-bot="white" data-size="20"></span></span>
-    CalendarioIA
+    <?= htmlspecialchars(nomeApp()) ?>
   </div>
   <div class="links-rodape">
     <a href="privacidade.php"><?= traduz('lp_privacy') ?></a>
     <a href="termos.php"><?= traduz('lp_terms') ?></a>
-    <a href="#"><?= traduz('lp_support') ?></a>
-    <a href="#"><?= traduz('lp_contact') ?></a>
+    <?php if ($link_suporte): ?>
+    <a href="<?= htmlspecialchars($link_suporte) ?>" target="_blank"><?= traduz('lp_support') ?></a>
+    <?php endif; ?>
+  </div>
+  <div class="redes-rodape">
+    <?php if ($email_suporte): ?>
+    <a href="mailto:<?= htmlspecialchars($email_suporte) ?>" title="Email" target="_blank">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    </a>
+    <?php endif; ?>
+    <?php if ($instagram): ?>
+    <a href="https://instagram.com/<?= htmlspecialchars(ltrim($instagram, '@')) ?>" title="Instagram" target="_blank">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+    </a>
+    <?php endif; ?>
+    <?php if ($tiktok): ?>
+    <a href="https://tiktok.com/<?= htmlspecialchars(ltrim($tiktok, '@')) ?>" title="TikTok" target="_blank">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1 0-5.78 2.92 2.92 0 0 1 .88.13v-3.5a6.37 6.37 0 0 0-.88-.07 6.26 6.26 0 0 0 0 12.51 6.27 6.27 0 0 0 6.27-6.27V9.4a8.16 8.16 0 0 0 3.83.96V6.84a4.85 4.85 0 0 1-.01-.15z"/></svg>
+    </a>
+    <?php endif; ?>
   </div>
   <div class="copyright"><?= sprintf(traduz('lp_footer_copy'), date('Y')) ?></div>
 </footer>
@@ -254,7 +284,7 @@ $sufixo_ciclo = [
   function addBubble(item){
     var b = el('balao '+item.who);
     var meta = '<span class="balao-info">' + (item.time||'') + (item.who==='eu' ? ' '+checks : '') + '</span>';
-    var name = item.who==='ele' ? '<span class="nome-contato">CalendarioIA</span>' : '';
+    var name = item.who==='ele' ? '<span class="nome-contato"><?= htmlspecialchars(nomeApp()) ?></span>' : '';
     b.innerHTML = name + '<span class="balao-interno">' + item.text + '</span>' + meta;
     THREAD.appendChild(b);
     void b.offsetWidth;

@@ -54,7 +54,7 @@ $whatsapp_conectado = !empty($usuario['telefone']);
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CalendarioIA — <?= traduz('menu_inicio') ?></title>
+<title><?= htmlspecialchars(nomeApp()) ?> — <?= traduz('menu_inicio') ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -64,7 +64,7 @@ $whatsapp_conectado = !empty($usuario['telefone']);
 
 <div class="vista-mobile">
   <div class="barra-topo">
-    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> CalendarioIA</div>
+    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
     <span class="selo <?= $badge_cor ?>"><?= htmlspecialchars($badge_plano) ?></span>
   </div>
   <div class="conteudo-pagina espacado">

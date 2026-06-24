@@ -102,6 +102,79 @@ function listaPlanos($filtro = []) {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+function buscaPlanoSugerido() {
+    garanteTabelaPlanos();
+    $pdo = conexao();
+    $stmt = $pdo->query("SELECT * FROM planos WHERE ativo = 1 ORDER BY FIELD(ciclo, 'trimestral', 'mensal', 'anual'), preco ASC LIMIT 1");
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function calculaReceitaMensal() {
+    garanteTabelaPlanos();
+    $pdo = conexao();
+    $stmt = $pdo->query(
+        "SELECT COALESCE(SUM(
+            CASE p.ciclo
+                WHEN 'mensal' THEN p.preco
+                WHEN 'trimestral' THEN p.preco / 3
+                WHEN 'anual' THEN p.preco / 12
+            END
+        ), 0) AS mrr
+        FROM usuarios u
+        JOIN planos p ON p.nome = u.plano OR (u.plano = 'ativo' AND p.ativo = 1)
+        WHERE u.deletado = 0 AND u.plano = 'ativo'"
+    );
+    return (float) $stmt->fetchColumn();
+}
+
+function calculaReceitaTotal() {
+    garanteTabelaPlanos();
+    $pdo = conexao();
+    $planos = listaPlanos(['ativo' => 1]);
+    if (!$planos) return 0.0;
+    $preco_medio = 0;
+    foreach ($planos as $p) $preco_medio += (float)$p['preco'];
+    $preco_medio = $preco_medio / count($planos);
+    $stmt = $pdo->query("SELECT COUNT(*) FROM usuarios WHERE plano = 'ativo' AND deletado = 0");
+    $ativos = (int) $stmt->fetchColumn();
+    return $preco_medio * $ativos;
+}
+
+function receitaPorMes($meses = 6) {
+    garanteTabelaPlanos();
+    $pdo = conexao();
+    $planos = listaPlanos(['ativo' => 1]);
+    if (!$planos) {
+        return [];
+    }
+    $preco_medio = 0;
+    foreach ($planos as $p) $preco_medio += (float)$p['preco'];
+    $preco_medio = $preco_medio / count($planos);
+
+    $stmt = $pdo->prepare(
+        "SELECT DATE_FORMAT(criado_em, '%Y-%m') AS mes, COUNT(*) AS total
+         FROM usuarios WHERE plano = 'ativo' AND deletado = 0
+         AND criado_em >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
+         GROUP BY mes ORDER BY mes ASC"
+    );
+    $stmt->execute([$meses]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $resultado = [];
+    for ($i = $meses - 1; $i >= 0; $i--) {
+        $mes = date('Y-m', strtotime("-{$i} months"));
+        $total = 0;
+        foreach ($rows as $r) {
+            if ($r['mes'] === $mes) { $total = (int)$r['total']; break; }
+        }
+        $resultado[] = [
+            'mes' => date('M', strtotime($mes . '-01')),
+            'receita' => round($total * $preco_medio, 2),
+        ];
+    }
+    return $resultado;
+}
+
 function contaPlanos() {
     garanteTabelaPlanos();
     $pdo = conexao();

@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/funcoesConfiguracao.php';
+
 function traduz($chave) {
     static $textos = null;
     if ($textos === null) {
@@ -10,7 +12,6 @@ function traduz($chave) {
 
         $idioma = $_SESSION['idioma'] ?? null;
         if (!$idioma) {
-            require_once __DIR__ . '/funcoesConfiguracao.php';
             $idioma = buscaConfiguracao('idioma_padrao') ?? IDIOMA_PADRAO;
         }
 
@@ -22,5 +23,9 @@ function traduz($chave) {
 
         $textos = require $arquivo;
     }
-    return $textos[$chave] ?? $chave;
+    $valor = $textos[$chave] ?? $chave;
+    if (strpos($valor, '%APP%') !== false) {
+        $valor = str_replace('%APP%', nomeApp(), $valor);
+    }
+    return $valor;
 }
