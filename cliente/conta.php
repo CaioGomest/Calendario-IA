@@ -93,6 +93,13 @@ $preco_plano_texto = $plano_conta
 
 $agora = new DateTime();
 $expirado = $usuario['plano_expira_em'] && new DateTime($usuario['plano_expira_em']) < $agora;
+
+if ($usuario['plano_expira_em']) {
+    $data_expira = new DateTime($usuario['plano_expira_em']);
+    $texto_datas = sprintf(traduz('sub_dates_dinamico'), $data_expira->format('d/m/Y'));
+} else {
+    $texto_datas = '';
+}
 $dias_restantes_trial = (!$expirado && $usuario['plano_expira_em'])
     ? (int) $agora->diff(new DateTime($usuario['plano_expira_em']))->days
     : 0;
@@ -157,10 +164,10 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
       <div class="secao-rotulo"><?= traduz('conta_suscripcion_titulo') ?></div>
       <div class="assinatura-cartao">
         <div class="assinatura-cabecalho">
-          <b><?= traduz('plan_mensual') ?></b>
+          <b><?= $plano_conta ? htmlspecialchars($plano_conta['nome']) : traduz('plan_mensual') ?></b>
           <span class="selo verde"><?= htmlspecialchars($preco_plano_texto) ?></span>
         </div>
-        <div class="assinatura-datas"><?= traduz('sub_dates') ?></div>
+        <div class="assinatura-datas"><?= $texto_datas ?></div>
         <div class="assinatura-acoes">
           <button type="button" class="botao botao-contorno botao-pequeno"><?= traduz('botao_cambiar_tarjeta') ?></button>
           <button type="button" class="botao botao-perigo botao-pequeno"><?= traduz('botao_cancelar_plan') ?></button>
@@ -170,12 +177,14 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
 
     <div>
       <div class="secao-rotulo"><?= traduz('preferencias_titulo') ?></div>
+      <!-- TODO: modo silêncio, ativar quando tiver lembretes estiverem funcionando
       <form method="post" action="conta.php" class="config-linha">
         <input type="hidden" name="acao" value="alternar_modo_silencio" />
         <span class="config-icone">🔕</span>
         <div class="config-info"><b><?= traduz('modo_silencio_titulo') ?></b><span><?= traduz('modo_silencio_sub') ?></span></div>
         <button type="submit" class="toggle" style="border:0;background:none;cursor:pointer;"><span class="<?= $usuario['modo_silencio'] ? 'ativo' : '' ?>"></span></button>
       </form>
+      -->
       <div class="config-linha">
         <span class="config-icone">⏰</span>
         <div class="config-info">
@@ -248,10 +257,10 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
             <div class="secao-rotulo-desktop"><?= traduz('conta_suscripcion_titulo') ?></div>
             <div class="assinatura-cartao">
               <div class="assinatura-cabecalho">
-                <b><?= traduz('plan_mensual') ?></b>
+                <b><?= $plano_conta ? htmlspecialchars($plano_conta['nome']) : traduz('plan_mensual') ?></b>
                 <span class="selo verde"><?= htmlspecialchars($preco_plano_texto) ?></span>
               </div>
-              <div class="assinatura-datas"><?= traduz('sub_dates') ?></div>
+              <div class="assinatura-datas"><?= $texto_datas ?></div>
               <div class="assinatura-acoes">
                 <?php if ($planos_disponiveis): ?>
                 <button type="button" class="botao botao-contorno botao-pequeno" onclick="abrirModal('modal-plano')" style="color:var(--primary);"><?= traduz('modal_cambiar_plan') ?></button>
@@ -270,12 +279,14 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
 
           <div class="coluna">
             <div class="secao-rotulo-desktop"><?= traduz('preferencias_titulo') ?></div>
+            <!-- TODO: modo silêncio, ativar/se lembretes via WhatsApp estiverem funcionando
             <form method="post" action="conta.php" class="config-linha">
               <input type="hidden" name="acao" value="alternar_modo_silencio" />
               <span class="config-icone">🔕</span>
               <div class="config-info"><b><?= traduz('modo_silencio_titulo') ?></b><span><?= traduz('modo_silencio_sub') ?></span></div>
               <button type="submit" class="toggle" style="border:0;background:none;cursor:pointer;"><span class="<?= $usuario['modo_silencio'] ? 'ativo' : '' ?>"></span></button>
             </form>
+            -->
             <div class="config-linha">
               <span class="config-icone">⏰</span>
               <div class="config-info">

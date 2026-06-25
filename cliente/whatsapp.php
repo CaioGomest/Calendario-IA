@@ -11,7 +11,8 @@ $erro_whatsapp = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $whatsapp = trim($_POST['whatsapp'] ?? '');
     if ($whatsapp !== '') {
-        $telefone_formatado = '+52' . preg_replace('/\D+/', '', $whatsapp);
+        $somente_digitos = preg_replace('/\D+/', '', $whatsapp);
+        $telefone_formatado = '+' . $somente_digitos;
         $existente = buscaUsuarioPorTelefone($telefone_formatado);
         if ($existente && (int)$existente['id_usuario'] !== usuarioLogadoId()) {
             $erro_whatsapp = traduz('erro_telefone_existe');
@@ -57,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="post" action="whatsapp.php" style="width:100%;">
       <div class="campo">
         <label><?= traduz('campo_whatsapp') ?></label>
-        <div class="input"><span class="input-prefixo">🇲🇽 +52</span><input inputmode="tel" name="whatsapp" placeholder="55 1234 5678" required /></div>
+        <div class="input"><span class="input-prefixo">📱</span><input inputmode="tel" name="whatsapp" placeholder="+55 11 91234 5678" required /></div>
       </div>
       <p class="tela-subtitulo" style="text-align:center;font-size:13px;"><?= traduz('whatsapp_aviso') ?></p>
       <button type="submit" class="botao botao-whatsapp" style="width:100%;"><?= traduz('botao_conectar_whatsapp') ?></button>
@@ -66,17 +67,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if (MODO_DEV): ?>
       <a class="dica" style="text-align:center;display:block;margin-top:4px;" href="home.php">🧪 Modo desarrollo: pular sem conectar</a>
     <?php endif; ?>
-    <div class="divisor" style="width:100%;"><?= traduz('whatsapp_sep') ?></div>
-
-    <div class="cartao" style="width:100%;">
-      <div class="qr-cartao">
-        <div class="qr-caixa">📱</div>
-        <div class="qr-texto">
-          <b><?= traduz('whatsapp_qr_titulo') ?></b>
-          <span><?= traduz('whatsapp_qr_texto') ?></span>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -106,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="post" action="whatsapp.php">
           <div class="campo">
             <label><?= traduz('campo_whatsapp') ?></label>
-            <div class="input"><span class="input-prefixo">🇲🇽 +52</span><input inputmode="tel" name="whatsapp" placeholder="55 1234 5678" required /></div>
+            <div class="input"><span class="input-prefixo">📱</span><input inputmode="tel" name="whatsapp" placeholder="+55 11 91234 5678" required /></div>
           </div>
           <button type="submit" class="botao botao-whatsapp botao-espaco"><?= traduz('botao_conectar_whatsapp') ?></button>
           <?php if (MODO_DEV): ?>

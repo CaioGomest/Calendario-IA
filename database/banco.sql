@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     fuso_horario VARCHAR(50) NOT NULL DEFAULT 'America/Mexico_City',
     modo_silencio TINYINT(1) NOT NULL DEFAULT 0,
     antecedencia_lembrete_min INT NOT NULL DEFAULT 30,
+    token_recuperacao VARCHAR(255) NULL,
+    token_recuperacao_expira DATETIME NULL,
     stripe_customer_id VARCHAR(255) NULL,
     stripe_subscription_id VARCHAR(255) NULL,
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -78,4 +80,11 @@ CREATE TABLE IF NOT EXISTS administradores (
     email VARCHAR(150) NOT NULL UNIQUE,
     senha_hash VARCHAR(255) NOT NULL,
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Admin padrão (email: admin@gmail.com / senha: Admin@123)
+INSERT IGNORE INTO administradores (nome, email, senha_hash) VALUES (
+    'Caio Gomes',
+    'admin@gmail.com',
+    '$2y$10$W0aZgyoIytf3P2xkN/bSLOpZwkMbzuTWtz1WSxmyYBPboLFbIVVCi'
 );

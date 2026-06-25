@@ -43,11 +43,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     }
 
     if ($_POST['acao'] === 'salvar_contato') {
+        $email_remetente = trim($_POST['email_remetente'] ?? '');
         $email_suporte = trim($_POST['email_suporte'] ?? '');
         $instagram = trim($_POST['instagram'] ?? '');
         $tiktok = trim($_POST['tiktok'] ?? '');
         $link_suporte = trim($_POST['link_suporte'] ?? '');
 
+        salvaConfiguracao('email_remetente', $email_remetente);
         salvaConfiguracao('email_suporte', $email_suporte);
         salvaConfiguracao('instagram', $instagram);
         salvaConfiguracao('tiktok', $tiktok);
@@ -67,6 +69,7 @@ $fusos_disponiveis = listaFusosHorariosComuns();
 
 $nome_app = buscaConfiguracao('nome_app') ?? nomeApp();
 $moeda_atual = moedaSistema();
+$email_remetente = buscaConfiguracao('email_remetente') ?? '';
 $email_suporte = buscaConfiguracao('email_suporte') ?? '';
 $instagram = buscaConfiguracao('instagram') ?? '';
 $tiktok = buscaConfiguracao('tiktok') ?? '';
@@ -196,6 +199,13 @@ $variaveis = [
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </span>
             <h2><?= traduz('admin_contato_redes') ?></h2>
+          </div>
+          <div class="config-form-item">
+            <div class="config-item-info">
+              <b><?= traduz('admin_email_remetente') ?></b>
+              <span><?= traduz('admin_email_remetente_desc') ?></span>
+            </div>
+            <input type="email" name="email_remetente" value="<?= htmlspecialchars($email_remetente) ?>" placeholder="noreply@<?= strtolower(nomeApp()) ?>.com" />
           </div>
           <div class="config-form-item">
             <div class="config-item-info">

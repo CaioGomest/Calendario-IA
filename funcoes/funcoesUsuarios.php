@@ -223,6 +223,34 @@ function contaCanceladosEsteMes() {
     return (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE plano = 'cancelado' AND deletado = 0 AND criado_em >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetchColumn();
 }
 
+function criaTokenRecuperacao($id_usuario) {
+    $pdo = conexao();
+    $token = bin2hex(random_bytes(32));
+    $expira = date('Y-m-d H:i:s', strtotime('+1 hour'));
+    $stmt = $pdo->prepare('UPDATE usuarios SET token_recuperacao = ?, token_recuperacao_expira = ? WHERE id_usuario = ?');
+    $stmt->execute([$token, $expira, $id_usuario]);
+    return $token;
+}
+
+function buscaUsuarioPorTokenRecuperacao($token) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM usuarios WHERE token_recuperacao = ? AND token_recuperacao_expira > NOW() AND deletado = 0');
+    $stmt->execute([$token]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function deletaTokenRecuperacao($id_usuario) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('UPDATE usuarios SET token_recuperacao = NULL, token_recuperacao_expira = NULL WHERE id_usuario = ?');
+    $stmt->execute([$id_usuario]);
+}
+
+function atualizaSenhaUsuario($id_usuario, $nova_senha) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('UPDATE usuarios SET senha_hash = ? WHERE id_usuario = ?');
+    $stmt->execute([password_hash($nova_senha, PASSWORD_DEFAULT), $id_usuario]);
+}
+
 function insereUsuarioGoogle($nome, $email) {
     $pdo = conexao();
     $senha_random = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
