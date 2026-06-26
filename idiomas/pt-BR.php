@@ -45,6 +45,8 @@ return [
     'divisor_ou' => 'ou',
     'login_sem_conta' => 'Ainda não tem conta?',
     'link_criar_conta' => 'Crie uma grátis',
+    'cadastro_ja_tem_conta' => 'Já tem uma conta?',
+    'link_iniciar_sesion' => 'Entrar',
     'login_headline_desktop' => 'Sua agenda, direto no WhatsApp 📅',
     'login_subtitulo_desktop' => 'Diga ao seu assistente o que você precisa e pronto. Sem apps extras, sem complicação.',
     'login_feature_1' => 'Agende por mensagem, como com um amigo',

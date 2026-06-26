@@ -110,3 +110,94 @@ function listaEventosRecentes($limite = 10) {
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+
+function listaEventosUsuario($id_usuario, $filtro = []) {
+    $pdo = conexao();
+    $sql = 'SELECT * FROM eventos WHERE id_usuario = ?';
+    $params = [$id_usuario];
+
+    if (!empty($filtro['data_inicio'])) {
+        $sql .= ' AND data_inicio >= ?';
+        $params[] = $filtro['data_inicio'];
+    }
+    if (!empty($filtro['data_fim'])) {
+        $sql .= ' AND data_inicio <= ?';
+        $params[] = $filtro['data_fim'];
+    }
+
+    $sql .= ' ORDER BY data_inicio ASC';
+
+    if (!empty($filtro['limite'])) {
+        $sql .= ' LIMIT ?';
+        $stmt = $pdo->prepare($sql);
+        foreach ($params as $i => $val) {
+            $stmt->bindValue($i + 1, $val);
+        }
+        $stmt->bindValue(count($params) + 1, (int) $filtro['limite'], PDO::PARAM_INT);
+        $stmt->execute();
+    } else {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+    }
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function atualizaEvento($id_evento, $dados) {
+    $pdo = conexao();
+    $campos = [];
+    $params = [];
+
+    $permitidos = ['titulo', 'descricao', 'data_inicio', 'data_fim', 'id_google_event', 'lembrete'];
+    foreach ($permitidos as $campo) {
+        if (array_key_exists($campo, $dados)) {
+            $campos[] = "$campo = ?";
+            $params[] = $dados[$campo];
+        }
+    }
+
+    if (empty($campos)) {
+        return false;
+    }
+
+    $params[] = $id_evento;
+    $stmt = $pdo->prepare('UPDATE eventos SET ' . implode(', ', $campos) . ' WHERE id_evento = ?');
+    $stmt->execute($params);
+    return $stmt->rowCount() > 0;
+}
+
+function deletaEvento($id_evento) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('DELETE FROM eventos WHERE id_evento = ?');
+    $stmt->execute([$id_evento]);
+    return $stmt->rowCount() > 0;
+}
+
+function buscaEventoPorId($id_evento) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM eventos WHERE id_evento = ?');
+    $stmt->execute([$id_evento]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function buscaSessaoConversa($id_usuario) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM sessoes_conversa WHERE id_usuario = ?');
+    $stmt->execute([$id_usuario]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function atualizaSessaoConversa($id_usuario, $contexto) {
+    $pdo = conexao();
+    $sessao = buscaSessaoConversa($id_usuario);
+
+    if ($sessao) {
+        $stmt = $pdo->prepare('UPDATE sessoes_conversa SET contexto = ? WHERE id_usuario = ?');
+        $stmt->execute([$contexto, $id_usuario]);
+        return (int) $sessao['id_sessao'];
+    }
+
+    $stmt = $pdo->prepare('INSERT INTO sessoes_conversa (id_usuario, contexto) VALUES (?, ?)');
+    $stmt->execute([$id_usuario, $contexto]);
+    return (int) $pdo->lastInsertId();
+}
