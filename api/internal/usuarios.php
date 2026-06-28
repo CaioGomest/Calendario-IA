@@ -5,6 +5,7 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../../funcoes/funcoesUsuarios.php';
+require_once __DIR__ . '/../../funcoes/funcoesConfiguracao.php';
 
 if (!validaSecretInterno()) {
     http_response_code(401);
@@ -48,4 +49,5 @@ echo json_encode(['ok' => true, 'data' => [
     'token_acesso_google' => $usuario['token_acesso_google'],
     'token_refresh_google' => $usuario['token_refresh_google'],
     'token_google_expira_em' => $usuario['token_google_expira_em'],
+    'idioma' => buscaConfiguracao('idioma_padrao') ?? IDIOMA_PADRAO,
 ]]);
