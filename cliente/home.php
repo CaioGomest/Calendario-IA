@@ -3,6 +3,7 @@ require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesEventos.php';
+require_once __DIR__ . '/../funcoes/funcoesGoogle.php';
 
 iniciaSessao();
 exigeLoginCliente();
@@ -13,6 +14,12 @@ $usuario = buscaUsuarioPorId(usuarioLogadoId());
 
 $meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
+$eventos_google = [];
+$token_acesso = garanteTokenGoogleValido($usuario['id_usuario']);
+if ($token_acesso) {
+    $eventos_google = listaEventosGoogleCalendar($token_acesso, $usuario['fuso_horario'] ?? 'America/Mexico_City', 5);
+}
+
 $proximos_eventos = array_map(function ($evento) use ($meses) {
     $data = new DateTime($evento['data_inicio']);
     return [
@@ -21,9 +28,14 @@ $proximos_eventos = array_map(function ($evento) use ($meses) {
         'titulo' => $evento['titulo'],
         'detalhe' => $data->format('H:i') . ($evento['descricao'] ? ' · ' . $evento['descricao'] : ''),
     ];
-}, listaProximosEventos($usuario['id_usuario']));
+}, $eventos_google);
 
-$eventos_semana = contaEventosSemana($usuario['id_usuario']);
+$eventos_semana = count(array_filter($eventos_google, function ($e) {
+    $inicio = new DateTime($e['data_inicio']);
+    $agora = new DateTime();
+    $fim_semana = (clone $agora)->modify('+7 days');
+    return $inicio >= $agora && $inicio <= $fim_semana;
+}));
 $agora = new DateTime();
 $expirado = $usuario['plano_expira_em'] && new DateTime($usuario['plano_expira_em']) < $agora;
 $dias_restantes_trial = (!$expirado && $usuario['plano_expira_em'])
