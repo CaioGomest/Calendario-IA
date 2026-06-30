@@ -4,5 +4,6 @@
 ?>
 <nav class="barra-abas">
   <a class="<?= $pagina_atual === 'home' ? 'ativo' : '' ?>" href="home.php"><span class="aba-icone">🏠</span> <?= traduz('menu_inicio') ?></a>
+  <a class="<?= $pagina_atual === 'financas' ? 'ativo' : '' ?>" href="financas.php"><span class="aba-icone">💰</span> <?= traduz('menu_financas') ?></a>
   <a class="<?= $pagina_atual === 'conta' ? 'ativo' : '' ?>" href="conta.php"><span class="aba-icone">👤</span> <?= traduz('menu_cuenta') ?></a>
 </nav>
