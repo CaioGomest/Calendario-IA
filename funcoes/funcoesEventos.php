@@ -68,6 +68,7 @@ function listaEventosPendentesLembrete() {
          WHERE e.lembrete = 1
            AND e.lembrete_enviado = 0
            AND e.data_inicio >= NOW()
+           AND DATE_SUB(e.data_inicio, INTERVAL u.antecedencia_lembrete_min MINUTE) <= NOW()
            AND u.deletado = 0
            AND u.ativo = 1
          ORDER BY e.data_inicio ASC"
