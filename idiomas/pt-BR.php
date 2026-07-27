@@ -137,6 +137,7 @@ return [
     'botao_abrir' => 'Abrir',
     'botao_abrir_whatsapp' => 'Abrir WhatsApp',
     'home_conexiones_titulo' => 'Suas conexões',
+    'home_conexiones_sub' => 'Para alterar, acesse',
     'home_eventos_titulo' => 'Próximos eventos',
     'home_google_label' => 'Google Calendar',
     'home_whatsapp_label' => 'WhatsApp',

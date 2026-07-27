@@ -67,12 +67,18 @@ function listaEventosPendentesLembrete() {
          JOIN usuarios u ON e.id_usuario = u.id_usuario
          WHERE e.lembrete = 1
            AND e.lembrete_enviado = 0
-           AND e.data_inicio >= NOW()
            AND u.deletado = 0
            AND u.ativo = 1
          ORDER BY e.data_inicio ASC"
     );
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    return array_values(array_filter($eventos, function ($e) {
+        $fuso = new DateTimeZone($e['fuso_horario'] ?: 'America/Mexico_City');
+        $inicio = new DateTime($e['data_inicio'], $fuso);
+        $agora = new DateTime('now', $fuso);
+        return $inicio >= $agora;
+    }));
 }
 
 function marcaLembreteEnviado($id_evento) {

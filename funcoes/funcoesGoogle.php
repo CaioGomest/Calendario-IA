@@ -95,6 +95,23 @@ function garanteTokenGoogleValido($id_usuario) {
     return $resposta['access_token'];
 }
 
+function buscaStatusEventoGoogle($token_acesso, $id_google_event) {
+    $ch = curl_init('https://www.googleapis.com/calendar/v3/calendars/primary/events/' . urlencode($id_google_event));
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token_acesso],
+        CURLOPT_TIMEOUT => 10,
+    ]);
+    $resposta = curl_exec($ch);
+    $codigo = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($codigo !== 200) return 'nao_encontrado';
+
+    $dados = json_decode($resposta, true) ?: [];
+    return $dados['status'] ?? 'nao_encontrado';
+}
+
 function listaEventosGoogleCalendar($token_acesso, $fuso_horario = 'America/Mexico_City', $limite = 10) {
     $agora = (new DateTime('now', new DateTimeZone($fuso_horario)))->format('c');
     $params = http_build_query([

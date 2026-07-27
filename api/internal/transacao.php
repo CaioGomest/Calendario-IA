@@ -59,6 +59,10 @@ if ($metodo === 'GET') {
 
     $resultado = listaTransacoes($id_usuario, $filtro);
 
+    if (!empty($filtro['mes']) && !empty($filtro['ano'])) {
+        $resultado['resumo'] = resumoMensal($id_usuario, (int) $filtro['mes'], (int) $filtro['ano']);
+    }
+
     echo json_encode(['ok' => true, 'data' => $resultado]);
     exit;
 }

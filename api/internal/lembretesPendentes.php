@@ -5,6 +5,7 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../../funcoes/funcoesEventos.php';
+require_once __DIR__ . '/../../funcoes/funcoesConfiguracao.php';
 
 if (!validaSecretInterno()) {
     http_response_code(401);
@@ -19,8 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 $pendentes = listaEventosPendentesLembrete();
+$idioma = buscaConfiguracao('idioma_padrao') ?? IDIOMA_PADRAO;
 
-$data = array_map(function ($e) {
+$data = array_map(function ($e) use ($idioma) {
     return [
         'id_evento' => (int) $e['id_evento'],
         'id_usuario' => (int) $e['id_usuario'],
@@ -30,6 +32,7 @@ $data = array_map(function ($e) {
         'antecedencia_lembrete_min' => (int) $e['antecedencia_lembrete_min'],
         'modo_silencio' => (bool) $e['modo_silencio'],
         'fuso_horario' => $e['fuso_horario'],
+        'idioma' => $idioma,
     ];
 }, $pendentes);
 

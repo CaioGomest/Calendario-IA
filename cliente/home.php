@@ -99,6 +99,7 @@ $whatsapp_conectado = !empty($usuario['telefone']);
 
     <div>
       <div class="secao-rotulo"><?= traduz('home_conexiones_titulo') ?></div>
+      <div class="secao-rotulo-nota"><?= traduz('home_conexiones_sub') ?> <a href="conta.php"><?= traduz('menu_cuenta') ?></a></div>
       <div class="conexao">
         <span class="conexao-icone google">📅</span>
         <div class="conexao-info"><b><?= traduz('home_google_label') ?></b><span><?= $google_conectado ? htmlspecialchars($usuario['email']) : '—' ?></span></div>
@@ -163,6 +164,7 @@ $whatsapp_conectado = !empty($usuario['telefone']);
           </div>
           <div class="coluna">
             <div class="secao-rotulo-desktop"><?= traduz('home_conexiones_titulo') ?></div>
+            <div class="secao-rotulo-nota"><?= traduz('home_conexiones_sub') ?> <a href="conta.php"><?= traduz('menu_cuenta') ?></a></div>
             <div class="conexao">
               <span class="conexao-icone google">📅</span>
               <div class="conexao-info"><b><?= traduz('home_google_label') ?></b><span><?= $google_conectado ? htmlspecialchars($usuario['email']) : '—' ?></span></div>

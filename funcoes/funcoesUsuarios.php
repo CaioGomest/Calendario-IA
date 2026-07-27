@@ -1,6 +1,11 @@
 <?php
 
 require_once __DIR__ . '/../config/conexao.php';
+require_once __DIR__ . '/funcoesConfiguracao.php';
+
+function fusoHorarioPadrao() {
+    return buscaConfiguracao('fuso_horario_padrao') ?? 'America/Mexico_City';
+}
 
 function buscaUsuarioPorEmail($email) {
     $pdo = conexao();
@@ -25,11 +30,12 @@ function buscaUsuarioPorId($id_usuario) {
 
 function insereUsuario($dados) {
     $pdo = conexao();
-    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash) VALUES (?, ?, ?)');
+    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, fuso_horario) VALUES (?, ?, ?, ?)');
     $stmt->execute([
         $dados['nome'],
         $dados['email'],
         password_hash($dados['senha'], PASSWORD_DEFAULT),
+        fusoHorarioPadrao(),
     ]);
     return (int) $pdo->lastInsertId();
 }
@@ -254,20 +260,21 @@ function atualizaSenhaUsuario($id_usuario, $nova_senha) {
 function insereUsuarioGoogle($nome, $email) {
     $pdo = conexao();
     $senha_random = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
-    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash) VALUES (?, ?, ?)');
-    $stmt->execute([$nome, $email, $senha_random]);
+    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, fuso_horario) VALUES (?, ?, ?, ?)');
+    $stmt->execute([$nome, $email, $senha_random, fusoHorarioPadrao()]);
     return (int) $pdo->lastInsertId();
 }
 
 function insereUsuarioAdmin($dados) {
     $pdo = conexao();
-    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, telefone, plano) VALUES (?, ?, ?, ?, ?)');
+    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, telefone, plano, fuso_horario) VALUES (?, ?, ?, ?, ?, ?)');
     $stmt->execute([
         $dados['nome'],
         $dados['email'],
         password_hash($dados['senha'], PASSWORD_DEFAULT),
         $dados['telefone'] ?: null,
         $dados['plano'] ?? 'trial',
+        fusoHorarioPadrao(),
     ]);
     return (int) $pdo->lastInsertId();
 }
