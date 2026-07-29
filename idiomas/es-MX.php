@@ -577,7 +577,7 @@ return [
     'priv_s5_item3' => '<strong>Cancelación / Eliminación:</strong> solicitar la supresión de sus datos personales.',
     'priv_s5_item4' => '<strong>Oposición:</strong> oponerse al tratamiento de sus datos para determinada finalidad.',
     'priv_s5_item5' => '<strong>Portabilidad:</strong> recibir sus datos en formato estructurado e interoperable (LGPD).',
-    'priv_s5_item6' => '<strong>Revocación del consentimiento:</strong> retirar el consentimiento en cualquier momento, sin afectar la licitud del tratamiento previo.',
+    'priv_s5_item6' => '<strong>Revocación del consentimiento:</strong> retirar el consentimiento en cualquier momento, sin afectar la licitud del tratamiento previo. Para revocar específicamente el acceso a Google Calendar, acceda a <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a> y elimine la aplicación. También puede desconectar su cuenta de Google directamente en la sección "Conexiones" de su panel.',
 
     'priv_s6_titulo' => 'Transferencia de datos',
     'priv_s6_texto' => 'Compartimos datos únicamente con los servicios necesarios para la operación: Google (sincronización de calendario vía OAuth), Stripe (procesamiento de pagos), Evolution API / WhatsApp (envío y recepción de mensajes) y n8n (orquestación de automatizaciones). No vendemos, alquilamos ni cedemos sus datos a terceros con fines de mercadotecnia.',
