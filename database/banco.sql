@@ -131,6 +131,62 @@ CREATE TABLE IF NOT EXISTS transacoes (
 CREATE INDEX idx_transacoes_usuario_data ON transacoes (id_usuario, data_transacao);
 CREATE INDEX idx_transacoes_usuario_tipo ON transacoes (id_usuario, tipo, data_transacao);
 
+CREATE TABLE IF NOT EXISTS afiliados (
+    id_afiliado INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(120) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    senha_hash VARCHAR(255) NOT NULL,
+    codigo VARCHAR(50) NOT NULL UNIQUE,
+    comissao_percentual DECIMAL(5,2) NOT NULL DEFAULT 10.00,
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS afiliados_indicacoes (
+    id_indicacao INT AUTO_INCREMENT PRIMARY KEY,
+    id_afiliado INT NOT NULL,
+    id_usuario_indicado INT NOT NULL UNIQUE,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_afiliado) REFERENCES afiliados(id_afiliado),
+    FOREIGN KEY (id_usuario_indicado) REFERENCES usuarios(id_usuario)
+);
+
+CREATE INDEX idx_afiliados_indicacoes_afiliado ON afiliados_indicacoes (id_afiliado);
+
+CREATE TABLE IF NOT EXISTS afiliados_comissoes (
+    id_comissao INT AUTO_INCREMENT PRIMARY KEY,
+    id_indicacao INT NOT NULL,
+    id_pagamento INT NOT NULL UNIQUE,
+    valor DECIMAL(10,2) NOT NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_indicacao) REFERENCES afiliados_indicacoes(id_indicacao),
+    FOREIGN KEY (id_pagamento) REFERENCES pagamentos(id_pagamento)
+);
+
+CREATE INDEX idx_afiliados_comissoes_indicacao ON afiliados_comissoes (id_indicacao);
+
+CREATE TABLE IF NOT EXISTS afiliados_cliques (
+    id_clique INT AUTO_INCREMENT PRIMARY KEY,
+    id_afiliado INT NOT NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_afiliado) REFERENCES afiliados(id_afiliado)
+);
+
+CREATE INDEX idx_afiliados_cliques_afiliado ON afiliados_cliques (id_afiliado);
+
+CREATE TABLE IF NOT EXISTS afiliados_saques (
+    id_saque INT AUTO_INCREMENT PRIMARY KEY,
+    id_afiliado INT NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    email_paypal VARCHAR(150) NOT NULL,
+    status ENUM('pendente', 'pago', 'recusado') NOT NULL DEFAULT 'pendente',
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_afiliado) REFERENCES afiliados(id_afiliado)
+);
+
+CREATE INDEX idx_afiliados_saques_afiliado ON afiliados_saques (id_afiliado);
+
 -- Admin padrão (email: admin@gmail.com / senha: Admin@123)
 INSERT IGNORE INTO administradores (nome, email, senha_hash) VALUES (
     'Caio Gomes',

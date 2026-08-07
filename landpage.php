@@ -2,6 +2,19 @@
 require_once __DIR__ . '/funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/funcoes/funcoesPlanos.php';
 require_once __DIR__ . '/funcoes/funcoesConfiguracao.php';
+require_once __DIR__ . '/funcoes/funcoesAfiliados.php';
+
+if (!empty($_GET['ref']) && empty($_COOKIE['afiliado_ref'])) {
+    $afiliado_ref = buscaAfiliadoPorCodigo($_GET['ref']);
+    if ($afiliado_ref) {
+        setcookie('afiliado_ref', geraCookieAfiliadoAssinado($_GET['ref']), [
+            'expires' => time() + 30 * 24 * 60 * 60,
+            'path' => '/',
+            'samesite' => 'Lax',
+        ]);
+        registraCliqueAfiliado($afiliado_ref['id_afiliado']);
+    }
+}
 
 $planos_ativos = listaPlanos(['ativo' => 1]);
 $moeda = simboloMoeda();

@@ -6,6 +6,7 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../funcoes/funcoesStripe.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
+require_once __DIR__ . '/../funcoes/funcoesAfiliados.php';
 
 $payload = file_get_contents('php://input');
 $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
@@ -86,13 +87,24 @@ switch ($tipo) {
 
                 $valor_pago = ((int) ($objeto['amount_paid'] ?? 0)) / 100;
                 if ($valor_pago > 0) {
-                    registraPagamento([
+                    $id_pagamento = registraPagamento([
                         'id_usuario' => (int)$usuario['id_usuario'],
                         'id_plano' => (int) ($sub['metadata']['id_plano'] ?? 0),
                         'ciclo' => cicloDaAssinaturaStripe($sub),
                         'valor' => $valor_pago,
                         'stripe_invoice_id' => $objeto['id'] ?? null,
                     ]);
+
+                    if ($id_pagamento > 0) {
+                        $indicacao = buscaIndicacaoPorUsuario((int)$usuario['id_usuario']);
+                        if ($indicacao) {
+                            $afiliado = buscaAfiliadoPorId($indicacao['id_afiliado']);
+                            if ($afiliado) {
+                                $valor_comissao = round($valor_pago * $afiliado['comissao_percentual'] / 100, 2);
+                                registraComissaoAfiliado($indicacao['id_indicacao'], $id_pagamento, $valor_comissao);
+                            }
+                        }
+                    }
                 }
             }
         }

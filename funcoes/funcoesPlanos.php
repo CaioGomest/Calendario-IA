@@ -140,6 +140,7 @@ function registraPagamento($dados) {
         $dados['stripe_invoice_id'] ?? null,
         $dados['criado_em'] ?? date('Y-m-d H:i:s'),
     ]);
+    return (int) $pdo->lastInsertId();
 }
 
 function calculaReceitaMensal() {
