@@ -18,7 +18,15 @@ $sufixo_ciclo_sidebar = [
   <a class="nav-link <?= $pagina_atual === 'home' ? 'ativo' : '' ?>" href="home.php"><span class="nav-icone">🏠</span> <?= traduz('menu_inicio') ?></a>
   <a class="nav-link <?= $pagina_atual === 'financas' ? 'ativo' : '' ?>" href="financas.php"><span class="nav-icone">💰</span> <?= traduz('menu_financas') ?></a>
   <a class="nav-link <?= $pagina_atual === 'conta' ? 'ativo' : '' ?>" href="conta.php"><span class="nav-icone">👤</span> <?= traduz('menu_cuenta') ?></a>
-  <a class="nav-link" href="https://wa.me/" target="_blank"><span class="nav-icone">💬</span> <?= traduz('menu_whatsapp') ?></a>
+  <?php
+  $whatsapp_conectado_sidebar = !empty($usuario['telefone']);
+  $link_bot_sidebar = linkWhatsappBot();
+  $mostrar_whatsapp_sidebar = !$whatsapp_conectado_sidebar || $link_bot_sidebar;
+  $href_whatsapp_sidebar = $whatsapp_conectado_sidebar ? $link_bot_sidebar : 'whatsapp.php';
+  ?>
+  <?php if ($mostrar_whatsapp_sidebar): ?>
+  <a class="nav-link" href="<?= htmlspecialchars($href_whatsapp_sidebar) ?>" <?= $whatsapp_conectado_sidebar ? 'target="_blank"' : '' ?>><span class="nav-icone">💬</span> <?= traduz('menu_whatsapp') ?></a>
+  <?php endif; ?>
   <?php if ($plano_sugerido): ?>
   <div class="sidebar-plano">
     <b><?= htmlspecialchars($plano_sugerido['nome']) ?></b>

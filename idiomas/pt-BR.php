@@ -42,6 +42,7 @@ return [
     'botao_google_login' => 'Entrar com Google',
     'botao_google_cadastro' => 'Cadastrar com Google',
     'erro_google_login' => 'Não foi possível autenticar com Google. Tente novamente.',
+    'erro_google_sem_calendario' => 'É necessário permitir o acesso ao Google Agenda para usar o assistente. Tente novamente e marque essa permissão.',
     'divisor_ou' => 'ou',
     'login_sem_conta' => 'Ainda não tem conta?',
     'link_criar_conta' => 'Crie uma grátis',
@@ -123,9 +124,6 @@ return [
     'botao_conectar_whatsapp' => 'Conectar meu WhatsApp',
     'whatsapp_feature_1' => 'Mensagem de boas-vindas instantânea',
     'whatsapp_feature_2' => 'Funciona no WhatsApp normal e Business',
-    'whatsapp_sep' => 'ou se preferir',
-    'whatsapp_qr_titulo' => 'Escaneie e comece a conversar',
-    'whatsapp_qr_texto' => 'Abra a câmera, escaneie o código e seu assistente te saúda na hora.',
 
     'home_saludo' => 'Olá, Mariana! 👋',
     'home_subtitulo' => 'Tudo certo. Sua agenda se cuida sozinha.',
@@ -277,6 +275,7 @@ return [
     'admin_erro_telefone_existe' => 'Já existe um usuário com este número de telefone.',
     'admin_erro_telefone_outro' => 'Já existe outro usuário com este número de telefone.',
     'erro_telefone_existe' => 'Este número de WhatsApp já está registrado em outra conta.',
+    'erro_telefone_sem_codigo_pais' => 'Verifique o número digitado — parece estar incompleto.',
 
     // Admin — Configuração
     'admin_config_subtitulo' => 'Variáveis de ambiente e estado do sistema',
@@ -301,6 +300,8 @@ return [
     'admin_contato_redes' => 'Contato e redes sociais',
     'admin_link_suporte' => 'Link de suporte',
     'admin_link_suporte_desc' => 'Link exibido como "Suporte" no rodapé',
+    'admin_whatsapp_bot' => 'Número do WhatsApp do bot',
+    'admin_whatsapp_bot_desc' => 'Número (com código do país) usado no link para o cliente conversar com o bot',
     'admin_email_suporte' => 'E-mail de contato',
     'admin_email_suporte_desc' => 'Exibido no rodapé da landing page',
     'admin_instagram_desc' => 'Usuário do Instagram (com ou sem @)',
@@ -481,6 +482,8 @@ return [
     'fin_ingresos' => 'Entradas',
     'fin_gastos' => 'Saídas',
     'fin_gastos_categoria' => 'Saídas por categoria',
+    'fin_entradas_categoria' => 'Entradas por categoria',
+    'fin_visao_geral' => 'Visão geral',
     'fin_distribucion' => 'Distribuição de %s - R$%s',
     'fin_grafico_titulo' => 'Entradas vs. Saídas',
     'fin_grafico_subtitulo' => 'Últimos 6 meses',

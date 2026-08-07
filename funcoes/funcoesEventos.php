@@ -67,13 +67,18 @@ function listaEventosPendentesLembrete() {
          JOIN usuarios u ON e.id_usuario = u.id_usuario
          WHERE e.lembrete = 1
            AND e.lembrete_enviado = 0
-           AND e.data_inicio >= NOW()
-           AND DATE_SUB(e.data_inicio, INTERVAL u.antecedencia_lembrete_min MINUTE) <= NOW()
            AND u.deletado = 0
            AND u.ativo = 1
          ORDER BY e.data_inicio ASC"
     );
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    return array_values(array_filter($eventos, function ($e) {
+        $fuso = new DateTimeZone($e['fuso_horario'] ?: 'America/Mexico_City');
+        $inicio = new DateTime($e['data_inicio'], $fuso);
+        $agora = new DateTime('now', $fuso);
+        return $inicio >= $agora;
+    }));
 }
 
 function marcaLembreteEnviado($id_evento) {
@@ -178,6 +183,13 @@ function buscaEventoPorId($id_evento) {
     $pdo = conexao();
     $stmt = $pdo->prepare('SELECT * FROM eventos WHERE id_evento = ?');
     $stmt->execute([$id_evento]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function buscaEventoPorGoogleEventId($id_google_event) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM eventos WHERE id_google_event = ?');
+    $stmt->execute([$id_google_event]);
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 

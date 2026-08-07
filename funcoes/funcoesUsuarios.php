@@ -1,12 +1,26 @@
 <?php
 
 require_once __DIR__ . '/../config/conexao.php';
+require_once __DIR__ . '/funcoesConfiguracao.php';
+
+function fusoHorarioPadrao() {
+    return buscaConfiguracao('fuso_horario_padrao') ?? 'America/Mexico_City';
+}
 
 function buscaUsuarioPorEmail($email) {
     $pdo = conexao();
     $stmt = $pdo->prepare('SELECT * FROM usuarios WHERE email = ?');
     $stmt->execute([$email]);
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function normalizaTelefone($codigo_pais, $numero_local) {
+    $codigo_digitos = preg_replace('/\D+/', '', $codigo_pais);
+    $numero_digitos = preg_replace('/\D+/', '', $numero_local);
+    if ($codigo_digitos === '' || strlen($numero_digitos) < 8) {
+        return null;
+    }
+    return '+' . $codigo_digitos . $numero_digitos;
 }
 
 function buscaUsuarioPorTelefone($telefone) {
@@ -23,13 +37,31 @@ function buscaUsuarioPorId($id_usuario) {
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 
+function planoUsuarioAtivo($usuario) {
+    if (($usuario['plano'] ?? '') !== 'ativo') {
+        return false;
+    }
+    if (empty($usuario['plano_expira_em'])) {
+        return true;
+    }
+    return new DateTime($usuario['plano_expira_em']) >= new DateTime();
+}
+
+function exigeAssinaturaAtiva($usuario) {
+    if (!planoUsuarioAtivo($usuario)) {
+        header('Location: pago.php');
+        exit;
+    }
+}
+
 function insereUsuario($dados) {
     $pdo = conexao();
-    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash) VALUES (?, ?, ?)');
+    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, fuso_horario) VALUES (?, ?, ?, ?)');
     $stmt->execute([
         $dados['nome'],
         $dados['email'],
         password_hash($dados['senha'], PASSWORD_DEFAULT),
+        fusoHorarioPadrao(),
     ]);
     return (int) $pdo->lastInsertId();
 }
@@ -254,20 +286,21 @@ function atualizaSenhaUsuario($id_usuario, $nova_senha) {
 function insereUsuarioGoogle($nome, $email) {
     $pdo = conexao();
     $senha_random = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
-    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash) VALUES (?, ?, ?)');
-    $stmt->execute([$nome, $email, $senha_random]);
+    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, fuso_horario) VALUES (?, ?, ?, ?)');
+    $stmt->execute([$nome, $email, $senha_random, fusoHorarioPadrao()]);
     return (int) $pdo->lastInsertId();
 }
 
 function insereUsuarioAdmin($dados) {
     $pdo = conexao();
-    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, telefone, plano) VALUES (?, ?, ?, ?, ?)');
+    $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, telefone, plano, fuso_horario) VALUES (?, ?, ?, ?, ?, ?)');
     $stmt->execute([
         $dados['nome'],
         $dados['email'],
         password_hash($dados['senha'], PASSWORD_DEFAULT),
         $dados['telefone'] ?: null,
         $dados['plano'] ?? 'trial',
+        fusoHorarioPadrao(),
     ]);
     return (int) $pdo->lastInsertId();
 }

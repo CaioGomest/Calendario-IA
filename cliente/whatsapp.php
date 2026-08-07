@@ -6,23 +6,29 @@ require_once __DIR__ . '/../config/config.php';
 
 iniciaSessao();
 exigeLoginCliente();
+exigeAssinaturaAtiva(buscaUsuarioPorId(usuarioLogadoId()));
 
 $erro_whatsapp = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $whatsapp = trim($_POST['whatsapp'] ?? '');
-    if ($whatsapp !== '') {
-        $somente_digitos = preg_replace('/\D+/', '', $whatsapp);
-        $telefone_formatado = '+' . $somente_digitos;
-        $existente = buscaUsuarioPorTelefone($telefone_formatado);
-        if ($existente && (int)$existente['id_usuario'] !== usuarioLogadoId()) {
-            $erro_whatsapp = traduz('erro_telefone_existe');
+    $codigo_pais = trim($_POST['codigo_pais'] ?? '');
+    $numero_local = trim($_POST['numero_local'] ?? '');
+    if ($numero_local !== '') {
+        $telefone_formatado = normalizaTelefone($codigo_pais, $numero_local);
+        if ($telefone_formatado === null) {
+            $erro_whatsapp = traduz('erro_telefone_sem_codigo_pais');
         } else {
-            atualizaTelefoneUsuario(usuarioLogadoId(), $telefone_formatado);
-            header('Location: home.php');
-            exit;
+            $existente = buscaUsuarioPorTelefone($telefone_formatado);
+            if ($existente && (int)$existente['id_usuario'] !== usuarioLogadoId()) {
+                $erro_whatsapp = traduz('erro_telefone_existe');
+            } else {
+                atualizaTelefoneUsuario(usuarioLogadoId(), $telefone_formatado);
+                header('Location: home.php');
+                exit;
+            }
         }
     }
 }
+$codigos_pais = listaCodigosPaisTelefone();
 ?>
 <!DOCTYPE html>
 <html lang="es-MX">
@@ -33,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="../assets/css/cliente.css" />
+<link rel="stylesheet" href="../assets/css/cliente.css?v=<?= versaoAsset('assets/css/cliente.css') ?>" />
 </head>
 <body>
 
@@ -58,7 +64,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="post" action="whatsapp.php" style="width:100%;">
       <div class="campo">
         <label><?= traduz('campo_whatsapp') ?></label>
-        <div class="input"><span class="input-prefixo">📱</span><input inputmode="tel" name="whatsapp" placeholder="+55 11 91234 5678" required /></div>
+        <div style="display:flex; gap:8px;">
+          <select name="codigo_pais" class="input" style="flex:0 0 auto; max-width:140px; font-family:var(--font-body); font-size:14px; font-weight:600; color:var(--ink);">
+            <?php foreach ($codigos_pais as $codigo => $rotulo): ?>
+            <option value="<?= htmlspecialchars($codigo) ?>" <?= $codigo === ($codigo_pais ?? '55') ? 'selected' : '' ?>><?= htmlspecialchars($rotulo) ?></option>
+            <?php endforeach; ?>
+          </select>
+          <div class="input" style="flex:1;"><input inputmode="tel" name="numero_local" value="<?= htmlspecialchars($numero_local ?? '') ?>" placeholder="11 91234 5678" required /></div>
+        </div>
       </div>
       <p class="tela-subtitulo" style="text-align:center;font-size:13px;"><?= traduz('whatsapp_aviso') ?></p>
       <button type="submit" class="botao botao-whatsapp" style="width:100%;"><?= traduz('botao_conectar_whatsapp') ?></button>
@@ -96,23 +109,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="post" action="whatsapp.php">
           <div class="campo">
             <label><?= traduz('campo_whatsapp') ?></label>
-            <div class="input"><span class="input-prefixo">📱</span><input inputmode="tel" name="whatsapp" placeholder="+55 11 91234 5678" required /></div>
+            <div style="display:flex; gap:8px;">
+              <select name="codigo_pais" class="input" style="flex:0 0 auto; max-width:140px; font-family:var(--font-body); font-size:14px; font-weight:600; color:var(--ink);">
+                <?php foreach ($codigos_pais as $codigo => $rotulo): ?>
+                <option value="<?= htmlspecialchars($codigo) ?>" <?= $codigo === ($codigo_pais ?? '55') ? 'selected' : '' ?>><?= htmlspecialchars($rotulo) ?></option>
+                <?php endforeach; ?>
+              </select>
+              <div class="input" style="flex:1;"><input inputmode="tel" name="numero_local" value="<?= htmlspecialchars($numero_local ?? '') ?>" placeholder="11 91234 5678" required /></div>
+            </div>
           </div>
           <button type="submit" class="botao botao-whatsapp botao-espaco"><?= traduz('botao_conectar_whatsapp') ?></button>
           <?php if (MODO_DEV): ?>
             <a class="dica" style="text-align:center;display:block;margin-top:8px;" href="home.php">🧪 Modo desarrollo: pular sem conectar</a>
           <?php endif; ?>
         </form>
-        <div class="divisor"><?= traduz('whatsapp_sep') ?></div>
-        <div class="cartao">
-          <div class="qr-cartao">
-            <div class="qr-caixa">📱</div>
-            <div class="qr-texto">
-              <b><?= traduz('whatsapp_qr_titulo') ?></b>
-              <span><?= traduz('whatsapp_qr_texto') ?></span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>

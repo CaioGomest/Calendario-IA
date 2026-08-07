@@ -13,7 +13,9 @@ $(function () {
 
     function desenhaDonut() {
         $('.js-donut-chart').each(function () {
-            if (!estaVisivel(this) || !window.finDonutData || !window.finDonutData.length) return;
+            var dados;
+            try { dados = JSON.parse(this.dataset.dados || '[]'); } catch (e) { dados = []; }
+            if (!estaVisivel(this) || !dados.length) return;
 
             var tela = this;
             var ctx = tela.getContext('2d');
@@ -25,7 +27,6 @@ $(function () {
             tela.style.height = tamanho + 'px';
             ctx.scale(proporcao, proporcao);
 
-            var dados = window.finDonutData;
             var total = 0;
             for (var i = 0; i < dados.length; i++) total += dados[i].valor;
             if (total === 0) return;
@@ -50,6 +51,15 @@ $(function () {
             ctx.arc(centro_x, centro_y, raio_interno, 0, Math.PI * 2);
             ctx.fillStyle = '#fff';
             ctx.fill();
+
+            var centro_texto = tela.dataset.centro;
+            if (centro_texto) {
+                ctx.fillStyle = '#1f2733';
+                ctx.font = "700 15px 'Nunito', sans-serif";
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(centro_texto, centro_x, centro_y);
+            }
         });
     }
 

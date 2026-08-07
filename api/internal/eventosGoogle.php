@@ -36,7 +36,10 @@ if (!$token_acesso) {
 
 $fuso = $_GET['fuso_horario'] ?? 'America/Mexico_City';
 $limite = (int) ($_GET['limite'] ?? 10);
+$data_inicio = $_GET['data_inicio'] ?? null;
+$data_fim = $_GET['data_fim'] ?? null;
+$ordem = ($_GET['ordem'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
 
-$eventos = listaEventosGoogleCalendar($token_acesso, $fuso, $limite);
+$eventos = listaEventosGoogleCalendar($token_acesso, $fuso, $limite, $data_inicio, $data_fim, $ordem);
 
 echo json_encode(['ok' => true, 'data' => $eventos]);

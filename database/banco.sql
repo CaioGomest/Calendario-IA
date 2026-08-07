@@ -68,6 +68,17 @@ CREATE TABLE IF NOT EXISTS planos (
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS pagamentos (
+    id_pagamento INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_plano INT NULL,
+    ciclo ENUM('mensal', 'trimestral', 'anual') NOT NULL DEFAULT 'mensal',
+    valor DECIMAL(10,2) NOT NULL,
+    stripe_invoice_id VARCHAR(255) NULL UNIQUE,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
+);
+
 CREATE TABLE IF NOT EXISTS configuracoes (
     chave VARCHAR(100) PRIMARY KEY,
     valor VARCHAR(255) NOT NULL,

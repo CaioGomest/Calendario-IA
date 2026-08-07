@@ -103,7 +103,11 @@ function listaTransacoes($id_usuario, $filtro = []) {
     $where = 'WHERE id_usuario = ?';
     $params = [$id_usuario];
 
-    if (!empty($filtro['mes']) && !empty($filtro['ano'])) {
+    if (!empty($filtro['data_inicio']) && !empty($filtro['data_fim'])) {
+        $where .= ' AND data_transacao BETWEEN ? AND ?';
+        $params[] = $filtro['data_inicio'];
+        $params[] = $filtro['data_fim'];
+    } elseif (!empty($filtro['mes']) && !empty($filtro['ano'])) {
         $where .= ' AND MONTH(data_transacao) = ? AND YEAR(data_transacao) = ?';
         $params[] = (int) $filtro['mes'];
         $params[] = (int) $filtro['ano'];
@@ -171,12 +175,50 @@ function resumoMensal($id_usuario, $mes, $ano) {
     ];
 }
 
+function resumoPeriodo($id_usuario, $data_inicio, $data_fim) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare(
+        "SELECT tipo, SUM(valor) AS total
+         FROM transacoes
+         WHERE id_usuario = ? AND data_transacao BETWEEN ? AND ?
+         GROUP BY tipo"
+    );
+    $stmt->execute([$id_usuario, $data_inicio, $data_fim]);
+    $linhas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $total_entradas = 0;
+    $total_saidas = 0;
+    foreach ($linhas as $linha) {
+        if ($linha['tipo'] === 'entrada') $total_entradas = (float) $linha['total'];
+        if ($linha['tipo'] === 'saida') $total_saidas = (float) $linha['total'];
+    }
+
+    return [
+        'total_entradas' => $total_entradas,
+        'total_saidas' => $total_saidas,
+        'saldo' => $total_entradas - $total_saidas,
+    ];
+}
+
 function saidasPorCategoria($id_usuario, $mes, $ano) {
     $pdo = conexao();
     $stmt = $pdo->prepare(
         "SELECT categoria, SUM(valor) AS total
          FROM transacoes
          WHERE id_usuario = ? AND tipo = 'saida' AND MONTH(data_transacao) = ? AND YEAR(data_transacao) = ?
+         GROUP BY categoria
+         ORDER BY total DESC"
+    );
+    $stmt->execute([$id_usuario, $mes, $ano]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function entradasPorCategoria($id_usuario, $mes, $ano) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare(
+        "SELECT categoria, SUM(valor) AS total
+         FROM transacoes
+         WHERE id_usuario = ? AND tipo = 'entrada' AND MONTH(data_transacao) = ? AND YEAR(data_transacao) = ?
          GROUP BY categoria
          ORDER BY total DESC"
     );

@@ -109,52 +109,77 @@ function buscaPlanoSugerido() {
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 
+function garanteTabelaPagamentos() {
+    static $criada = false;
+    if ($criada) return;
+    $pdo = conexao();
+    $pdo->exec("CREATE TABLE IF NOT EXISTS pagamentos (
+        id_pagamento INT AUTO_INCREMENT PRIMARY KEY,
+        id_usuario INT NOT NULL,
+        id_plano INT NULL,
+        ciclo ENUM('mensal', 'trimestral', 'anual') NOT NULL DEFAULT 'mensal',
+        valor DECIMAL(10,2) NOT NULL,
+        stripe_invoice_id VARCHAR(255) NULL UNIQUE,
+        criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
+    )");
+    $criada = true;
+}
+
+function registraPagamento($dados) {
+    garanteTabelaPagamentos();
+    $pdo = conexao();
+    $stmt = $pdo->prepare(
+        'INSERT IGNORE INTO pagamentos (id_usuario, id_plano, ciclo, valor, stripe_invoice_id, criado_em) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    $stmt->execute([
+        $dados['id_usuario'],
+        $dados['id_plano'] ?: null,
+        $dados['ciclo'] ?? 'mensal',
+        $dados['valor'],
+        $dados['stripe_invoice_id'] ?? null,
+        $dados['criado_em'] ?? date('Y-m-d H:i:s'),
+    ]);
+}
+
 function calculaReceitaMensal() {
-    garanteTabelaPlanos();
+    garanteTabelaPagamentos();
     $pdo = conexao();
     $stmt = $pdo->query(
         "SELECT COALESCE(SUM(
-            CASE p.ciclo
-                WHEN 'mensal' THEN p.preco
-                WHEN 'trimestral' THEN p.preco / 3
-                WHEN 'anual' THEN p.preco / 12
+            CASE ultimo.ciclo
+                WHEN 'mensal' THEN ultimo.valor
+                WHEN 'trimestral' THEN ultimo.valor / 3
+                WHEN 'anual' THEN ultimo.valor / 12
             END
         ), 0) AS mrr
         FROM usuarios u
-        JOIN planos p ON p.nome = u.plano OR (u.plano = 'ativo' AND p.ativo = 1)
+        JOIN (
+            SELECT p1.id_usuario, p1.valor, p1.ciclo
+            FROM pagamentos p1
+            INNER JOIN (
+                SELECT id_usuario, MAX(criado_em) AS ultimo_em FROM pagamentos GROUP BY id_usuario
+            ) p2 ON p2.id_usuario = p1.id_usuario AND p2.ultimo_em = p1.criado_em
+        ) ultimo ON ultimo.id_usuario = u.id_usuario
         WHERE u.deletado = 0 AND u.plano = 'ativo'"
     );
     return (float) $stmt->fetchColumn();
 }
 
 function calculaReceitaTotal() {
-    garanteTabelaPlanos();
+    garanteTabelaPagamentos();
     $pdo = conexao();
-    $planos = listaPlanos(['ativo' => 1]);
-    if (!$planos) return 0.0;
-    $preco_medio = 0;
-    foreach ($planos as $p) $preco_medio += (float)$p['preco'];
-    $preco_medio = $preco_medio / count($planos);
-    $stmt = $pdo->query("SELECT COUNT(*) FROM usuarios WHERE plano = 'ativo' AND deletado = 0");
-    $ativos = (int) $stmt->fetchColumn();
-    return $preco_medio * $ativos;
+    return (float) $pdo->query('SELECT COALESCE(SUM(valor), 0) FROM pagamentos')->fetchColumn();
 }
 
 function receitaPorMes($meses = 6) {
-    garanteTabelaPlanos();
+    garanteTabelaPagamentos();
     $pdo = conexao();
-    $planos = listaPlanos(['ativo' => 1]);
-    if (!$planos) {
-        return [];
-    }
-    $preco_medio = 0;
-    foreach ($planos as $p) $preco_medio += (float)$p['preco'];
-    $preco_medio = $preco_medio / count($planos);
 
     $stmt = $pdo->prepare(
-        "SELECT DATE_FORMAT(criado_em, '%Y-%m') AS mes, COUNT(*) AS total
-         FROM usuarios WHERE plano = 'ativo' AND deletado = 0
-         AND criado_em >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
+        "SELECT DATE_FORMAT(criado_em, '%Y-%m') AS mes, SUM(valor) AS total
+         FROM pagamentos
+         WHERE criado_em >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
          GROUP BY mes ORDER BY mes ASC"
     );
     $stmt->execute([$meses]);
@@ -165,11 +190,11 @@ function receitaPorMes($meses = 6) {
         $mes = date('Y-m', strtotime("-{$i} months"));
         $total = 0;
         foreach ($rows as $r) {
-            if ($r['mes'] === $mes) { $total = (int)$r['total']; break; }
+            if ($r['mes'] === $mes) { $total = (float)$r['total']; break; }
         }
         $resultado[] = [
             'mes' => date('M', strtotime($mes . '-01')),
-            'receita' => round($total * $preco_medio, 2),
+            'receita' => round($total, 2),
         ];
     }
     return $resultado;

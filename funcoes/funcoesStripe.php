@@ -87,6 +87,16 @@ function buscaAssinaturaStripe($subscription_id) {
     return stripeRequest('GET', '/v1/subscriptions/' . $subscription_id);
 }
 
+function cicloDaAssinaturaStripe($sub) {
+    $recurring = $sub['items']['data'][0]['price']['recurring'] ?? [];
+    $interval = $recurring['interval'] ?? 'month';
+    $count = (int) ($recurring['interval_count'] ?? 1);
+
+    if ($interval === 'year') return 'anual';
+    if ($interval === 'month' && $count >= 3) return 'trimestral';
+    return 'mensal';
+}
+
 function cancelaAssinaturaStripe($subscription_id) {
     return stripeRequest('DELETE', '/v1/subscriptions/' . $subscription_id);
 }

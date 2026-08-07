@@ -95,16 +95,51 @@ function garanteTokenGoogleValido($id_usuario) {
     return $resposta['access_token'];
 }
 
-function listaEventosGoogleCalendar($token_acesso, $fuso_horario = 'America/Mexico_City', $limite = 10) {
-    $agora = (new DateTime('now', new DateTimeZone($fuso_horario)))->format('c');
-    $params = http_build_query([
-        'timeMin' => $agora,
-        'maxResults' => $limite,
+function buscaStatusEventoGoogle($token_acesso, $id_google_event) {
+    $ch = curl_init('https://www.googleapis.com/calendar/v3/calendars/primary/events/' . urlencode($id_google_event));
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token_acesso],
+        CURLOPT_TIMEOUT => 10,
+    ]);
+    $resposta = curl_exec($ch);
+    $codigo = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($codigo !== 200) return 'nao_encontrado';
+
+    $dados = json_decode($resposta, true) ?: [];
+    return $dados['status'] ?? 'nao_encontrado';
+}
+
+function listaEventosGoogleCalendar($token_acesso, $fuso_horario = 'America/Mexico_City', $limite = 10, $data_inicio = null, $data_fim = null, $ordem = 'asc') {
+    $tz = new DateTimeZone($fuso_horario);
+    $agora = new DateTime('now', $tz);
+
+    if ($data_inicio) {
+        $timeMin = (new DateTime($data_inicio, $tz))->format('c');
+    } elseif ($ordem === 'desc') {
+        $timeMin = (new DateTime('1970-01-01', $tz))->format('c');
+    } else {
+        $timeMin = $agora->format('c');
+    }
+
+    $timeMax = null;
+    if ($data_fim) {
+        $timeMax = (new DateTime($data_fim, $tz))->setTime(23, 59, 59)->format('c');
+    } elseif ($ordem === 'desc' && !$data_inicio) {
+        $timeMax = $agora->format('c');
+    }
+
+    $params = [
+        'timeMin' => $timeMin,
+        'maxResults' => $ordem === 'desc' ? 2500 : $limite,
         'singleEvents' => 'true',
         'orderBy' => 'startTime',
-    ]);
+    ];
+    if ($timeMax) $params['timeMax'] = $timeMax;
 
-    $ch = curl_init('https://www.googleapis.com/calendar/v3/calendars/primary/events?' . $params);
+    $ch = curl_init('https://www.googleapis.com/calendar/v3/calendars/primary/events?' . http_build_query($params));
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token_acesso],
@@ -124,6 +159,12 @@ function listaEventosGoogleCalendar($token_acesso, $fuso_horario = 'America/Mexi
             'data_inicio' => $inicio,
             'data_fim' => $fim,
         ];
+    }
+
+    if ($ordem === 'desc') {
+        $eventos = array_reverse(array_slice($eventos, -$limite));
+    } else {
+        $eventos = array_slice($eventos, 0, $limite);
     }
 
     return $eventos;

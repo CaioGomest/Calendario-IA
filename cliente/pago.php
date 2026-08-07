@@ -100,15 +100,15 @@ $mostra_pagamento = $plano_selecionado !== null;
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="../assets/css/cliente.css" />
+<link rel="stylesheet" href="../assets/css/cliente.css?v=<?= versaoAsset('assets/css/cliente.css') ?>" />
 <?php if (!MODO_DEV): ?>
 <script src="https://js.stripe.com/v3/"></script>
 <?php endif; ?>
 <style>
-#card-element { padding:12px 14px; border:1.5px solid var(--line,#dde3ec); border-radius:12px; background:#fff; transition:border-color .2s; }
-#card-element.StripeElement--focus { border-color:var(--primary,#3b82f6); }
-#card-element.StripeElement--invalid { border-color:#ef4444; }
-#card-errors { color:#ef4444; font-size:13px; font-weight:600; margin-top:6px; min-height:20px; }
+[id^="card-element-"] { padding:12px 14px; border:1.5px solid var(--line,#dde3ec); border-radius:12px; background:#fff; transition:border-color .2s; }
+[id^="card-element-"].StripeElement--focus { border-color:var(--primary,#3b82f6); }
+[id^="card-element-"].StripeElement--invalid { border-color:#ef4444; }
+[id^="card-errors-"] { color:#ef4444; font-size:13px; font-weight:600; margin-top:6px; min-height:20px; }
 .pago-loading { opacity:.6; pointer-events:none; }
 .grade-planos-pago { display:flex; flex-direction:column; gap:12px; width:100%; }
 .plano-opcao { border:1.5px solid var(--line,#dde3ec); border-radius:14px; padding:16px 18px; cursor:pointer; transition:border-color .15s, box-shadow .15s; }
@@ -125,7 +125,7 @@ $mostra_pagamento = $plano_selecionado !== null;
 
 <?php if ($mostra_pagamento): ?>
   <?php
-  $form_cartao = function() use ($erro_pago, $subscription_id, $plano_selecionado) { ?>
+  $form_cartao = function($sufixo) use ($erro_pago, $subscription_id, $plano_selecionado) { ?>
       <?php if ($erro_pago): ?>
       <div class="erro-msg" style="margin-bottom:12px;"><?= htmlspecialchars($erro_pago) ?></div>
       <?php endif; ?>
@@ -138,19 +138,19 @@ $mostra_pagamento = $plano_selecionado !== null;
           <button type="submit" class="botao botao-primario botao-espaco" style="width:100%;"><?= traduz('pago_botao_checkout') ?></button>
         </form>
       <?php else: ?>
-        <form id="payment-form" method="post" action="pago.php">
+        <form id="payment-form-<?= $sufixo ?>" method="post" action="pago.php">
           <input type="hidden" name="confirmar" value="1" />
           <input type="hidden" name="subscription_id" value="<?= htmlspecialchars($subscription_id) ?>" />
           <div class="campo" style="margin-top:0;">
             <label><?= traduz('campo_nombre_tarjeta') ?></label>
-            <div class="input"><input type="text" id="card-name" placeholder="Mariana López" required /></div>
+            <div class="input"><input type="text" id="card-name-<?= $sufixo ?>" placeholder="Mariana López" required /></div>
           </div>
           <div class="campo">
             <label><?= traduz('campo_numero_tarjeta') ?></label>
-            <div id="card-element"></div>
-            <div id="card-errors"></div>
+            <div id="card-element-<?= $sufixo ?>"></div>
+            <div id="card-errors-<?= $sufixo ?>"></div>
           </div>
-          <button type="submit" id="btn-pagar" class="botao botao-primario botao-espaco" style="width:100%;"><?= traduz('pago_botao_checkout') ?></button>
+          <button type="submit" id="btn-pagar-<?= $sufixo ?>" class="botao botao-primario botao-espaco" style="width:100%;"><?= traduz('pago_botao_checkout') ?></button>
         </form>
       <?php endif; ?>
       <div class="confianca" style="margin-top:12px;"><?= traduz('pago_trust') ?></div>
@@ -167,7 +167,7 @@ $mostra_pagamento = $plano_selecionado !== null;
         <div class="plano-preco"><?= simboloMoeda() . number_format((float)$plano_selecionado['preco'], 0) ?> <small><?= $sufixo_pago[$plano_selecionado['ciclo']] ?? '' ?></small></div>
         <div style="font-weight:700;margin-bottom:8px;"><?= htmlspecialchars($plano_selecionado['nome']) ?></div>
       </div>
-      <?php $form_cartao(); ?>
+      <?php $form_cartao('mobile'); ?>
     </div>
   </div>
 
@@ -191,7 +191,7 @@ $mostra_pagamento = $plano_selecionado !== null;
         <div class="form-area">
           <h2 class="form-titulo"><?= traduz('pago_titulo') ?></h2>
           <p class="form-subtitulo"><?= traduz('pago_subtitulo_desktop') ?></p>
-          <?php $form_cartao(); ?>
+          <?php $form_cartao('desktop'); ?>
         </div>
       </div>
     </div>
@@ -283,52 +283,57 @@ $mostra_pagamento = $plano_selecionado !== null;
 (function() {
     var stripe = Stripe('<?= STRIPE_PUBLISHABLE_KEY ?>');
     var elements = stripe.elements();
-    var card = elements.create('card', {
-        style: {
-            base: {
-                fontFamily: "'Nunito', sans-serif",
-                fontSize: '15px',
-                fontWeight: '600',
-                color: '#1f2733',
-                '::placeholder': { color: '#94a3b8' }
+
+    var sufixo = window.matchMedia('(min-width: 840px)').matches ? 'desktop' : 'mobile';
+    var form = document.getElementById('payment-form-' + sufixo);
+
+    if (form) {
+        var card = elements.create('card', {
+            style: {
+                base: {
+                    fontFamily: "'Nunito', sans-serif",
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    color: '#1f2733',
+                    '::placeholder': { color: '#94a3b8' }
+                },
+                invalid: { color: '#ef4444' }
             },
-            invalid: { color: '#ef4444' }
-        },
-        hidePostalCode: true
-    });
-    card.mount('#card-element');
-
-    var form = document.getElementById('payment-form');
-    var btn = document.getElementById('btn-pagar');
-    var erros = document.getElementById('card-errors');
-    var textoOriginal = btn.textContent;
-
-    card.on('change', function(e) {
-        erros.textContent = e.error ? e.error.message : '';
-    });
-
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        btn.disabled = true;
-        btn.textContent = '<?= traduz('pago_processando') ?>';
-        form.classList.add('pago-loading');
-
-        stripe.confirmCardPayment('<?= $client_secret ?>', {
-            payment_method: {
-                card: card,
-                billing_details: { name: document.getElementById('card-name').value }
-            }
-        }).then(function(result) {
-            if (result.error) {
-                erros.textContent = result.error.message;
-                btn.disabled = false;
-                btn.textContent = textoOriginal;
-                form.classList.remove('pago-loading');
-            } else {
-                form.submit();
-            }
+            hidePostalCode: true
         });
-    });
+        card.mount('#card-element-' + sufixo);
+
+        var btn = document.getElementById('btn-pagar-' + sufixo);
+        var erros = document.getElementById('card-errors-' + sufixo);
+        var textoOriginal = btn.textContent;
+
+        card.on('change', function(e) {
+            erros.textContent = e.error ? e.error.message : '';
+        });
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            btn.disabled = true;
+            btn.textContent = '<?= traduz('pago_processando') ?>';
+            form.classList.add('pago-loading');
+
+            stripe.confirmCardPayment('<?= $client_secret ?>', {
+                payment_method: {
+                    card: card,
+                    billing_details: { name: document.getElementById('card-name-' + sufixo).value }
+                }
+            }).then(function(result) {
+                if (result.error) {
+                    erros.textContent = result.error.message;
+                    btn.disabled = false;
+                    btn.textContent = textoOriginal;
+                    form.classList.remove('pago-loading');
+                } else {
+                    form.submit();
+                }
+            });
+        });
+    }
 })();
 </script>
 <?php endif; ?>

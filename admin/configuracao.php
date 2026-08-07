@@ -48,12 +48,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         $instagram = trim($_POST['instagram'] ?? '');
         $tiktok = trim($_POST['tiktok'] ?? '');
         $link_suporte = trim($_POST['link_suporte'] ?? '');
+        $whatsapp_bot_numero = preg_replace('/\D+/', '', $_POST['whatsapp_bot_numero'] ?? '');
 
         salvaConfiguracao('email_remetente', $email_remetente);
         salvaConfiguracao('email_suporte', $email_suporte);
         salvaConfiguracao('instagram', $instagram);
         salvaConfiguracao('tiktok', $tiktok);
         salvaConfiguracao('link_suporte', $link_suporte);
+        salvaConfiguracao('whatsapp_bot_numero', $whatsapp_bot_numero);
 
         header('Location: configuracao.php?sucesso=1');
         exit;
@@ -74,6 +76,7 @@ $email_suporte = buscaConfiguracao('email_suporte') ?? '';
 $instagram = buscaConfiguracao('instagram') ?? '';
 $tiktok = buscaConfiguracao('tiktok') ?? '';
 $link_suporte = buscaConfiguracao('link_suporte') ?? '';
+$whatsapp_bot_numero = buscaConfiguracao('whatsapp_bot_numero') ?? '';
 
 $nomes_idioma = [
     'pt-BR' => 'Português (Brasil)',
@@ -96,7 +99,7 @@ $variaveis = [
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="../assets/css/admin.css" />
+<link rel="stylesheet" href="../assets/css/admin.css?v=<?= versaoAsset('assets/css/admin.css') ?>" />
 </head>
 <body>
 <div class="admin-estrutura">
@@ -213,6 +216,13 @@ $variaveis = [
               <span><?= traduz('admin_link_suporte_desc') ?></span>
             </div>
             <input type="url" name="link_suporte" value="<?= htmlspecialchars($link_suporte) ?>" placeholder="https://wa.me/5215512345678" />
+          </div>
+          <div class="config-form-item">
+            <div class="config-item-info">
+              <b><?= traduz('admin_whatsapp_bot') ?></b>
+              <span><?= traduz('admin_whatsapp_bot_desc') ?></span>
+            </div>
+            <input type="text" name="whatsapp_bot_numero" value="<?= htmlspecialchars($whatsapp_bot_numero) ?>" placeholder="5215512345678" />
           </div>
           <div class="config-form-item">
             <div class="config-item-info">

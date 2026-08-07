@@ -11,6 +11,7 @@ exigeLoginCliente();
 $pagina_atual = 'home';
 
 $usuario = buscaUsuarioPorId(usuarioLogadoId());
+exigeAssinaturaAtiva($usuario);
 
 $meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
@@ -20,13 +21,18 @@ if ($token_acesso) {
     $eventos_google = listaEventosGoogleCalendar($token_acesso, $usuario['fuso_horario'] ?? 'America/Mexico_City', 5);
 }
 
-$proximos_eventos = array_map(function ($evento) use ($meses) {
+$fuso_usuario = new DateTimeZone($usuario['fuso_horario'] ?? 'America/Mexico_City');
+$proximos_eventos = array_map(function ($evento) use ($meses, $fuso_usuario) {
+    $dia_inteiro = strpos($evento['data_inicio'], 'T') === false;
     $data = new DateTime($evento['data_inicio']);
+    if (!$dia_inteiro) {
+        $data->setTimezone($fuso_usuario);
+    }
     return [
         'dia' => $data->format('d'),
         'mes' => $meses[(int) $data->format('n') - 1],
         'titulo' => $evento['titulo'],
-        'detalhe' => $data->format('H:i') . ($evento['descricao'] ? ' · ' . $evento['descricao'] : ''),
+        'detalhe' => $dia_inteiro ? ($evento['descricao'] ?? '') : ($data->format('H:i') . ($evento['descricao'] ? ' · ' . $evento['descricao'] : '')),
     ];
 }, $eventos_google);
 
@@ -60,6 +66,7 @@ $saudacao = str_replace('Mariana', $usuario['nome'], traduz('home_saludo'));
 
 $google_conectado = !empty($usuario['token_acesso_google']);
 $whatsapp_conectado = !empty($usuario['telefone']);
+$destino_assistente = $whatsapp_conectado ? (linkWhatsappBot() ?? '#') : 'whatsapp.php';
 ?>
 <!DOCTYPE html>
 <html lang="es-MX">
@@ -70,7 +77,7 @@ $whatsapp_conectado = !empty($usuario['telefone']);
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="../assets/css/cliente.css" />
+<link rel="stylesheet" href="../assets/css/cliente.css?v=<?= versaoAsset('assets/css/cliente.css') ?>" />
 </head>
 <body>
 
@@ -91,7 +98,7 @@ $whatsapp_conectado = !empty($usuario['telefone']);
         <b><?= traduz('assist_titulo') ?></b>
       </div>
       <div class="assistente-exemplo"><?= traduz('assist_ejemplo') ?></div>
-      <a class="botao botao-whatsapp" href="https://wa.me/" target="_blank">
+      <a class="botao botao-whatsapp" href="<?= htmlspecialchars($destino_assistente) ?>" <?= $whatsapp_conectado ? 'target="_blank"' : '' ?>>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.06 24l1.7-6.2A11.9 11.9 0 1 1 12 24a11.9 11.9 0 0 1-5.7-1.45L.06 24zM6.6 20l.36.22a9.9 9.9 0 1 0-3.4-3.4l.24.38-1 3.63 3.8-.83z"/></svg>
         <?= traduz('botao_abrir') ?>
       </a>
@@ -145,7 +152,7 @@ $whatsapp_conectado = !empty($usuario['telefone']);
             <div class="assistente-cartao">
               <div class="assistente-cabecalho"><span class="assistente-avatar"><span data-bot="white" data-size="24"></span></span> <b><?= traduz('assist_titulo') ?></b></div>
               <div class="assistente-exemplo"><?= traduz('assist_ejemplo') ?></div>
-              <a class="botao botao-whatsapp" href="https://wa.me/" target="_blank">
+              <a class="botao botao-whatsapp" href="<?= htmlspecialchars($destino_assistente) ?>" <?= $whatsapp_conectado ? 'target="_blank"' : '' ?>>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.06 24l1.7-6.2A11.9 11.9 0 1 1 12 24a11.9 11.9 0 0 1-5.7-1.45L.06 24zM6.6 20l.36.22a9.9 9.9 0 1 0-3.4-3.4l.24.38-1 3.63 3.8-.83z"/></svg>
                 <?= traduz('botao_abrir_whatsapp') ?>
               </a>

@@ -23,6 +23,22 @@ function listaIdiomasDisponiveis() {
     return $idiomas;
 }
 
+function listaCodigosPaisTelefone() {
+    return [
+        '55' => '🇧🇷 +55 Brasil',
+        '52' => '🇲🇽 +52 México',
+        '1' => '🇺🇸 +1 EUA / Canadá',
+        '54' => '🇦🇷 +54 Argentina',
+        '57' => '🇨🇴 +57 Colômbia',
+        '56' => '🇨🇱 +56 Chile',
+        '51' => '🇵🇪 +51 Peru',
+        '598' => '🇺🇾 +598 Uruguai',
+        '595' => '🇵🇾 +595 Paraguai',
+        '351' => '🇵🇹 +351 Portugal',
+        '34' => '🇪🇸 +34 Espanha',
+    ];
+}
+
 function listaFusosHorariosComuns() {
     return [
         'America/Mexico_City',
@@ -80,6 +96,16 @@ function nomeApp() {
         $nome = buscaConfiguracao('nome_app') ?? 'CalendarioIA';
     }
     return $nome;
+}
+
+function versaoAsset($caminho_relativo) {
+    $caminho_absoluto = __DIR__ . '/../' . $caminho_relativo;
+    return file_exists($caminho_absoluto) ? filemtime($caminho_absoluto) : time();
+}
+
+function linkWhatsappBot() {
+    $numero = preg_replace('/\D+/', '', buscaConfiguracao('whatsapp_bot_numero') ?? '');
+    return $numero !== '' ? 'https://wa.me/' . $numero : null;
 }
 
 function salvaConfiguracao($chave, $valor) {

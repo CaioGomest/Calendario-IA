@@ -42,6 +42,7 @@ return [
     'botao_google_login' => 'Iniciar sesión con Google',
     'botao_google_cadastro' => 'Registrarse con Google',
     'erro_google_login' => 'No se pudo autenticar con Google. Intenta de nuevo.',
+    'erro_google_sem_calendario' => 'Es necesario permitir el acceso a Google Calendar para usar el asistente. Intenta de nuevo y marca ese permiso.',
     'divisor_ou' => 'o',
     'login_sem_conta' => '¿Aún no tienes cuenta?',
     'link_criar_conta' => 'Crea una gratis',
@@ -123,9 +124,6 @@ return [
     'botao_conectar_whatsapp' => 'Conectar mi WhatsApp',
     'whatsapp_feature_1' => 'Mensaje de bienvenida al instante',
     'whatsapp_feature_2' => 'Funciona en WhatsApp normal y Business',
-    'whatsapp_sep' => 'o si prefieres',
-    'whatsapp_qr_titulo' => 'Escanéa y empieza a chatear',
-    'whatsapp_qr_texto' => 'Abre la cámara, escanea el código y tu asistente te saluda al instante.',
 
     'home_saludo' => '¡Hola, Mariana! 👋',
     'home_subtitulo' => 'Todo listo. Tu agenda se maneja sola.',
@@ -277,6 +275,7 @@ return [
     'admin_erro_telefone_existe' => 'Ya existe un usuario con este número de teléfono.',
     'admin_erro_telefone_outro' => 'Ya existe otro usuario con este número de teléfono.',
     'erro_telefone_existe' => 'Este número de WhatsApp ya está registrado en otra cuenta.',
+    'erro_telefone_sem_codigo_pais' => 'Revisa el número ingresado — parece estar incompleto.',
 
     // Admin — Configuración
     'admin_config_subtitulo' => 'Variables de entorno y estado del sistema',
@@ -301,6 +300,8 @@ return [
     'admin_contato_redes' => 'Contacto y redes sociales',
     'admin_link_suporte' => 'Link de soporte',
     'admin_link_suporte_desc' => 'Link mostrado como "Soporte" en el footer',
+    'admin_whatsapp_bot' => 'Número de WhatsApp del bot',
+    'admin_whatsapp_bot_desc' => 'Número (con código de país) usado en el link para que el cliente hable con el bot',
     'admin_email_suporte' => 'Correo de contacto',
     'admin_email_suporte_desc' => 'Mostrado en el footer de la landing page',
     'admin_instagram_desc' => 'Usuario de Instagram (con o sin @)',
@@ -481,6 +482,8 @@ return [
     'fin_ingresos' => 'Ingresos',
     'fin_gastos' => 'Gastos',
     'fin_gastos_categoria' => 'Gastos por categoría',
+    'fin_entradas_categoria' => 'Ingresos por categoría',
+    'fin_visao_geral' => 'Resumen general',
     'fin_distribucion' => 'Distribución de %s - $%s',
     'fin_grafico_titulo' => 'Ingresos vs. Gastos',
     'fin_grafico_subtitulo' => 'Últimos 6 meses',

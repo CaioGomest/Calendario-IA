@@ -51,13 +51,25 @@ if ($metodo === 'GET') {
     }
 
     $filtro = [];
-    if (!empty($_GET['mes'])) $filtro['mes'] = $_GET['mes'];
-    if (!empty($_GET['ano'])) $filtro['ano'] = $_GET['ano'];
+    if (!empty($_GET['data_inicio']) && !empty($_GET['data_fim'])) {
+        $filtro['data_inicio'] = $_GET['data_inicio'];
+        $filtro['data_fim'] = $_GET['data_fim'];
+    } else {
+        if (!empty($_GET['mes'])) $filtro['mes'] = $_GET['mes'];
+        if (!empty($_GET['ano'])) $filtro['ano'] = $_GET['ano'];
+    }
     if (!empty($_GET['tipo'])) $filtro['tipo'] = $_GET['tipo'];
     if (!empty($_GET['categoria'])) $filtro['categoria'] = $_GET['categoria'];
     if (!empty($_GET['pagina'])) $filtro['pagina'] = $_GET['pagina'];
+    if (!empty($_GET['por_pagina'])) $filtro['por_pagina'] = $_GET['por_pagina'];
 
     $resultado = listaTransacoes($id_usuario, $filtro);
+
+    if (!empty($filtro['data_inicio']) && !empty($filtro['data_fim'])) {
+        $resultado['resumo'] = resumoPeriodo($id_usuario, $filtro['data_inicio'], $filtro['data_fim']);
+    } elseif (!empty($filtro['mes']) && !empty($filtro['ano'])) {
+        $resultado['resumo'] = resumoMensal($id_usuario, (int) $filtro['mes'], (int) $filtro['ano']);
+    }
 
     echo json_encode(['ok' => true, 'data' => $resultado]);
     exit;

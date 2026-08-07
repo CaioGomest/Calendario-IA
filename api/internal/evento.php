@@ -42,14 +42,20 @@ if ($metodo === 'POST') {
 
 if ($metodo === 'PUT') {
     $id_evento = (int) ($corpo['id_evento'] ?? 0);
+    $id_google_event = trim($corpo['id_google_event'] ?? '');
+
+    if (!$id_evento && $id_google_event !== '') {
+        $evento = buscaEventoPorGoogleEventId($id_google_event);
+        $id_evento = $evento ? (int) $evento['id_evento'] : 0;
+    }
 
     if (!$id_evento) {
         http_response_code(400);
-        echo json_encode(['ok' => false, 'erro' => 'Campo obrigatório: id_evento']);
+        echo json_encode(['ok' => false, 'erro' => 'Campo obrigatório: id_evento ou id_google_event']);
         exit;
     }
 
-    unset($corpo['id_evento']);
+    unset($corpo['id_evento'], $corpo['id_google_event']);
     $atualizado = atualizaEvento($id_evento, $corpo);
 
     if (!$atualizado) {

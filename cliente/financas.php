@@ -10,6 +10,7 @@ exigeLoginCliente();
 $pagina_atual = 'financas';
 $id_usuario = usuarioLogadoId();
 $usuario = buscaUsuarioPorId($id_usuario);
+exigeAssinaturaAtiva($usuario);
 $msg_sucesso = '';
 $msg_erro = '';
 
@@ -95,7 +96,6 @@ $ano_prox = (int) $dt_proximo->format('Y');
 // Dados
 $resumo = resumoMensal($id_usuario, $mes_atual, $ano_atual);
 $resumo_ant = resumoMensal($id_usuario, $mes_ant, $ano_ant);
-$saidas_cat = saidasPorCategoria($id_usuario, $mes_atual, $ano_atual);
 $historico_6m = resumoUltimos6Meses($id_usuario, $mes_atual, $ano_atual);
 
 $resultado_lista = listaTransacoes($id_usuario, [
@@ -155,7 +155,7 @@ function formatValor($v) {
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="../assets/css/cliente.css" />
+<link rel="stylesheet" href="../assets/css/cliente.css?v=<?= versaoAsset('assets/css/cliente.css') ?>" />
 </head>
 <body>
 
@@ -192,24 +192,32 @@ ob_start();
   </div>
 </div>
 
-<!-- Gastos por Categoría -->
-<?php if ($saidas_cat): ?>
+<!-- Visão Geral do mês -->
+<?php if ($resumo['total_entradas'] > 0 || $resumo['total_saidas'] > 0): ?>
 <div class="fin-secao">
-  <div class="fin-secao-titulo"><?= traduz('fin_gastos_categoria') ?></div>
-  <div class="fin-secao-subtitulo"><?= sprintf(traduz('fin_distribucion'), strtolower($nome_mes_atual), number_format($resumo['total_saidas'], 0, '.', ',')) ?></div>
-  <div class="fin-donut-area">
-    <canvas class="js-donut-chart" class="fin-donut-canvas" width="140" height="140"></canvas>
+  <div class="fin-secao-titulo"><?= traduz('fin_visao_geral') ?></div>
+  <div class="fin-secao-subtitulo"><?= sprintf(traduz('fin_distribucion'), strtolower($nome_mes_atual), number_format($resumo['total_entradas'] + $resumo['total_saidas'], 0, '.', ',')) ?></div>
+  <div class="fin-donut-area fin-visao-geral">
+    <canvas class="js-donut-chart fin-donut-canvas" data-dados='<?= htmlspecialchars(json_encode([
+        ['valor' => (float) $resumo['total_entradas'], 'cor' => '#22C55E'],
+        ['valor' => (float) $resumo['total_saidas'], 'cor' => '#e0533d'],
+    ]), ENT_QUOTES) ?>' data-centro="<?= formatValor($resumo['total_entradas'] + $resumo['total_saidas']) ?>" width="140" height="140"></canvas>
     <div class="fin-donut-legenda">
-      <?php foreach ($saidas_cat as $sc):
-        $cat_key = $sc['categoria'];
-        $cat_info = $categorias[$cat_key] ?? $categorias['outros'];
-      ?>
       <div class="fin-legenda-item">
-        <span class="fin-legenda-cor" style="background:<?= $cat_info['cor'] ?>"></span>
-        <span class="fin-legenda-nome"><?= traduz('fin_cat_' . $cat_key) ?></span>
-        <span class="fin-legenda-valor"><?= formatValor($sc['total']) ?></span>
+        <span class="fin-legenda-cor" style="background:#22C55E"></span>
+        <span class="fin-legenda-nome"><?= traduz('fin_ingresos') ?></span>
+        <span class="fin-legenda-valor"><?= formatValor($resumo['total_entradas']) ?></span>
       </div>
-      <?php endforeach; ?>
+      <div class="fin-legenda-item">
+        <span class="fin-legenda-cor" style="background:#e0533d"></span>
+        <span class="fin-legenda-nome"><?= traduz('fin_gastos') ?></span>
+        <span class="fin-legenda-valor"><?= formatValor($resumo['total_saidas']) ?></span>
+      </div>
+      <div class="fin-legenda-item fin-legenda-saldo">
+        <span class="fin-legenda-cor" style="background:var(--primary)"></span>
+        <span class="fin-legenda-nome"><?= traduz('fin_saldo_mes') ?></span>
+        <span class="fin-legenda-valor" style="color:<?= $resumo['saldo'] >= 0 ? '#22C55E' : '#e0533d' ?>"><?= $resumo['saldo'] >= 0 ? '+' : '-' ?><?= formatValor($resumo['saldo']) ?></span>
+      </div>
     </div>
   </div>
 </div>
@@ -458,11 +466,6 @@ ob_start();
 
 <!-- JS data for charts -->
 <script>
-window.finDonutData = <?= json_encode(array_map(function ($sc) use ($categorias) {
-    $info = $categorias[$sc['categoria']] ?? $categorias['outros'];
-    return ['valor' => (float) $sc['total'], 'cor' => $info['cor']];
-}, $saidas_cat)) ?>;
-
 window.finBarData = <?= json_encode(array_map(function ($m) {
     return [
         'mes' => traduz('fin_mes_curto_' . $m['mes']),
@@ -475,7 +478,7 @@ window.finBarLabelEntradas = <?= json_encode(traduz('fin_ingresos')) ?>;
 window.finBarLabelSaidas = <?= json_encode(traduz('fin_gastos')) ?>;
 </script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="../assets/js/financas.js"></script>
+<script src="../assets/js/financas.js?v=<?= versaoAsset('assets/js/financas.js') ?>"></script>
 <script src="../assets/js/mascote.js"></script>
 <script>
 // Sync editar-id to delete form

@@ -9,6 +9,7 @@ iniciaSessao();
 exigeLoginCliente();
 
 $usuario = buscaUsuarioPorId(usuarioLogadoId());
+exigeAssinaturaAtiva($usuario);
 if (!empty($usuario['token_acesso_google'])) {
     header('Location: whatsapp.php');
     exit;
@@ -32,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conecta
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="../assets/css/cliente.css" />
+<link rel="stylesheet" href="../assets/css/cliente.css?v=<?= versaoAsset('assets/css/cliente.css') ?>" />
 </head>
 <body>
 
