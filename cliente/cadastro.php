@@ -3,6 +3,7 @@ require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesGoogle.php';
+require_once __DIR__ . '/../funcoes/funcoesAfiliados.php';
 
 iniciaSessao();
 
@@ -24,6 +25,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = traduz('erro_email_existente');
     } else {
         $id_usuario = insereUsuario(['nome' => $nome, 'email' => $email, 'senha' => $senha]);
+
+        if (!empty($_COOKIE['afiliado_ref'])) {
+            $codigo_afiliado = validaCookieAfiliadoAssinado($_COOKIE['afiliado_ref']);
+            $afiliado = $codigo_afiliado ? buscaAfiliadoPorCodigo($codigo_afiliado) : null;
+            if ($afiliado) {
+                insereIndicacaoAfiliado($afiliado['id_afiliado'], $id_usuario);
+            }
+        }
+
         fazLoginCliente(['id_usuario' => $id_usuario, 'nome' => $nome, 'email' => $email]);
         header('Location: pago.php');
         exit;

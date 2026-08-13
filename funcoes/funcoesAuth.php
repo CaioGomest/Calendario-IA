@@ -63,6 +63,31 @@ function exigeLoginAdmin() {
     }
 }
 
+function fazLoginAfiliado($afiliado) {
+    iniciaSessao();
+    $_SESSION['id_afiliado'] = $afiliado['id_afiliado'];
+    $_SESSION['nome_afiliado'] = $afiliado['nome'];
+    $_SESSION['email_afiliado'] = $afiliado['email'];
+}
+
+function fazLogoutAfiliado() {
+    iniciaSessao();
+    $_SESSION = [];
+    session_destroy();
+}
+
+function afiliadoLogadoId() {
+    iniciaSessao();
+    return $_SESSION['id_afiliado'] ?? null;
+}
+
+function exigeLoginAfiliado() {
+    if (afiliadoLogadoId() === null) {
+        header('Location: login.php');
+        exit;
+    }
+}
+
 function buscaAdminPorEmail($email) {
     $pdo = conexao();
     $stmt = $pdo->prepare('SELECT * FROM administradores WHERE email = ?');
