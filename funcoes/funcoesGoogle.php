@@ -118,6 +118,24 @@ function garanteTokenGoogleValido($id_usuario) {
     return $resposta['access_token'];
 }
 
+function revogaTokenGoogle($token) {
+    if (!$token) return;
+    $ch = curl_init('https://oauth2.googleapis.com/revoke?' . http_build_query(['token' => $token]));
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_TIMEOUT => 10,
+    ]);
+    curl_exec($ch);
+    curl_close($ch);
+}
+
+function desconectaGoogle($id_usuario) {
+    $tokens = buscaTokensGoogle($id_usuario);
+    revogaTokenGoogle($tokens['token_refresh_google'] ?? $tokens['token_acesso_google'] ?? null);
+    atualizaTokensGoogle($id_usuario, null, null, null);
+}
+
 function buscaStatusEventoGoogle($token_acesso, $id_google_event) {
     $ch = curl_init('https://www.googleapis.com/calendar/v3/calendars/primary/events/' . urlencode($id_google_event));
     curl_setopt_array($ch, [

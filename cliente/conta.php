@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
+require_once __DIR__ . '/../funcoes/funcoesGoogle.php';
 require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
 require_once __DIR__ . '/../funcoes/funcoesStripe.php';
 
@@ -32,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($acao === 'desconectar_google') {
-        atualizaTokensGoogle(usuarioLogadoId(), null, null, null);
+        desconectaGoogle(usuarioLogadoId());
     }
 
     if ($acao === 'cancelar_plano') {
