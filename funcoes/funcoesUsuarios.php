@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../config/conexao.php';
 require_once __DIR__ . '/funcoesConfiguracao.php';
+require_once __DIR__ . '/funcoesGoogle.php';
 
 function fusoHorarioPadrao() {
     return buscaConfiguracao('fuso_horario_padrao') ?? 'America/Mexico_City';
@@ -75,7 +76,7 @@ function atualizaPlanoUsuario($id_usuario, $plano, $plano_expira_em) {
 function atualizaTokensGoogle($id_usuario, $token_acesso, $token_refresh, $token_expira_em) {
     $pdo = conexao();
     $stmt = $pdo->prepare('UPDATE usuarios SET token_acesso_google = ?, token_refresh_google = ?, token_google_expira_em = ? WHERE id_usuario = ?');
-    $stmt->execute([$token_acesso, $token_refresh, $token_expira_em, $id_usuario]);
+    $stmt->execute([cifraTokenGoogle($token_acesso), cifraTokenGoogle($token_refresh), $token_expira_em, $id_usuario]);
 }
 
 function atualizaTelefoneUsuario($id_usuario, $telefone) {

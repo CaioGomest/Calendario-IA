@@ -8,7 +8,7 @@ function geraUrlAutorizacaoGoogle() {
         'client_id' => GOOGLE_CLIENT_ID,
         'redirect_uri' => GOOGLE_REDIRECT_URI,
         'response_type' => 'code',
-        'scope' => 'openid email profile https://www.googleapis.com/auth/calendar',
+        'scope' => 'openid email profile https://www.googleapis.com/auth/calendar.events',
         'access_type' => 'offline',
         'prompt' => 'consent',
     ]);
@@ -46,17 +46,40 @@ function buscaPerfilGoogle($access_token) {
     return json_decode($resposta, true) ?: [];
 }
 
+function cifraTokenGoogle($texto_plano) {
+    if ($texto_plano === null || $texto_plano === '') return $texto_plano;
+    $iv = random_bytes(12);
+    $tag = '';
+    $cifrado = openssl_encrypt($texto_plano, 'aes-256-gcm', TOKEN_ENCRYPTION_KEY, OPENSSL_RAW_DATA, $iv, $tag);
+    return base64_encode($iv . $tag . $cifrado);
+}
+
+function decifraTokenGoogle($texto_cifrado) {
+    if ($texto_cifrado === null || $texto_cifrado === '') return $texto_cifrado;
+    $dados = base64_decode($texto_cifrado, true);
+    if ($dados === false || strlen($dados) < 28) return null;
+    $iv = substr($dados, 0, 12);
+    $tag = substr($dados, 12, 16);
+    $cifrado = substr($dados, 28);
+    $texto_plano = openssl_decrypt($cifrado, 'aes-256-gcm', TOKEN_ENCRYPTION_KEY, OPENSSL_RAW_DATA, $iv, $tag);
+    return $texto_plano === false ? null : $texto_plano;
+}
+
 function buscaTokensGoogle($id_usuario) {
     $pdo = conexao();
     $stmt = $pdo->prepare('SELECT token_acesso_google, token_refresh_google, token_google_expira_em FROM usuarios WHERE id_usuario = ?');
     $stmt->execute([$id_usuario]);
-    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    $tokens = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$tokens) return null;
+    $tokens['token_acesso_google'] = decifraTokenGoogle($tokens['token_acesso_google']);
+    $tokens['token_refresh_google'] = decifraTokenGoogle($tokens['token_refresh_google']);
+    return $tokens;
 }
 
 function renovaTokenGoogle($id_usuario, $token_acesso, $token_expira_em) {
     $pdo = conexao();
     $stmt = $pdo->prepare('UPDATE usuarios SET token_acesso_google = ?, token_google_expira_em = ? WHERE id_usuario = ?');
-    $stmt->execute([$token_acesso, $token_expira_em, $id_usuario]);
+    $stmt->execute([cifraTokenGoogle($token_acesso), $token_expira_em, $id_usuario]);
 }
 
 function garanteTokenGoogleValido($id_usuario) {

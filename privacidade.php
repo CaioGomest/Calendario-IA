@@ -79,6 +79,11 @@ require_once __DIR__ . '/funcoes/funcoesIdioma.php';
   </section>
 
   <section>
+    <h2>6.1 <?= traduz('priv_s6b_titulo') ?></h2>
+    <p><?= traduz('priv_s6b_texto') ?></p>
+  </section>
+
+  <section>
     <h2>7. <?= traduz('priv_s7_titulo') ?></h2>
     <p><?= traduz('priv_s7_texto') ?></p>
   </section>

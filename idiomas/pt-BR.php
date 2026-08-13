@@ -585,6 +585,9 @@ return [
     'priv_s6_titulo' => 'Compartilhamento de dados',
     'priv_s6_texto' => 'Compartilhamos dados apenas com os serviços necessários à operação: Google (sincronização de calendário via OAuth), Stripe (processamento de pagamentos), Evolution API / WhatsApp (envio e recebimento de mensagens) e n8n (orquestração de automações). Não vendemos, alugamos ou cedemos seus dados a terceiros para fins de marketing.',
 
+    'priv_s6b_titulo' => 'Uso de dados do Google',
+    'priv_s6b_texto' => 'O uso que fazemos das informações recebidas das APIs do Google está em conformidade com a <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Política de Dados do Usuário dos Serviços de API do Google</a>, incluindo os requisitos de Uso Limitado (Limited Use).',
+
     'priv_s7_titulo' => 'Armazenamento e segurança',
     'priv_s7_texto' => 'Seus dados são armazenados em servidores com acesso restrito. Senhas são protegidas com hash criptográfico (bcrypt). Tokens do Google são armazenados de forma criptografada. Adotamos medidas técnicas e organizacionais para proteger seus dados contra acesso não autorizado, destruição, perda ou alteração.',
 

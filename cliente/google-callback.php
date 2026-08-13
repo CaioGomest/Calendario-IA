@@ -22,7 +22,7 @@ if (empty($tokens['access_token'])) {
 }
 
 $escopos_concedidos = explode(' ', $tokens['scope'] ?? '');
-if (!in_array('https://www.googleapis.com/auth/calendar', $escopos_concedidos, true)) {
+if (!in_array('https://www.googleapis.com/auth/calendar.events', $escopos_concedidos, true)) {
     $_SESSION['erro_google'] = traduz('erro_google_sem_calendario');
     header('Location: login.php');
     exit;
