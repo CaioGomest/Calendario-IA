@@ -9,6 +9,7 @@ Apenas a camada **PHP**:
 - Endpoints internos consumidos pelo n8n (`api/internal/`)
 - Painel admin (`admin/`)
 - Área do cliente (`cliente/`)
+- Painel do afiliado (`afiliado/`)
 - Landing page (`landpage.php`)
 
 WhatsApp, Evolution API, n8n e Gemini são infraestrutura externa.
@@ -25,36 +26,47 @@ WhatsApp, Evolution API, n8n e Gemini são infraestrutura externa.
 
 ```
 api/internal/       Endpoints consumidos pelo n8n (protegidos por X-Internal-Secret)
-  usuarios.php      GET  — dados do usuário por telefone
-  evento.php        POST/PUT/DELETE — gerencia eventos
+  usuarios.php      GET  — dados do usuário por telefone (tokens Google descriptografados)
+  evento.php        POST/PUT/DELETE — gerencia eventos (aceita id_evento ou id_google_event)
   eventos.php       GET  — lista eventos do usuário
+  eventosGoogle.php GET  — busca eventos direto no Google Calendar (com filtro de data e ordem)
   log.php           POST — salva log de mensagem
   lembreteEnviado.php    PUT — marca lembrete como enviado
-  lembretesPendentes.php GET — eventos com lembrete pendente
+  lembretesPendentes.php GET — eventos com lembrete pendente (inclui idioma do usuário)
   token.php         POST — renova token Google OAuth
   sessao.php        GET/POST — contexto de conversa
-  eventosGoogle.php GET  — busca eventos direto no Google Calendar
   transacao.php     POST/GET/DELETE — registra transações financeiras
+
+api/stripe-webhook.php   Webhook de confirmação de pagamento (também gera comissão de afiliado)
 
 admin/              Painel do operador
   login.php
   dashboard.php     Métricas, gráficos de atividade, eventos recentes
   usuarios.php      Listagem, busca, criar/editar/apagar usuários
   planos.php        CRUD de planos (integrado ao Stripe)
+  afiliados.php     Gestão de afiliados e comissões
+  saques.php        Aprovação de saques solicitados por afiliados
   configuracao.php  Variáveis de sistema, preferências, modo dev
 
 cliente/            Área do usuário final
   login.php / cadastro.php / recuperar.php / redefinir.php
   pago.php          Checkout via Stripe (seleção de plano)
-  google.php / google-callback.php   OAuth Google Calendar
+  google.php / google-callback.php   OAuth Google Calendar (escopo calendar.events)
   whatsapp.php      Configuração do número WhatsApp
   home.php          Status das integrações + próximos eventos
   conta.php         Plano, modo silêncio, recordatórios, desconectar
   financas.php      Controle financeiro (transações, gráficos, categorias)
 
+afiliado/           Painel do programa de afiliados
+  login.php / cadastro.php / logout.php
+  painel.php        Resumo de cliques, indicações e comissões
+  link.php          Link de indicação e materiais de divulgação
+  comissoes.php     Extrato de comissões
+  saque.php         Solicitação de saque
+
 funcoes/            Toda lógica de dados (sem SQL solto em páginas)
 idiomas/            i18n — es-MX.php e pt-BR.php
-database/banco.sql  Schema completo
+database/banco.sql  Schema completo (inclui tabelas de afiliados)
 ```
 
 ## Implementado
@@ -64,8 +76,10 @@ database/banco.sql  Schema completo
 - **Pagamento** — Stripe Checkout com seleção de plano, webhook de confirmação, portal de faturamento
 - **Área do cliente** — home com próximos eventos, minha conta, controle financeiro
 - **Controle financeiro** — transações por mês, donut chart por categoria, bar chart 6 meses, paginação, categorias via banco
-- **Painel admin** — dashboard com métricas, gestão de usuários, planos e configurações do sistema
+- **Programa de afiliados** — cadastro/login próprio, link de indicação, tracking de cliques, cálculo de comissão no webhook do Stripe, solicitação e aprovação de saques
+- **Painel admin** — dashboard com métricas, gestão de usuários, planos, afiliados/saques e configurações do sistema
 - **Endpoints n8n** — todos implementados e protegidos por `X-Internal-Secret`
+- **Verificação OAuth Google** — escopo restrito a `calendar.events`, tokens cifrados em repouso (AES-256-GCM), seção de Limited Use na política de privacidade
 - **i18n** — espanhol mexicano (padrão) e português BR via arrays, sem dependências externas
 
 ## Preview
