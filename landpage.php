@@ -41,6 +41,7 @@ $sufixo_ciclo = [
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg" />
 <title><?= traduz('lp_title') ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -203,23 +204,23 @@ $sufixo_ciclo = [
   <h2 class="titulo-secao titulo-fonte revelar d1"><?= traduz('lp_faq_title') ?></h2>
   <div class="faq">
     <div class="pergunta revelar d1">
-      <button><?= traduz('lp_faq1_q') ?><span class="mais-menos">+</span></button>
+      <button><?= traduz('lp_faq1_q') ?><span class="mais-menos"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
       <div class="resposta"><p><?= traduz('lp_faq1_a') ?></p></div>
     </div>
     <div class="pergunta revelar d1">
-      <button><?= traduz('lp_faq2_q') ?><span class="mais-menos">+</span></button>
+      <button><?= traduz('lp_faq2_q') ?><span class="mais-menos"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
       <div class="resposta"><p><?= traduz('lp_faq2_a') ?></p></div>
     </div>
     <div class="pergunta revelar d2">
-      <button><?= traduz('lp_faq3_q') ?><span class="mais-menos">+</span></button>
+      <button><?= traduz('lp_faq3_q') ?><span class="mais-menos"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
       <div class="resposta"><p><?= traduz('lp_faq3_a') ?></p></div>
     </div>
     <div class="pergunta revelar d2">
-      <button><?= traduz('lp_faq4_q') ?><span class="mais-menos">+</span></button>
+      <button><?= traduz('lp_faq4_q') ?><span class="mais-menos"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
       <div class="resposta"><p><?= traduz('lp_faq4_a') ?></p></div>
     </div>
     <div class="pergunta revelar d3">
-      <button><?= traduz('lp_faq5_q') ?><span class="mais-menos">+</span></button>
+      <button><?= traduz('lp_faq5_q') ?><span class="mais-menos"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
       <div class="resposta"><p><?= traduz('lp_faq5_a') ?></p></div>
     </div>
   </div>

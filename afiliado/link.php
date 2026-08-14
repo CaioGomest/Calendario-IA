@@ -19,6 +19,7 @@ $taxa_conversao = $total_cliques > 0 ? round(($total_indicacoes / $total_cliques
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg" />
 <title><?= htmlspecialchars(nomeApp()) ?> — Meu link</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

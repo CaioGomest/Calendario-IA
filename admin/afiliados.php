@@ -49,6 +49,7 @@ $afiliados = listaAfiliados();
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg" />
 <title><?= htmlspecialchars(nomeApp()) ?> — Afiliados</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -158,5 +159,6 @@ $afiliados = listaAfiliados();
 <script>document.getElementById('modal-criar').classList.add('aberto');</script>
 <?php endif; ?>
 
+<script src="../assets/js/mascote.js"></script>
 </body>
 </html>

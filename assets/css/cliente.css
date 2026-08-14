@@ -378,7 +378,7 @@ body {
         font-family: var(--font-titulo);
         font-weight: 600;
         font-size: 18px;
-        margin-bottom: auto;
+        margin-bottom: 48px;
     }
 
     .login-icone {
@@ -389,7 +389,7 @@ body {
 
     .login-titulo h1 {
         font-size: 32px;
-        max-width: 14ch;
+        max-width: 26ch;
     }
 
     .login-titulo p {
@@ -1231,7 +1231,7 @@ body {
     font-family: var(--font-titulo);
     font-weight: 600;
     font-size: 18px;
-    margin-bottom: auto;
+    margin-bottom: 48px;
 }
 
 .cadastro-marca .logo {
@@ -1254,7 +1254,7 @@ body {
     font-family: var(--font-titulo);
     font-weight: 700;
     font-size: 32px;
-    max-width: 14ch;
+    max-width: 26ch;
     margin: 0 0 14px;
 }
 
