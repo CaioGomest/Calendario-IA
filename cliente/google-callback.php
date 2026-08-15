@@ -9,7 +9,7 @@ iniciaSessao();
 $code = $_GET['code'] ?? '';
 
 if ($code === '') {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -17,14 +17,14 @@ $tokens = trocaCodigoGooglePorTokens($code);
 
 if (empty($tokens['access_token'])) {
     $_SESSION['erro_google'] = traduz('erro_google_login');
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
 $escopos_concedidos = explode(' ', $tokens['scope'] ?? '');
 if (!in_array('https://www.googleapis.com/auth/calendar.events', $escopos_concedidos, true)) {
     $_SESSION['erro_google'] = traduz('erro_google_sem_calendario');
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -32,7 +32,7 @@ $perfil = buscaPerfilGoogle($tokens['access_token']);
 
 if (empty($perfil['email'])) {
     $_SESSION['erro_google'] = traduz('erro_google_login');
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -63,8 +63,8 @@ atualizaTokensGoogle(
 fazLoginCliente($usuario);
 
 if ($novo) {
-    header('Location: pago.php');
+    header('Location: pago');
 } else {
-    header('Location: home.php');
+    header('Location: home');
 }
 exit;

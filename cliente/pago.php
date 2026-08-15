@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
             $expira = date('Y-m-d H:i:s', strtotime($map[$plano_dev['ciclo']] ?? '+1 month'));
         }
         atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira);
-        header('Location: google.php');
+        header('Location: google');
         exit;
     }
 
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
                 : date('Y-m-d H:i:s', strtotime('+1 month'));
             atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em);
             atualizaStripeUsuario(usuarioLogadoId(), $sub['customer'] ?? '', $sub_id);
-            header('Location: google.php');
+            header('Location: google');
             exit;
         }
     }
@@ -133,13 +133,13 @@ $mostra_pagamento = $plano_selecionado !== null;
 
       <?php if (MODO_DEV): ?>
         <div class="dica" style="text-align:center;margin-bottom:12px;">🧪 Modo dev: continuar sem pagamento real.</div>
-        <form method="post" action="pago.php">
+        <form method="post" action="pago">
           <input type="hidden" name="confirmar" value="1" />
           <input type="hidden" name="id_plano" value="<?= $plano_selecionado['id_plano'] ?>" />
           <button type="submit" class="botao botao-primario botao-espaco" style="width:100%;"><?= traduz('pago_botao_checkout') ?></button>
         </form>
       <?php else: ?>
-        <form id="payment-form-<?= $sufixo ?>" method="post" action="pago.php">
+        <form id="payment-form-<?= $sufixo ?>" method="post" action="pago">
           <input type="hidden" name="confirmar" value="1" />
           <input type="hidden" name="subscription_id" value="<?= htmlspecialchars($subscription_id) ?>" />
           <div class="campo" style="margin-top:0;">
@@ -160,7 +160,7 @@ $mostra_pagamento = $plano_selecionado !== null;
   <div class="vista-mobile">
     <div class="barra-topo">
       <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
-      <a class="botao botao-contorno botao-pequeno" href="pago.php"><?= traduz('botao_atras') ?></a>
+      <a class="botao botao-contorno botao-pequeno" href="pago"><?= traduz('botao_atras') ?></a>
     </div>
     <div class="conteudo-pagina espacado">
       <h1 class="tela-titulo"><?= traduz('pago_titulo') ?></h1>
@@ -203,7 +203,7 @@ $mostra_pagamento = $plano_selecionado !== null;
   <div class="vista-mobile">
     <div class="barra-topo">
       <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
-      <a class="botao botao-contorno botao-pequeno" href="cadastro.php"><?= traduz('botao_atras') ?></a>
+      <a class="botao botao-contorno botao-pequeno" href="cadastro"><?= traduz('botao_atras') ?></a>
     </div>
     <div class="conteudo-pagina espacado">
       <div class="etapa-cabecalho">
@@ -224,7 +224,7 @@ $mostra_pagamento = $plano_selecionado !== null;
           <?php if ((int)$p['dias_teste'] > 0): ?>
           <div class="plano-opcao-teste"><?= sprintf(traduz('pago_dias_teste'), (int)$p['dias_teste']) ?></div>
           <?php endif; ?>
-          <form method="post" action="pago.php">
+          <form method="post" action="pago">
             <input type="hidden" name="escolher_plano" value="1" />
             <input type="hidden" name="id_plano" value="<?= $p['id_plano'] ?>" />
             <button type="submit" class="botao botao-primario"><?= traduz('pago_botao_escolher') ?></button>
@@ -263,7 +263,7 @@ $mostra_pagamento = $plano_selecionado !== null;
               <?php if ((int)$p['dias_teste'] > 0): ?>
               <div class="plano-opcao-teste"><?= sprintf(traduz('pago_dias_teste'), (int)$p['dias_teste']) ?></div>
               <?php endif; ?>
-              <form method="post" action="pago.php">
+              <form method="post" action="pago">
                 <input type="hidden" name="escolher_plano" value="1" />
                 <input type="hidden" name="id_plano" value="<?= $p['id_plano'] ?>" />
                 <button type="submit" class="botao botao-primario"><?= traduz('pago_botao_escolher') ?></button>

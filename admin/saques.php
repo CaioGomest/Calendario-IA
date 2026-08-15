@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     }
 
     if ($msg_sucesso) {
-        header('Location: saques.php?sucesso=' . urlencode($msg_sucesso));
+        header('Location: saques?sucesso=' . urlencode($msg_sucesso));
         exit;
     }
 }
@@ -62,7 +62,7 @@ $cor_status = ['pendente' => 'ambar', 'pago' => 'verde', 'recusado' => 'vermelho
       </div>
       <div class="espaco"></div>
       <div class="campo-entrada">
-        <select onchange="location.href='saques.php' + (this.value ? '?status=' + this.value : '')">
+        <select onchange="location.href='saques' + (this.value ? '?status=' + this.value : '')">
           <option value="" <?= $filtro_status === '' ? 'selected' : '' ?>>Todos os status</option>
           <option value="pendente" <?= $filtro_status === 'pendente' ? 'selected' : '' ?>>Pendente</option>
           <option value="pago" <?= $filtro_status === 'pago' ? 'selected' : '' ?>>Pago</option>
@@ -102,12 +102,12 @@ $cor_status = ['pendente' => 'ambar', 'pago' => 'verde', 'recusado' => 'vermelho
               <td><span class="selo <?= $cor_status[$s['status']] ?>"><span class="ponto"></span> <?= $rotulo_status[$s['status']] ?></span></td>
               <td>
                 <?php if ($s['status'] === 'pendente'): ?>
-                <form method="post" action="saques.php" style="display:inline-block;">
+                <form method="post" action="saques" style="display:inline-block;">
                   <input type="hidden" name="id_saque" value="<?= $s['id_saque'] ?>" />
                   <input type="hidden" name="acao" value="marcar_pago" />
                   <button type="submit" class="botao-pequeno botao-primario-pequeno">Marcar pago</button>
                 </form>
-                <form method="post" action="saques.php" style="display:inline-block;" onsubmit="return confirm('Recusar esta solicitação?')">
+                <form method="post" action="saques" style="display:inline-block;" onsubmit="return confirm('Recusar esta solicitação?')">
                   <input type="hidden" name="id_saque" value="<?= $s['id_saque'] ?>" />
                   <input type="hidden" name="acao" value="recusar" />
                   <button type="submit" class="botao-pequeno botao-fantasma">Recusar</button>

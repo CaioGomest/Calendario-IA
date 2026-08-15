@@ -33,7 +33,7 @@ function usuarioLogadoId() {
 
 function exigeLoginCliente() {
     if (!usuarioLogadoId()) {
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 }
@@ -58,7 +58,7 @@ function adminLogadoId() {
 
 function exigeLoginAdmin() {
     if (adminLogadoId() === null) {
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 }
@@ -83,7 +83,7 @@ function afiliadoLogadoId() {
 
 function exigeLoginAfiliado() {
     if (afiliadoLogadoId() === null) {
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 }

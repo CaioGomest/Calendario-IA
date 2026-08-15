@@ -6,7 +6,7 @@ require_once __DIR__ . '/../funcoes/funcoesConfiguracao.php';
 iniciaSessao();
 
 if (afiliadoLogadoId()) {
-    header('Location: painel.php');
+    header('Location: painel');
     exit;
 }
 
@@ -18,13 +18,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $afiliado = buscaAfiliadoPorEmail($email);
 
-    if ($afiliado && $afiliado['ativo'] && password_verify($senha, $afiliado['senha_hash'])) {
-        fazLoginAfiliado($afiliado);
-        header('Location: painel.php');
-        exit;
+    if ($afiliado && password_verify($senha, $afiliado['senha_hash'])) {
+        if (!$afiliado['ativo']) {
+            $erro = 'Seu cadastro ainda está em análise. Aguarde a aprovação do administrador.';
+        } else {
+            fazLoginAfiliado($afiliado);
+            header('Location: painel');
+            exit;
+        }
+    } else {
+        $erro = 'E-mail ou senha inválidos.';
     }
-
-    $erro = 'E-mail ou senha inválidos.';
 }
 ?>
 <!DOCTYPE html>
@@ -60,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
   </div>
   <div class="login-form">
-    <form class="form-area" method="post" action="login.php">
+    <form class="form-area" method="post" action="login">
       <h2 class="form-titulo">Entrar</h2>
       <?php if ($erro): ?>
         <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro) ?></p>
@@ -74,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="input"><span class="input-icone">🔒</span><input type="password" name="senha" required /></div>
       </div>
       <button type="submit" class="botao botao-primario botao-espaco">Entrar</button>
-      <div class="link-central">Ainda não é afiliado? <a class="link" href="cadastro.php">Cadastre-se</a></div>
+      <div class="link-central">Ainda não é afiliado? <a class="link" href="cadastro">Cadastre-se</a></div>
     </form>
   </div>
 </div>

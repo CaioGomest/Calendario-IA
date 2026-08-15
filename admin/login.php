@@ -5,7 +5,7 @@ require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
 iniciaSessao();
 
 if (adminLogadoId() !== null) {
-    header('Location: dashboard.php');
+    header('Location: dashboard');
     exit;
 }
 
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($admin && password_verify($senha, $admin['senha_hash'])) {
         fazLoginAdmin($admin);
-        header('Location: dashboard.php');
+        header('Location: dashboard');
         exit;
     }
 
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if ($erro): ?>
       <div class="erro-msg"><?= htmlspecialchars($erro) ?></div>
     <?php endif; ?>
-    <form method="post" action="login.php">
+    <form method="post" action="login">
       <div class="campo">
         <label><?= traduz('admin_email') ?></label>
         <div class="campo-entrada">

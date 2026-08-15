@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $erro_whatsapp = traduz('erro_telefone_existe');
             } else {
                 atualizaTelefoneUsuario(usuarioLogadoId(), $telefone_formatado);
-                header('Location: home.php');
+                header('Location: home');
                 exit;
             }
         }
@@ -47,7 +47,7 @@ $codigos_pais = listaCodigosPaisTelefone();
 <div class="vista-mobile">
   <div class="barra-topo">
     <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
-    <a class="botao botao-contorno botao-pequeno" href="google.php"><?= traduz('botao_atras') ?></a>
+    <a class="botao botao-contorno botao-pequeno" href="google"><?= traduz('botao_atras') ?></a>
   </div>
   <div class="conteudo-pagina espacado centralizado">
     <div class="etapa-cabecalho" style="width:100%;">
@@ -62,7 +62,7 @@ $codigos_pais = listaCodigosPaisTelefone();
     <div class="erro-msg" style="margin-bottom:10px;"><?= htmlspecialchars($erro_whatsapp) ?></div>
     <?php endif; ?>
 
-    <form method="post" action="whatsapp.php" style="width:100%;">
+    <form method="post" action="whatsapp" style="width:100%;">
       <div class="campo">
         <label><?= traduz('campo_whatsapp') ?></label>
         <div style="display:flex; gap:8px;">
@@ -79,7 +79,7 @@ $codigos_pais = listaCodigosPaisTelefone();
     </form>
 
     <?php if (MODO_DEV): ?>
-      <a class="dica" style="text-align:center;display:block;margin-top:4px;" href="home.php">🧪 Modo desarrollo: pular sem conectar</a>
+      <a class="dica" style="text-align:center;display:block;margin-top:4px;" href="home">🧪 Modo desarrollo: pular sem conectar</a>
     <?php endif; ?>
   </div>
 </div>
@@ -107,7 +107,7 @@ $codigos_pais = listaCodigosPaisTelefone();
         <?php if ($erro_whatsapp): ?>
         <div class="erro-msg" style="margin-bottom:10px;"><?= htmlspecialchars($erro_whatsapp) ?></div>
         <?php endif; ?>
-        <form method="post" action="whatsapp.php">
+        <form method="post" action="whatsapp">
           <div class="campo">
             <label><?= traduz('campo_whatsapp') ?></label>
             <div style="display:flex; gap:8px;">
@@ -121,7 +121,7 @@ $codigos_pais = listaCodigosPaisTelefone();
           </div>
           <button type="submit" class="botao botao-whatsapp botao-espaco"><?= traduz('botao_conectar_whatsapp') ?></button>
           <?php if (MODO_DEV): ?>
-            <a class="dica" style="text-align:center;display:block;margin-top:8px;" href="home.php">🧪 Modo desarrollo: pular sem conectar</a>
+            <a class="dica" style="text-align:center;display:block;margin-top:8px;" href="home">🧪 Modo desarrollo: pular sem conectar</a>
           <?php endif; ?>
         </form>
       </div>

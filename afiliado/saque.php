@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($msg_sucesso) {
-        header('Location: saque.php?sucesso=' . urlencode($msg_sucesso));
+        header('Location: saque?sucesso=' . urlencode($msg_sucesso));
         exit;
     }
 }
@@ -81,7 +81,7 @@ ob_start();
   <div class="afiliado-card">Saldo disponível<b>$<?= number_format($saldo_disponivel, 2) ?></b></div>
 </div>
 
-<form class="afiliado-form-saque" method="post" action="saque.php">
+<form class="afiliado-form-saque" method="post" action="saque">
   <div class="campo">
     <label>Valor do saque</label>
     <div class="input"><span class="input-icone">$</span><input type="text" name="valor" placeholder="0.00" required /></div>

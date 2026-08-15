@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
             salvaConfiguracao('fuso_horario_padrao', $fuso);
         }
 
-        header('Location: configuracao.php?sucesso=1');
+        header('Location: configuracao?sucesso=1');
         exit;
     }
 
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         if (in_array($moeda_post, ['BRL', 'USD', 'MXN'], true)) {
             salvaConfiguracao('moeda', $moeda_post);
         }
-        header('Location: configuracao.php?sucesso=1');
+        header('Location: configuracao?sucesso=1');
         exit;
     }
 
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         salvaConfiguracao('link_suporte', $link_suporte);
         salvaConfiguracao('whatsapp_bot_numero', $whatsapp_bot_numero);
 
-        header('Location: configuracao.php?sucesso=1');
+        header('Location: configuracao?sucesso=1');
         exit;
     }
 }
@@ -119,7 +119,7 @@ $variaveis = [
       <?php endif; ?>
 
       <!-- Nome do app -->
-      <form method="post" action="configuracao.php">
+      <form method="post" action="configuracao">
         <input type="hidden" name="acao" value="salvar_geral" />
         <div class="config-card" style="margin-bottom:16px;">
           <div class="config-card-header">
@@ -153,7 +153,7 @@ $variaveis = [
       </form>
 
       <!-- Preferências editáveis -->
-      <form method="post" action="configuracao.php">
+      <form method="post" action="configuracao">
         <input type="hidden" name="acao" value="salvar_preferencias" />
         <div class="config-card" style="margin-bottom:16px;">
           <div class="config-card-header">
@@ -195,7 +195,7 @@ $variaveis = [
       </form>
 
       <!-- Contato e Redes Sociais -->
-      <form method="post" action="configuracao.php">
+      <form method="post" action="configuracao">
         <input type="hidden" name="acao" value="salvar_contato" />
         <div class="config-card" style="margin-bottom:16px;">
           <div class="config-card-header">

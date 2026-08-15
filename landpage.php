@@ -51,11 +51,11 @@ $sufixo_ciclo = [
 <body>
 
 <nav class="barra-nav">
-  <a class="marca" href="landpage.php">
+  <a class="marca" href="landpage">
     <span class="logo"><span data-bot="ink" data-size="24"></span></span>
     <?= htmlspecialchars(nomeApp()) ?>
   </a>
-  <a class="entrar" href="cliente/login.php"><?= traduz('lp_login') ?></a>
+  <a class="entrar" href="cliente/login"><?= traduz('lp_login') ?></a>
 </nav>
 
 <!-- HERO -->
@@ -66,7 +66,7 @@ $sufixo_ciclo = [
     <p class="subtexto revelar d1"><?= traduz('lp_hero_lead') ?></p>
   </div>
   <div class="destaque-acoes">
-    <a href="cliente/cadastro.php" class="botao botao-primario revelar d1"><?= $tem_teste_gratis ? sprintf(traduz('lp_hero_cta'), $max_dias_teste) : traduz('lp_hero_cta_sem_teste') ?></a>
+    <a href="cliente/cadastro" class="botao botao-primario revelar d1"><?= $tem_teste_gratis ? sprintf(traduz('lp_hero_cta'), $max_dias_teste) : traduz('lp_hero_cta_sem_teste') ?></a>
     <div class="micro revelar d2"><?= $tem_teste_gratis ? traduz('lp_hero_micro') : traduz('lp_hero_micro_sem_teste') ?></div>
     <div class="social revelar d3">
       <span class="avatares">
@@ -185,9 +185,9 @@ $sufixo_ciclo = [
         <div><span class="check">✓</span> <?= traduz('lp_feat5') ?></div>
       </div>
       <?php if ((int)$plano['dias_teste'] > 0): ?>
-      <a href="cliente/cadastro.php" class="botao botao-primario"><?= traduz('lp_price_cta') ?></a>
+      <a href="cliente/cadastro" class="botao botao-primario"><?= traduz('lp_price_cta') ?></a>
       <?php else: ?>
-      <a href="cliente/cadastro.php" class="botao botao-primario"><?= traduz('lp_price_cta_sem_teste') ?></a>
+      <a href="cliente/cadastro" class="botao botao-primario"><?= traduz('lp_price_cta_sem_teste') ?></a>
       <?php endif; ?>
       <?php if ((int)$plano['dias_teste'] > 0): ?>
       <div class="garantia"><?= sprintf(traduz('lp_price_guarantee'), (int)$plano['dias_teste']) ?></div>
@@ -230,7 +230,7 @@ $sufixo_ciclo = [
   <div class="adesivo mascote-flutua acenando"><span data-bot="ink" data-size="54"></span></div>
   <h2 class="titulo-fonte revelar"><?= traduz('lp_final_title') ?></h2>
   <p class="revelar d1"><?= traduz('lp_final_text') ?></p>
-  <a href="cliente/cadastro.php" class="botao botao-cta-branco revelar d1"><?= $tem_teste_gratis ? traduz('lp_final_cta') : traduz('lp_final_cta_sem_teste') ?></a>
+  <a href="cliente/cadastro" class="botao botao-cta-branco revelar d1"><?= $tem_teste_gratis ? traduz('lp_final_cta') : traduz('lp_final_cta_sem_teste') ?></a>
   <div class="micro-rodape revelar d2"><?= $tem_teste_gratis ? sprintf(traduz('lp_final_micro'), $max_dias_teste) : traduz('lp_final_micro_sem_teste') ?></div>
 </section>
 
@@ -240,8 +240,8 @@ $sufixo_ciclo = [
     <?= htmlspecialchars(nomeApp()) ?>
   </div>
   <div class="links-rodape">
-    <a href="privacidade.php"><?= traduz('lp_privacy') ?></a>
-    <a href="termos.php"><?= traduz('lp_terms') ?></a>
+    <a href="privacidade"><?= traduz('lp_privacy') ?></a>
+    <a href="termos"><?= traduz('lp_terms') ?></a>
     <?php if ($link_suporte): ?>
     <a href="<?= htmlspecialchars($link_suporte) ?>" target="_blank"><?= traduz('lp_support') ?></a>
     <?php endif; ?>

@@ -2,5 +2,5 @@
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 
 fazLogoutAfiliado();
-header('Location: login.php');
+header('Location: login');
 exit;

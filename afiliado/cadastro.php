@@ -6,6 +6,7 @@ require_once __DIR__ . '/../funcoes/funcoesConfiguracao.php';
 iniciaSessao();
 
 $erro = '';
+$enviado = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = trim($_POST['nome'] ?? '');
@@ -22,11 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (buscaAfiliadoPorEmail($email)) {
         $erro = 'Já existe um afiliado com este e-mail.';
     } else {
-        $id_afiliado = insereAfiliado(['nome' => $nome, 'email' => $email, 'senha' => $senha]);
-        $afiliado = buscaAfiliadoPorId($id_afiliado);
-        fazLoginAfiliado($afiliado);
-        header('Location: painel.php');
-        exit;
+        insereAfiliado(['nome' => $nome, 'email' => $email, 'senha' => $senha, 'ativo' => 0]);
+        $enviado = true;
     }
 }
 ?>
@@ -43,15 +41,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link rel="stylesheet" href="../assets/css/cliente.css?v=<?= versaoAsset('assets/css/cliente.css') ?>" />
 </head>
 <body>
-<div class="vista-mobile">
-  <div class="barra-topo">
-    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
-    <a class="botao botao-contorno botao-pequeno" href="login.php">Entrar</a>
+<div class="login-estrutura">
+  <div class="login-marca">
+    <div class="marca"><span class="logo"><span data-bot="white" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+    <div class="login-titulo login-titulo-mobile">
+      <div class="login-icone"><span data-bot="ink" data-size="56"></span></div>
+      <h1>Seja um afiliado</h1>
+      <p>Ganhe comissão por cada indicação paga.</p>
+    </div>
+    <div class="login-titulo login-titulo-desktop">
+      <div class="login-icone"><span data-bot="ink" data-size="62"></span></div>
+      <h1>Seja um afiliado</h1>
+      <p>Cadastre-se e ganhe comissão por cada indicação paga.</p>
+      <div class="login-recursos">
+        <div><span class="login-recurso-check">✓</span> Acompanhe indicações em tempo real</div>
+        <div><span class="login-recurso-check">✓</span> Comissão sobre cada pagamento confirmado</div>
+        <div><span class="login-recurso-check">✓</span> Link de indicação exclusivo</div>
+      </div>
+    </div>
   </div>
-  <div class="conteudo-pagina">
-    <h1 class="tela-titulo">Seja um afiliado</h1>
-    <p class="tela-subtitulo">Cadastre-se e ganhe comissão por cada indicação paga.</p>
-    <form method="post" action="cadastro.php">
+  <div class="login-form">
+    <?php if ($enviado): ?>
+    <div class="form-area">
+      <h2 class="form-titulo">Cadastro enviado!</h2>
+      <p class="dica">Seu cadastro está em análise. Assim que o administrador aprovar, você poderá entrar no seu painel de afiliado.</p>
+      <div class="link-central"><a class="link" href="login">Voltar para o login</a></div>
+    </div>
+    <?php else: ?>
+    <form class="form-area" method="post" action="cadastro">
+      <h2 class="form-titulo">Cadastrar</h2>
       <?php if ($erro): ?>
         <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro) ?></p>
       <?php endif; ?>
@@ -72,8 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="input"><span class="input-icone">🔒</span><input type="password" name="confirmar_senha" required /></div>
       </div>
       <button type="submit" class="botao botao-primario botao-espaco">Cadastrar</button>
-      <div class="link-central">Já é afiliado? <a class="link" href="login.php">Entrar</a></div>
+      <div class="link-central">Já é afiliado? <a class="link" href="login">Entrar</a></div>
     </form>
+    <?php endif; ?>
   </div>
 </div>
 <script src="../assets/js/mascote.js"></script>

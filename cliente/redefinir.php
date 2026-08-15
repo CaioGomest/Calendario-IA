@@ -10,7 +10,7 @@ $erro = '';
 $sucesso = false;
 
 if ($token === '') {
-    header('Location: login.php');
+    header('Location: login');
     exit;
 }
 
@@ -65,16 +65,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $usuario) {
 
       <?php if ($sucesso): ?>
         <div class="sucesso-msg" style="margin-bottom:14px;"><?= traduz('redefinir_senha_atualizada') ?></div>
-        <a href="login.php" class="botao botao-primario botao-espaco" style="text-align:center;"><?= traduz('botao_entrar') ?></a>
+        <a href="login" class="botao botao-primario botao-espaco" style="text-align:center;"><?= traduz('botao_entrar') ?></a>
       <?php elseif ($erro && !$usuario): ?>
         <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro) ?></p>
-        <a href="recuperar.php" class="botao botao-primario botao-espaco" style="text-align:center;"><?= traduz('redefinir_pedir_novo') ?></a>
+        <a href="recuperar" class="botao botao-primario botao-espaco" style="text-align:center;"><?= traduz('redefinir_pedir_novo') ?></a>
       <?php else: ?>
         <?php if ($erro): ?>
           <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro) ?></p>
         <?php endif; ?>
 
-        <form method="post" action="redefinir.php">
+        <form method="post" action="redefinir">
           <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>" />
           <div class="campo">
             <label><?= traduz('campo_senha') ?></label>

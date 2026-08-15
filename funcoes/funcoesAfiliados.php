@@ -17,15 +17,22 @@ function geraCodigoAfiliadoUnico($nome) {
 function insereAfiliado($dados) {
     $pdo = conexao();
     $codigo = $dados['codigo'] ?? geraCodigoAfiliadoUnico($dados['nome']);
-    $stmt = $pdo->prepare('INSERT INTO afiliados (nome, email, senha_hash, codigo, comissao_percentual) VALUES (?, ?, ?, ?, ?)');
+    $stmt = $pdo->prepare('INSERT INTO afiliados (nome, email, senha_hash, codigo, comissao_percentual, ativo) VALUES (?, ?, ?, ?, ?, ?)');
     $stmt->execute([
         $dados['nome'],
         $dados['email'],
         password_hash($dados['senha'], PASSWORD_DEFAULT),
         $codigo,
         $dados['comissao_percentual'] ?? 10.00,
+        $dados['ativo'] ?? 1,
     ]);
     return (int) $pdo->lastInsertId();
+}
+
+function atualizaStatusAfiliado($id_afiliado, $ativo) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('UPDATE afiliados SET ativo = ? WHERE id_afiliado = ?');
+    $stmt->execute([$ativo ? 1 : 0, $id_afiliado]);
 }
 
 function buscaAfiliadoPorCodigo($codigo) {

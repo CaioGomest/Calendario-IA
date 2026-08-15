@@ -353,7 +353,7 @@ ob_start();
     <button type="button" class="modal-fechar" onclick="this.closest('.modal-fundo').classList.remove('aberto')">✕</button>
     <div class="modal-icone">💰</div>
     <h2 class="modal-titulo"><?= traduz('fin_modal_novo_titulo') ?></h2>
-    <form method="post" action="financas.php?<?= http_build_query(['mes' => $mes_atual, 'ano' => $ano_atual]) ?>">
+    <form method="post" action="financas?<?= http_build_query(['mes' => $mes_atual, 'ano' => $ano_atual]) ?>">
       <input type="hidden" name="acao" value="criar" />
       <div class="modal-campo">
         <label><?= traduz('fin_campo_tipo') ?></label>
@@ -408,7 +408,7 @@ ob_start();
     <button type="button" class="modal-fechar" onclick="this.closest('.modal-fundo').classList.remove('aberto')">✕</button>
     <div class="modal-icone">✏️</div>
     <h2 class="modal-titulo"><?= traduz('fin_modal_editar_titulo') ?></h2>
-    <form method="post" action="financas.php?<?= http_build_query(['mes' => $mes_atual, 'ano' => $ano_atual]) ?>">
+    <form method="post" action="financas?<?= http_build_query(['mes' => $mes_atual, 'ano' => $ano_atual]) ?>">
       <input type="hidden" name="acao" value="editar" />
       <input type="hidden" name="id_transacao" id="editar-id" value="" />
       <div class="modal-campo">
@@ -457,7 +457,7 @@ ob_start();
         <button type="submit" class="botao-primario-grande" style="flex:1;"><?= traduz('fin_botao_salvar') ?></button>
       </div>
     </form>
-    <form method="post" action="financas.php?<?= http_build_query(['mes' => $mes_atual, 'ano' => $ano_atual]) ?>" style="margin-top:8px;" onsubmit="return confirm('<?= traduz('fin_confirmar_deletar') ?>')">
+    <form method="post" action="financas?<?= http_build_query(['mes' => $mes_atual, 'ano' => $ano_atual]) ?>" style="margin-top:8px;" onsubmit="return confirm('<?= traduz('fin_confirmar_deletar') ?>')">
       <input type="hidden" name="acao" value="deletar" />
       <input type="hidden" name="id_transacao" id="editar-id-deletar" value="" />
       <button type="submit" class="botao-contorno-grande"><?= traduz('fin_botao_deletar') ?></button>

@@ -15,14 +15,14 @@ $sufixo_ciclo_sidebar = [
 ?>
 <aside class="sidebar">
   <div class="sidebar-marca"><span class="logo"><span data-bot="ink" data-size="22"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
-  <a class="nav-link <?= $pagina_atual === 'home' ? 'ativo' : '' ?>" href="home.php"><span class="nav-icone">🏠</span> <?= traduz('menu_inicio') ?></a>
-  <a class="nav-link <?= $pagina_atual === 'financas' ? 'ativo' : '' ?>" href="financas.php"><span class="nav-icone">💰</span> <?= traduz('menu_financas') ?></a>
-  <a class="nav-link <?= $pagina_atual === 'conta' ? 'ativo' : '' ?>" href="conta.php"><span class="nav-icone">👤</span> <?= traduz('menu_cuenta') ?></a>
+  <a class="nav-link <?= $pagina_atual === 'home' ? 'ativo' : '' ?>" href="home"><span class="nav-icone">🏠</span> <?= traduz('menu_inicio') ?></a>
+  <a class="nav-link <?= $pagina_atual === 'financas' ? 'ativo' : '' ?>" href="financas"><span class="nav-icone">💰</span> <?= traduz('menu_financas') ?></a>
+  <a class="nav-link <?= $pagina_atual === 'conta' ? 'ativo' : '' ?>" href="conta"><span class="nav-icone">👤</span> <?= traduz('menu_cuenta') ?></a>
   <?php
   $whatsapp_conectado_sidebar = !empty($usuario['telefone']);
   $link_bot_sidebar = linkWhatsappBot();
   $mostrar_whatsapp_sidebar = !$whatsapp_conectado_sidebar || $link_bot_sidebar;
-  $href_whatsapp_sidebar = $whatsapp_conectado_sidebar ? $link_bot_sidebar : 'whatsapp.php';
+  $href_whatsapp_sidebar = $whatsapp_conectado_sidebar ? $link_bot_sidebar : 'whatsapp';
   ?>
   <?php if ($mostrar_whatsapp_sidebar): ?>
   <a class="nav-link" href="<?= htmlspecialchars($href_whatsapp_sidebar) ?>" <?= $whatsapp_conectado_sidebar ? 'target="_blank"' : '' ?>><span class="nav-icone">💬</span> <?= traduz('menu_whatsapp') ?></a>
@@ -31,13 +31,13 @@ $sufixo_ciclo_sidebar = [
   <div class="sidebar-plano">
     <b><?= htmlspecialchars($plano_sugerido['nome']) ?></b>
     <span><?= simboloMoeda() ?><?= number_format((float)$plano_sugerido['preco'], 0) ?> <?= $sufixo_ciclo_sidebar[$plano_sugerido['ciclo']] ?? '' ?></span>
-    <a class="botao" href="conta.php"><?= traduz('upgrade_botao') ?></a>
+    <a class="botao" href="conta"><?= traduz('upgrade_botao') ?></a>
   </div>
   <?php endif; ?>
   <div class="sidebar-perfil">
     <span class="perfil-avatar"><?= htmlspecialchars($inicial_sidebar) ?></span>
     <div class="perfil-info"><b><?= htmlspecialchars($usuario['nome']) ?></b><span><?= htmlspecialchars($usuario['email']) ?></span></div>
-    <a class="perfil-logout" href="logout.php" title="<?= traduz('menu_salir') ?>">
+    <a class="perfil-logout" href="logout" title="<?= traduz('menu_salir') ?>">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
         <polyline points="16 17 21 12 16 7" />

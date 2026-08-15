@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($acao === 'sair') {
         fazLogoutCliente();
-        header('Location: login.php');
+        header('Location: login');
         exit;
     }
 
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
                 . '://' . $_SERVER['HTTP_HOST']
                 . dirname($_SERVER['SCRIPT_NAME']);
-            $portal = criaPortalSession($usuario_portal['stripe_customer_id'], $base_url . '/conta.php');
+            $portal = criaPortalSession($usuario_portal['stripe_customer_id'], $base_url . '/conta');
             if (!isset($portal['error'])) {
                 header('Location: ' . $portal['url']);
                 exit;
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    header('Location: conta.php');
+    header('Location: conta');
     exit;
 }
 
@@ -180,7 +180,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
     <div>
       <div class="secao-rotulo"><?= traduz('preferencias_titulo') ?></div>
       <!-- TODO: modo silêncio, ativar quando tiver lembretes estiverem funcionando
-      <form method="post" action="conta.php" class="config-linha">
+      <form method="post" action="conta" class="config-linha">
         <input type="hidden" name="acao" value="alternar_modo_silencio" />
         <span class="config-icone">🔕</span>
         <div class="config-info"><b><?= traduz('modo_silencio_titulo') ?></b><span><?= traduz('modo_silencio_sub') ?></span></div>
@@ -193,7 +193,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
           <b><?= traduz('recordatorios_titulo') ?></b><span><?= traduz('recordatorios_sub') ?></span>
           <div class="controle-segmentado">
             <?php foreach ($opcoes_recordatorio as $minutos => $chave): ?>
-            <form method="post" action="conta.php" style="display:inline;">
+            <form method="post" action="conta" style="display:inline;">
               <input type="hidden" name="acao" value="definir_recordatorio" />
               <input type="hidden" name="minutos" value="<?= $minutos ?>" />
               <button type="submit" class="opcoes-segmentadas <?= (int) $usuario['antecedencia_lembrete_min'] === $minutos ? 'ativo' : '' ?>" style="border:0;cursor:pointer;"><?= traduz($chave) ?></button>
@@ -210,26 +210,26 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
         <span class="conexao-icone whatsapp">💬</span>
         <div class="conexao-info"><b><?= traduz('home_whatsapp_label') ?></b><span><?= $whatsapp_conectado ? htmlspecialchars($usuario['telefone']) : '—' ?></span></div>
         <?php if (!$whatsapp_conectado): ?><span class="selo ambar"><span class="ponto"></span> <?= traduz('home_pendiente') ?></span><?php endif; ?>
-        <a class="botao botao-contorno botao-pequeno" href="whatsapp.php"><?= traduz('botao_cambiar') ?></a>
+        <a class="botao botao-contorno botao-pequeno" href="whatsapp"><?= traduz('botao_cambiar') ?></a>
       </div>
       <div class="conexao">
         <span class="conexao-icone google">📅</span>
         <div class="conexao-info"><b><?= traduz('home_google_label') ?></b><span><?= $google_conectado ? htmlspecialchars($usuario['email']) : '—' ?></span></div>
         <?php if (!$google_conectado): ?><span class="selo ambar"><span class="ponto"></span> <?= traduz('home_pendiente') ?></span><?php endif; ?>
         <?php if ($google_conectado): ?>
-        <form method="post" action="conta.php">
+        <form method="post" action="conta">
           <input type="hidden" name="acao" value="desconectar_google" />
           <button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_desconectar') ?></button>
         </form>
         <?php else: ?>
-        <a class="botao botao-contorno botao-pequeno" href="google.php"><?= traduz('botao_cambiar') ?></a>
+        <a class="botao botao-contorno botao-pequeno" href="google"><?= traduz('botao_cambiar') ?></a>
         <?php endif; ?>
       </div>
     </div>
 
     <div>
       <div class="secao-rotulo"><?= traduz('sesion_titulo') ?></div>
-      <form method="post" action="conta.php">
+      <form method="post" action="conta">
         <input type="hidden" name="acao" value="sair" />
         <button type="submit" class="botao botao-perigo" style="width:100%;"><?= traduz('botao_cerrar_sesion') ?></button>
       </form>
@@ -267,13 +267,13 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
                 <?php if ($planos_disponiveis): ?>
                 <button type="button" class="botao botao-contorno botao-pequeno" onclick="abrirModal('modal-plano')" style="color:var(--primary);"><?= traduz('modal_cambiar_plan') ?></button>
                 <?php endif; ?>
-                <form method="post" action="conta.php" style="display:inline;"><input type="hidden" name="acao" value="portal_stripe" /><button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_cambiar_tarjeta') ?></button></form>
+                <form method="post" action="conta" style="display:inline;"><input type="hidden" name="acao" value="portal_stripe" /><button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_cambiar_tarjeta') ?></button></form>
                 <button type="button" class="botao botao-perigo botao-pequeno" onclick="abrirModal('modal-cancelar')"><?= traduz('botao_cancelar_plan') ?></button>
               </div>
             </div>
 
             <div class="secao-rotulo-desktop"><?= traduz('sesion_titulo') ?></div>
-            <form method="post" action="conta.php">
+            <form method="post" action="conta">
         <input type="hidden" name="acao" value="sair" />
         <button type="submit" class="botao botao-perigo" style="width:100%;"><?= traduz('botao_cerrar_sesion') ?></button>
       </form>
@@ -282,7 +282,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
           <div class="coluna">
             <div class="secao-rotulo-desktop"><?= traduz('preferencias_titulo') ?></div>
             <!-- TODO: modo silêncio, ativar/se lembretes via WhatsApp estiverem funcionando
-            <form method="post" action="conta.php" class="config-linha">
+            <form method="post" action="conta" class="config-linha">
               <input type="hidden" name="acao" value="alternar_modo_silencio" />
               <span class="config-icone">🔕</span>
               <div class="config-info"><b><?= traduz('modo_silencio_titulo') ?></b><span><?= traduz('modo_silencio_sub') ?></span></div>
@@ -295,7 +295,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
                 <b><?= traduz('recordatorios_titulo') ?></b><span><?= traduz('recordatorios_sub') ?></span>
                 <div class="controle-segmentado">
                   <?php foreach ($opcoes_recordatorio as $minutos => $chave): ?>
-                  <form method="post" action="conta.php" style="display:inline;">
+                  <form method="post" action="conta" style="display:inline;">
                     <input type="hidden" name="acao" value="definir_recordatorio" />
                     <input type="hidden" name="minutos" value="<?= $minutos ?>" />
                     <button type="submit" class="opcoes-segmentadas <?= (int) $usuario['antecedencia_lembrete_min'] === $minutos ? 'ativo' : '' ?>" style="border:0;cursor:pointer;"><?= traduz($chave) ?></button>
@@ -310,19 +310,19 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
               <span class="conexao-icone whatsapp">💬</span>
               <div class="conexao-info"><b><?= traduz('home_whatsapp_label') ?></b><span><?= $whatsapp_conectado ? htmlspecialchars($usuario['telefone']) : '—' ?></span></div>
         <?php if (!$whatsapp_conectado): ?><span class="selo ambar"><span class="ponto"></span> <?= traduz('home_pendiente') ?></span><?php endif; ?>
-              <a class="botao botao-contorno botao-pequeno" href="whatsapp.php"><?= traduz('botao_cambiar') ?></a>
+              <a class="botao botao-contorno botao-pequeno" href="whatsapp"><?= traduz('botao_cambiar') ?></a>
             </div>
             <div class="conexao">
               <span class="conexao-icone google">📅</span>
               <div class="conexao-info"><b><?= traduz('home_google_label') ?></b><span><?= $google_conectado ? htmlspecialchars($usuario['email']) : '—' ?></span></div>
         <?php if (!$google_conectado): ?><span class="selo ambar"><span class="ponto"></span> <?= traduz('home_pendiente') ?></span><?php endif; ?>
               <?php if ($google_conectado): ?>
-              <form method="post" action="conta.php">
+              <form method="post" action="conta">
                 <input type="hidden" name="acao" value="desconectar_google" />
                 <button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_desconectar') ?></button>
               </form>
               <?php else: ?>
-              <a class="botao botao-contorno botao-pequeno" href="google.php"><?= traduz('botao_cambiar') ?></a>
+              <a class="botao botao-contorno botao-pequeno" href="google"><?= traduz('botao_cambiar') ?></a>
               <?php endif; ?>
             </div>
           </div>
@@ -377,7 +377,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
       </div>
       <?php endforeach; ?>
     </div>
-    <form method="post" action="conta.php">
+    <form method="post" action="conta">
       <input type="hidden" name="acao" value="cambiar_plano" />
       <input type="hidden" name="id_plano" id="plano-selecionado-id" value="<?= $planos_disponiveis[0]['id_plano'] ?? '' ?>" />
       <button type="submit" class="botao-primario-grande"><?= traduz('modal_cambiar_a_este') ?></button>
@@ -400,7 +400,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
       <span class="alerta-data"><?= $data_expira_fmt ?></span>
     </div>
     <button type="button" class="botao-primario-grande" onclick="fecharModal('modal-cancelar')"><?= traduz('modal_mantener') ?></button>
-    <form method="post" action="conta.php">
+    <form method="post" action="conta">
       <input type="hidden" name="acao" value="cancelar_plano" />
       <button type="submit" class="botao-contorno-grande"><?= traduz('modal_si_cancelar') ?></button>
     </form>

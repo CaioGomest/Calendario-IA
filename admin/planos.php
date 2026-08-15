@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     }
 
     if ($msg_sucesso) {
-        header('Location: planos.php?' . http_build_query(array_filter([
+        header('Location: planos?' . http_build_query(array_filter([
             'ciclo' => $_GET['ciclo'] ?? '',
             'sucesso' => $msg_sucesso,
         ])));
@@ -140,7 +140,7 @@ $nomes_ciclo = [
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-4)"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           <h2 class="painel-titulo"><?= traduz('admin_lista_planos') ?></h2>
           <div class="espacador"></div>
-          <form method="get" action="planos.php" style="display:flex;gap:8px;align-items:center;">
+          <form method="get" action="planos" style="display:flex;gap:8px;align-items:center;">
             <select name="ciclo" class="filtro-select" onchange="this.form.submit()">
               <option value=""><?= traduz('admin_todos_ciclos') ?></option>
               <option value="mensal" <?= ($_GET['ciclo'] ?? '') === 'mensal' ? 'selected' : '' ?>><?= traduz('admin_mensal') ?></option>
@@ -189,7 +189,7 @@ $nomes_ciclo = [
               <td><span class="selo <?= $p['ativo'] ? 'verde' : 'vermelho' ?>"><span class="ponto"></span> <?= $p['ativo'] ? traduz('admin_ativo') : traduz('admin_inativo') ?></span></td>
               <td style="text-align:right;display:flex;gap:4px;justify-content:flex-end;">
                 <button type="button" class="botao-acao" onclick="abrirEditar(<?= htmlspecialchars(json_encode($p, JSON_HEX_APOS | JSON_HEX_TAG)) ?>)"><?= traduz('admin_editar') ?></button>
-                <form method="post" action="planos.php?<?= http_build_query(array_filter(['ciclo' => $_GET['ciclo'] ?? ''])) ?>" style="display:inline;">
+                <form method="post" action="planos?<?= http_build_query(array_filter(['ciclo' => $_GET['ciclo'] ?? ''])) ?>" style="display:inline;">
                   <input type="hidden" name="id_plano" value="<?= $p['id_plano'] ?>" />
                   <?php if ($p['ativo']): ?>
                     <button type="submit" name="acao" value="desativar" class="botao-acao perigo"><?= traduz('admin_desativar') ?></button>
@@ -225,7 +225,7 @@ $nomes_ciclo = [
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <form method="post" action="planos.php?<?= http_build_query(array_filter(['ciclo' => $_GET['ciclo'] ?? ''])) ?>">
+    <form method="post" action="planos?<?= http_build_query(array_filter(['ciclo' => $_GET['ciclo'] ?? ''])) ?>">
       <input type="hidden" name="acao" value="criar" />
       <div class="modal-body">
         <div class="campo">
@@ -300,7 +300,7 @@ $nomes_ciclo = [
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <form method="post" action="planos.php?<?= http_build_query(array_filter(['ciclo' => $_GET['ciclo'] ?? ''])) ?>">
+    <form method="post" action="planos?<?= http_build_query(array_filter(['ciclo' => $_GET['ciclo'] ?? ''])) ?>">
       <input type="hidden" name="acao" value="editar" />
       <input type="hidden" name="id_plano" id="editar-id" value="" />
       <div class="modal-body">

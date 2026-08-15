@@ -50,7 +50,7 @@ function planoUsuarioAtivo($usuario) {
 
 function exigeAssinaturaAtiva($usuario) {
     if (!planoUsuarioAtivo($usuario)) {
-        header('Location: pago.php');
+        header('Location: pago');
         exit;
     }
 }

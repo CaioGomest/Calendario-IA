@@ -17,11 +17,11 @@ require_once __DIR__ . '/funcoes/funcoesIdioma.php';
 <body>
 
 <nav class="barra-nav">
-  <a class="marca" href="landpage.php">
+  <a class="marca" href="landpage">
     <span class="logo"><span data-bot="ink" data-size="24"></span></span>
     <?= htmlspecialchars(nomeApp()) ?>
   </a>
-  <a href="cliente/login.php" class="entrar"><?= traduz('lp_login') ?></a>
+  <a href="cliente/login" class="entrar"><?= traduz('lp_login') ?></a>
 </nav>
 
 <main class="legal-container">
@@ -112,8 +112,8 @@ require_once __DIR__ . '/funcoes/funcoesIdioma.php';
     <?= htmlspecialchars(nomeApp()) ?>
   </div>
   <div class="links-rodape">
-    <a href="privacidade.php"><?= traduz('lp_privacy') ?></a>
-    <a href="termos.php"><?= traduz('lp_terms') ?></a>
+    <a href="privacidade"><?= traduz('lp_privacy') ?></a>
+    <a href="termos"><?= traduz('lp_terms') ?></a>
   </div>
   <div class="copyright"><?= sprintf(traduz('lp_footer_copy'), date('Y')) ?></div>
 </footer>

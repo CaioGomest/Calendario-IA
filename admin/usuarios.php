@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     }
 
     if ($msg_sucesso) {
-        header('Location: usuarios.php?' . http_build_query(array_filter([
+        header('Location: usuarios?' . http_build_query(array_filter([
             'busca' => $_GET['busca'] ?? '',
             'plano' => $_GET['plano'] ?? '',
             'sucesso' => $msg_sucesso,
@@ -139,7 +139,7 @@ $usuarios = listaUsuarios($filtro);
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-4)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
           <h2 class="painel-titulo"><?= traduz('admin_lista_usuarios') ?></h2>
           <div class="espacador"></div>
-          <form method="get" action="usuarios.php" style="display:flex;gap:8px;align-items:center;">
+          <form method="get" action="usuarios" style="display:flex;gap:8px;align-items:center;">
             <div class="caixa-busca">
               <span class="icone"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
               <input type="text" name="busca" placeholder="<?= traduz('admin_buscar') ?>" value="<?= htmlspecialchars($_GET['busca'] ?? '') ?>" />
@@ -186,7 +186,7 @@ $usuarios = listaUsuarios($filtro);
               <td><?= date('d/m/Y', strtotime($u['criado_em'])) ?></td>
               <td style="text-align:right;display:flex;gap:4px;justify-content:flex-end;">
                 <button type="button" class="botao-acao" onclick="abrirEditar(<?= htmlspecialchars(json_encode($u, JSON_HEX_APOS | JSON_HEX_TAG)) ?>)"><?= traduz('admin_editar') ?></button>
-                <form method="post" action="usuarios.php?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? ''])) ?>" style="display:inline;" onsubmit="return confirm('<?= traduz('admin_confirmar_apagar') ?>')">
+                <form method="post" action="usuarios?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? ''])) ?>" style="display:inline;" onsubmit="return confirm('<?= traduz('admin_confirmar_apagar') ?>')">
                   <input type="hidden" name="id_usuario" value="<?= $u['id_usuario'] ?>" />
                   <button type="submit" name="acao" value="apagar" class="botao-acao perigo"><?= traduz('admin_apagar') ?></button>
                 </form>
@@ -217,7 +217,7 @@ $usuarios = listaUsuarios($filtro);
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <form method="post" action="usuarios.php?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? ''])) ?>">
+    <form method="post" action="usuarios?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? ''])) ?>">
       <input type="hidden" name="acao" value="criar" />
       <div class="modal-body">
         <div class="campo">
@@ -272,7 +272,7 @@ $usuarios = listaUsuarios($filtro);
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <form method="post" action="usuarios.php?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? ''])) ?>">
+    <form method="post" action="usuarios?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? ''])) ?>">
       <input type="hidden" name="acao" value="editar" />
       <input type="hidden" name="id_usuario" id="editar-id" value="" />
       <div class="modal-body">

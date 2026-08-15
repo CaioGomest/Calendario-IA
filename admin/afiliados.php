@@ -10,6 +10,14 @@ $pagina_atual = 'afiliados';
 $msg_sucesso = '';
 $msg_erro = '';
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'alternar_status') {
+    $id_afiliado = (int) ($_POST['id_afiliado'] ?? 0);
+    $ativo = (int) ($_POST['ativo'] ?? 0);
+    atualizaStatusAfiliado($id_afiliado, $ativo);
+    header('Location: afiliados?sucesso=' . urlencode($ativo ? 'Afiliado aprovado com sucesso.' : 'Afiliado desativado.'));
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'criar') {
     $nome = trim($_POST['nome'] ?? '');
     $email = trim($_POST['email'] ?? '');
@@ -33,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
     }
 
     if ($msg_sucesso) {
-        header('Location: afiliados.php?sucesso=' . urlencode($msg_sucesso));
+        header('Location: afiliados?sucesso=' . urlencode($msg_sucesso));
         exit;
     }
 }
@@ -95,6 +103,7 @@ $afiliados = listaAfiliados();
               <th>Indicações</th>
               <th>Comissões acumuladas</th>
               <th>Status</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -106,7 +115,20 @@ $afiliados = listaAfiliados();
               <td><?= htmlspecialchars($a['comissao_percentual']) ?>%</td>
               <td><?= contaIndicacoesPorAfiliado($a['id_afiliado']) ?></td>
               <td>$<?= number_format(somaComissoesPorAfiliado($a['id_afiliado']), 2) ?></td>
-              <td><span class="selo <?= $a['ativo'] ? 'verde' : 'vermelho' ?>"><span class="ponto"></span> <?= $a['ativo'] ? 'Ativo' : 'Inativo' ?></span></td>
+              <td><span class="selo <?= $a['ativo'] ? 'verde' : 'vermelho' ?>"><span class="ponto"></span> <?= $a['ativo'] ? 'Ativo' : 'Pendente' ?></span></td>
+              <td>
+                <form method="post" action="afiliados" style="display:inline;">
+                  <input type="hidden" name="acao" value="alternar_status" />
+                  <input type="hidden" name="id_afiliado" value="<?= (int) $a['id_afiliado'] ?>" />
+                  <?php if ($a['ativo']): ?>
+                    <input type="hidden" name="ativo" value="0" />
+                    <button type="submit" class="botao-pequeno botao-fantasma">Desativar</button>
+                  <?php else: ?>
+                    <input type="hidden" name="ativo" value="1" />
+                    <button type="submit" class="botao-pequeno botao-primario-pequeno">Aprovar</button>
+                  <?php endif; ?>
+                </form>
+              </td>
             </tr>
             <?php endforeach; ?>
           </tbody>
@@ -127,7 +149,7 @@ $afiliados = listaAfiliados();
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <form method="post" action="afiliados.php">
+    <form method="post" action="afiliados">
       <input type="hidden" name="acao" value="criar" />
       <div class="modal-body">
         <div class="campo">

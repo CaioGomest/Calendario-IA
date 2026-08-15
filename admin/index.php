@@ -4,8 +4,8 @@ require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 iniciaSessao();
 
 if (adminLogadoId()) {
-    header('Location: dashboard.php');
+    header('Location: dashboard');
 } else {
-    header('Location: login.php');
+    header('Location: login');
 }
 exit;

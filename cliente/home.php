@@ -66,7 +66,7 @@ $saudacao = str_replace('Mariana', $usuario['nome'], traduz('home_saludo'));
 
 $google_conectado = !empty($usuario['token_acesso_google']);
 $whatsapp_conectado = !empty($usuario['telefone']);
-$destino_assistente = $whatsapp_conectado ? (linkWhatsappBot() ?? '#') : 'whatsapp.php';
+$destino_assistente = $whatsapp_conectado ? (linkWhatsappBot() ?? '#') : 'whatsapp';
 ?>
 <!DOCTYPE html>
 <html lang="es-MX">

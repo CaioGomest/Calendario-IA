@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
                 . '://' . $_SERVER['HTTP_HOST']
                 . dirname($_SERVER['SCRIPT_NAME']);
-            $link = $base_url . '/redefinir.php?token=' . $token;
+            $link = $base_url . '/redefinir?token=' . $token;
 
             $assunto = sprintf(traduz('email_recuperacao_assunto'), nomeApp());
             $corpo = sprintf(traduz('email_recuperacao_corpo'),
@@ -73,14 +73,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro) ?></p>
       <?php endif; ?>
 
-      <form method="post" action="recuperar.php">
+      <form method="post" action="recuperar">
         <div class="campo">
           <label><?= traduz('campo_email') ?></label>
           <div class="input"><span class="input-icone">✉️</span><input type="email" name="email" placeholder="<?= traduz('email_placeholder') ?>" required /></div>
         </div>
         <button type="submit" class="botao botao-primario botao-espaco"><?= traduz('recuperar_botao') ?></button>
       </form>
-      <div class="link-central" style="margin-top:14px;"><a class="link" href="login.php"><?= traduz('recuperar_voltar_login') ?></a></div>
+      <div class="link-central" style="margin-top:14px;"><a class="link" href="login"><?= traduz('recuperar_voltar_login') ?></a></div>
     </div>
   </div>
 
