@@ -2,11 +2,11 @@
 
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/../config/config.php';
-require_once __DIR__ . '/../funcoes/funcoesStripe.php';
-require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
-require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
-require_once __DIR__ . '/../funcoes/funcoesAfiliados.php';
+require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../funcoes/funcoesStripe.php';
+require_once __DIR__ . '/../../funcoes/funcoesUsuarios.php';
+require_once __DIR__ . '/../../funcoes/funcoesPlanos.php';
+require_once __DIR__ . '/../../funcoes/funcoesAfiliados.php';
 
 $payload = file_get_contents('php://input');
 $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
