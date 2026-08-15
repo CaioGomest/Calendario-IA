@@ -17,7 +17,7 @@ require_once __DIR__ . '/funcoes/funcoesIdioma.php';
 <body>
 
 <nav class="barra-nav">
-  <a class="marca" href="landpage">
+  <a class="marca" href="/">
     <span class="logo"><span data-bot="ink" data-size="24"></span></span>
     <?= htmlspecialchars(nomeApp()) ?>
   </a>

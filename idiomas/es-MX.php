@@ -362,7 +362,7 @@ return [
     'lp_title' => '%APP% — Tu agenda en WhatsApp',
     'lp_login' => 'Iniciar sesión',
     'lp_hero_h1' => 'Tu agenda, directo<br>en WhatsApp',
-    'lp_hero_lead' => 'Dile a tu asistente lo que necesitas y listo. Sin apps extra, sin complicaciones.',
+    'lp_hero_lead' => 'Un asistente de IA que crea, organiza y te recuerda tus compromisos en Google Calendar — todo por WhatsApp, sin necesidad de abrir ninguna app.',
     'lp_hero_cta' => 'Probar gratis %d días',
     'lp_hero_cta_sem_teste' => 'Empezar ahora',
     'lp_hero_micro' => 'Sin tarjeta · Cancela cuando quieras',

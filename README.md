@@ -10,7 +10,7 @@ Apenas a camada **PHP**:
 - Painel admin (`admin/`)
 - Área do cliente (`cliente/`)
 - Painel do afiliado (`afiliado/`)
-- Landing page (`landpage.php`)
+- Landing page (`index.php`)
 
 WhatsApp, Evolution API, n8n e Gemini são infraestrutura externa.
 
@@ -36,8 +36,7 @@ api/internal/       Endpoints consumidos pelo n8n (protegidos por X-Internal-Sec
   token.php         POST — renova token Google OAuth
   sessao.php        GET/POST — contexto de conversa
   transacao.php     POST/GET/DELETE — registra transações financeiras
-
-api/stripe-webhook.php   Webhook de confirmação de pagamento (também gera comissão de afiliado)
+  stripe-webhook.php POST — webhook de confirmação de pagamento (protegido por assinatura Stripe, não por X-Internal-Secret; também gera comissão de afiliado)
 
 admin/              Painel do operador
   login.php

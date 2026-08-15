@@ -11,7 +11,7 @@ $afiliado = buscaAfiliadoPorId(afiliadoLogadoId());
 $total_cliques = contaCliquesPorAfiliado($afiliado['id_afiliado']);
 $total_indicacoes = contaIndicacoesPorAfiliado($afiliado['id_afiliado']);
 $protocolo = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$link_indicacao = $protocolo . '://' . $_SERVER['HTTP_HOST'] . '/landpage?ref=' . urlencode($afiliado['codigo']);
+$link_indicacao = $protocolo . '://' . $_SERVER['HTTP_HOST'] . '/?ref=' . urlencode($afiliado['codigo']);
 $taxa_conversao = $total_cliques > 0 ? round(($total_indicacoes / $total_cliques) * 100, 1) : 0;
 ?>
 <!DOCTYPE html>

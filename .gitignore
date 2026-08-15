@@ -1,5 +1,6 @@
 .env
 .env.*
+config/env.php
 *.log
 vendor/
 node_modules/
