@@ -3,6 +3,7 @@ require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesEmail.php';
+require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
 
 iniciaSessao();
 
@@ -52,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="login-estrutura">
 
   <div class="login-marca">
-    <div class="marca"><span class="logo"><span data-bot="white" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+    <?php renderizaMarca('white', 20); ?>
     <div class="login-titulo login-titulo-desktop">
       <div class="login-icone"><span data-bot="ink" data-size="62"></span></div>
       <h1><?= traduz('recuperar_titulo_desktop') ?></h1>

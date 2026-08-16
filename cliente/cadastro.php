@@ -4,12 +4,15 @@ require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesGoogle.php';
 require_once __DIR__ . '/../funcoes/funcoesAfiliados.php';
+require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
 
 iniciaSessao();
 
 $erro = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $eh_ajax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+
     $nome = trim($_POST['nome'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $senha = $_POST['senha'] ?? '';
@@ -35,7 +38,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         fazLoginCliente(['id_usuario' => $id_usuario, 'nome' => $nome, 'email' => $email]);
+
+        if ($eh_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true, 'data' => ['redirect' => 'pago']]);
+            exit;
+        }
         header('Location: pago');
+        exit;
+    }
+
+    if ($eh_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => false, 'erro' => $erro]);
         exit;
     }
 }
@@ -56,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="vista-mobile">
   <div class="barra-topo">
-    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+    <?php renderizaMarca('ink', 20); ?>
     <a class="botao botao-contorno botao-pequeno" href="login"><?= traduz('botao_iniciar_sesion') ?></a>
   </div>
   <div class="conteudo-pagina">
@@ -66,10 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <h1 class="tela-titulo"><?= traduz('cadastro_titulo') ?></h1>
     <p class="tela-subtitulo"><?= traduz('cadastro_subtitulo') ?></p>
-    <form method="post" action="cadastro">
-      <?php if ($erro): ?>
-        <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro) ?></p>
-      <?php endif; ?>
+    <form method="post" action="cadastro" class="form-cadastro">
+      <p class="dica dica-erro" style="color:var(--red);<?= $erro ? '' : 'display:none;' ?>"><?= htmlspecialchars($erro) ?></p>
       <div class="campo">
         <label><?= traduz('campo_nombre') ?></label>
         <div class="input"><span class="input-icone">🙂</span><input type="text" name="nome" value="<?= htmlspecialchars($_POST['nome'] ?? '') ?>" placeholder="<?= traduz('nome_placeholder') ?>" required /></div>
@@ -102,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="vista-desktop">
   <div class="cadastro-estrutura">
     <div class="cadastro-marca">
-      <div class="marca"><span class="logo"><span data-bot="white" data-size="22"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+      <?php renderizaMarca('white', 22); ?>
       <div class="login-icone"><span data-bot="ink" data-size="58"></span></div>
       <h2><?= traduz('cadastro_headline_desktop') ?></h2>
       <p><?= traduz('cadastro_subtitulo_desktop') ?></p>
@@ -114,16 +127,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div style="margin-top:auto"></div>
     </div>
     <div class="cadastro-form">
-      <form class="form-area" method="post" action="cadastro">
+      <form class="form-area form-cadastro" method="post" action="cadastro">
         <div class="cadastro-progresso">
           <div class="cadastro-progresso-barras"><span class="completo"></span><span></span><span></span><span></span></div>
           <span class="cadastro-progresso-rotulo"><?= traduz('cadastro_step_label') ?></span>
         </div>
         <h2 class="form-titulo"><?= traduz('cadastro_titulo') ?></h2>
         <p class="form-subtitulo"><?= traduz('cadastro_subtitulo') ?></p>
-        <?php if ($erro): ?>
-          <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro) ?></p>
-        <?php endif; ?>
+        <p class="dica dica-erro" style="color:var(--red);<?= $erro ? '' : 'display:none;' ?>"><?= htmlspecialchars($erro) ?></p>
         <div class="campo">
           <label><?= traduz('campo_nombre') ?></label>
           <div class="input"><span class="input-icone">🙂</span><input type="text" name="nome" placeholder="<?= traduz('nome_placeholder') ?>" required /></div>
@@ -156,5 +167,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <script src="../assets/js/mascote.js"></script>
 <script src="../assets/js/senha.js"></script>
+<script src="../assets/js/cadastro.js"></script>
 </body>
 </html>

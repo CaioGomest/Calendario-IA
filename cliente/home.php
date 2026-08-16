@@ -4,6 +4,7 @@ require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesEventos.php';
 require_once __DIR__ . '/../funcoes/funcoesGoogle.php';
+require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
 
 iniciaSessao();
 exigeLoginCliente();
@@ -13,8 +14,6 @@ $pagina_atual = 'home';
 $usuario = buscaUsuarioPorId(usuarioLogadoId());
 exigeAssinaturaAtiva($usuario);
 
-$meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-
 $eventos_google = [];
 $token_acesso = garanteTokenGoogleValido($usuario['id_usuario']);
 if ($token_acesso) {
@@ -22,7 +21,7 @@ if ($token_acesso) {
 }
 
 $fuso_usuario = new DateTimeZone($usuario['fuso_horario'] ?? 'America/Mexico_City');
-$proximos_eventos = array_map(function ($evento) use ($meses, $fuso_usuario) {
+$proximos_eventos = array_map(function ($evento) use ($fuso_usuario) {
     $dia_inteiro = strpos($evento['data_inicio'], 'T') === false;
     $data = new DateTime($evento['data_inicio']);
     if (!$dia_inteiro) {
@@ -30,7 +29,7 @@ $proximos_eventos = array_map(function ($evento) use ($meses, $fuso_usuario) {
     }
     return [
         'dia' => $data->format('d'),
-        'mes' => $meses[(int) $data->format('n') - 1],
+        'mes' => mesAbreviado((int) $data->format('n')),
         'titulo' => $evento['titulo'],
         'detalhe' => $dia_inteiro ? ($evento['descricao'] ?? '') : ($data->format('H:i') . ($evento['descricao'] ? ' · ' . $evento['descricao'] : '')),
     ];
@@ -67,6 +66,7 @@ $saudacao = str_replace('Mariana', $usuario['nome'], traduz('home_saludo'));
 $google_conectado = !empty($usuario['token_acesso_google']);
 $whatsapp_conectado = !empty($usuario['telefone']);
 $destino_assistente = $whatsapp_conectado ? (linkWhatsappBot() ?? '#') : 'whatsapp';
+$pagamento_falhou = !empty($usuario['pagamento_falhou']);
 ?>
 <!DOCTYPE html>
 <html lang="es-MX">
@@ -84,7 +84,7 @@ $destino_assistente = $whatsapp_conectado ? (linkWhatsappBot() ?? '#') : 'whatsa
 
 <div class="vista-mobile">
   <div class="barra-topo">
-    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+    <?php renderizaMarca('ink', 20); ?>
     <span class="selo <?= $badge_cor ?>"><?= htmlspecialchars($badge_plano) ?></span>
   </div>
   <div class="conteudo-pagina espacado">
@@ -92,6 +92,14 @@ $destino_assistente = $whatsapp_conectado ? (linkWhatsappBot() ?? '#') : 'whatsa
       <h1 class="saudacao"><?= htmlspecialchars($saudacao) ?></h1>
       <p class="saudacao-subtitulo"><?= traduz('home_subtitulo') ?></p>
     </div>
+
+    <?php if ($pagamento_falhou): ?>
+    <div class="alerta-cartao">
+      <b><?= traduz('home_alerta_pagamento_titulo') ?></b>
+      <p><?= traduz('home_alerta_pagamento_texto') ?></p>
+      <a class="botao botao-contorno botao-pequeno" href="conta?abrir=cartao"><?= traduz('home_alerta_pagamento_botao') ?></a>
+    </div>
+    <?php endif; ?>
 
     <div class="assistente-cartao">
       <div class="assistente-cabecalho">
@@ -150,6 +158,13 @@ $destino_assistente = $whatsapp_conectado ? (linkWhatsappBot() ?? '#') : 'whatsa
       <div class="conteudo-area">
         <div class="grid-duas-colunas">
           <div class="coluna">
+            <?php if ($pagamento_falhou): ?>
+            <div class="alerta-cartao">
+              <b><?= traduz('home_alerta_pagamento_titulo') ?></b>
+              <p><?= traduz('home_alerta_pagamento_texto') ?></p>
+              <a class="botao botao-contorno botao-pequeno" href="conta?abrir=cartao"><?= traduz('home_alerta_pagamento_botao') ?></a>
+            </div>
+            <?php endif; ?>
             <div class="assistente-cartao">
               <div class="assistente-cabecalho"><span class="assistente-avatar"><span data-bot="white" data-size="24"></span></span> <b><?= traduz('assist_titulo') ?></b></div>
               <div class="assistente-exemplo"><?= traduz('assist_ejemplo') ?></div>

@@ -75,6 +75,7 @@ body {
     align-items: center;
     justify-content: center;
     margin: 0 auto 14px;
+    line-height: 1;
 }
 
 .login-titulo h1 {
@@ -989,6 +990,43 @@ body {
     line-height: 1.4;
 }
 
+.alerta-cartao {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--red);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-top: 14px;
+    box-shadow: 0 12px 22px -12px rgba(224, 83, 61, .6);
+}
+
+.alerta-cartao b {
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 14.5px;
+}
+
+.alerta-cartao p {
+    font-size: 12.5px;
+    color: #fff;
+    opacity: .92;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.alerta-cartao .botao {
+    align-self: flex-start;
+    background: #fff;
+    color: var(--red);
+    border: none;
+}
+
+.alerta-cartao .botao:hover {
+    background: #fdf1ef;
+}
+
 .barra-abas {
     position: sticky;
     bottom: 0;
@@ -1222,6 +1260,10 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
 }
 
 .cadastro-marca .marca {
@@ -1591,6 +1633,25 @@ body {
 @keyframes modal-slide {
     from { opacity: 0; transform: translateY(14px) scale(.97); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.form-cadastro {
+    transition: transform .25s ease, opacity .25s ease;
+}
+
+.form-cadastro.form-sai {
+    transform: translateX(-32px);
+    opacity: 0;
+}
+
+@keyframes treme {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+
+.dica-erro.treme {
+    animation: treme .35s ease;
 }
 
 .modal-fechar {

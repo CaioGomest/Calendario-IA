@@ -85,7 +85,7 @@ h1, h2, h3 { margin: 0; }
     justify-content: center;
 }
 
-.marca .logo [data-bot] { display: flex; }
+.marca .logo [data-bot] { display: flex; align-items: center; justify-content: center; }
 
 .barra-nav .entrar {
     font-family: var(--font-display);

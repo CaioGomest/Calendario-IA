@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesAfiliados.php';
 require_once __DIR__ . '/../funcoes/funcoesConfiguracao.php';
+require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
 
 iniciaSessao();
 exigeLoginAfiliado();
@@ -118,7 +119,7 @@ ob_start();
 <!-- ══════ MOBILE ══════ -->
 <div class="vista-mobile">
   <div class="barra-topo">
-    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+    <?php renderizaMarca('ink', 20); ?>
   </div>
   <div class="conteudo-pagina espacado">
     <div style="margin-bottom:14px;">

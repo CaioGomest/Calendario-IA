@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     token_recuperacao_expira DATETIME NULL,
     stripe_customer_id VARCHAR(255) NULL,
     stripe_subscription_id VARCHAR(255) NULL,
+    pagamento_falhou TINYINT(1) NOT NULL DEFAULT 0,
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deletado TINYINT(1) NOT NULL DEFAULT 0
 );

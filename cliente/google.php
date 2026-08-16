@@ -4,6 +4,7 @@ require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesGoogle.php';
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
 
 iniciaSessao();
 exigeLoginCliente();
@@ -40,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conecta
 
 <div class="vista-mobile">
   <div class="barra-topo">
-    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+    <?php renderizaMarca('ink', 20); ?>
     <a class="botao botao-contorno botao-pequeno" href="pago"><?= traduz('botao_atras') ?></a>
   </div>
   <div class="conteudo-pagina espacado centralizado">
@@ -77,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conecta
 <div class="vista-desktop">
   <div class="cadastro-estrutura">
     <div class="cadastro-marca">
-      <div class="marca"><span class="logo"><span data-bot="white" data-size="22"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+      <?php renderizaMarca('white', 22); ?>
       <div class="login-icone" style="font-size:46px;">📅</div>
       <h2><?= traduz('google_titulo') ?></h2>
       <p><?= traduz('google_subtitulo') ?></p>

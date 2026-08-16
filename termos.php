@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/funcoes/funcoesIdioma.php';
+require_once __DIR__ . '/funcoes/funcoesComponentes.php';
 ?>
 <!DOCTYPE html>
 <html lang="<?= traduz('lang_code') ?>">
@@ -17,10 +18,7 @@ require_once __DIR__ . '/funcoes/funcoesIdioma.php';
 <body>
 
 <nav class="barra-nav">
-  <a class="marca" href="/">
-    <span class="logo"><span data-bot="ink" data-size="24"></span></span>
-    <?= htmlspecialchars(nomeApp()) ?>
-  </a>
+  <?php renderizaMarca('ink', 24, '/'); ?>
   <a href="cliente/login" class="entrar"><?= traduz('lp_login') ?></a>
 </nav>
 

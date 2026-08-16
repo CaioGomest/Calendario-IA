@@ -5,6 +5,7 @@ require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
 require_once __DIR__ . '/../funcoes/funcoesStripe.php';
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
 
 iniciaSessao();
 exigeLoginCliente();
@@ -18,6 +19,7 @@ $sufixo_pago = [
 
 $erro_pago = '';
 $client_secret = '';
+$tipo_confirmacao = '';
 $subscription_id = '';
 $plano_selecionado = null;
 
@@ -83,7 +85,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['escolher_plano'])) {
                 $erro_pago = traduz('pago_erro_stripe');
             } else {
                 $subscription_id = $assinatura['id'];
-                $client_secret = $assinatura['latest_invoice']['payment_intent']['client_secret'] ?? '';
+                if (!empty($assinatura['pending_setup_intent']['client_secret'])) {
+                    $client_secret = $assinatura['pending_setup_intent']['client_secret'];
+                    $tipo_confirmacao = 'setup';
+                } else {
+                    $client_secret = $assinatura['latest_invoice']['confirmation_secret']['client_secret'] ?? '';
+                    $tipo_confirmacao = 'payment';
+                }
             }
         }
     }
@@ -159,7 +167,7 @@ $mostra_pagamento = $plano_selecionado !== null;
 
   <div class="vista-mobile">
     <div class="barra-topo">
-      <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+      <?php renderizaMarca('ink', 20); ?>
       <a class="botao botao-contorno botao-pequeno" href="pago"><?= traduz('botao_atras') ?></a>
     </div>
     <div class="conteudo-pagina espacado">
@@ -175,7 +183,7 @@ $mostra_pagamento = $plano_selecionado !== null;
   <div class="vista-desktop">
     <div class="cadastro-estrutura">
       <div class="cadastro-marca">
-        <div class="marca"><span class="logo"><span data-bot="white" data-size="22"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+        <?php renderizaMarca('white', 22); ?>
         <div class="plano-cartao" style="background:rgba(255,255,255,.12);">
           <div class="plano-preco"><?= simboloMoeda() . number_format((float)$plano_selecionado['preco'], 0) ?> <small><?= $sufixo_pago[$plano_selecionado['ciclo']] ?? '' ?></small></div>
           <div style="font-weight:700;"><?= htmlspecialchars($plano_selecionado['nome']) ?></div>
@@ -202,7 +210,7 @@ $mostra_pagamento = $plano_selecionado !== null;
 
   <div class="vista-mobile">
     <div class="barra-topo">
-      <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+      <?php renderizaMarca('ink', 20); ?>
       <a class="botao botao-contorno botao-pequeno" href="cadastro"><?= traduz('botao_atras') ?></a>
     </div>
     <div class="conteudo-pagina espacado">
@@ -238,7 +246,7 @@ $mostra_pagamento = $plano_selecionado !== null;
   <div class="vista-desktop">
     <div class="cadastro-estrutura">
       <div class="cadastro-marca">
-        <div class="marca"><span class="logo"><span data-bot="white" data-size="22"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+        <?php renderizaMarca('white', 22); ?>
         <div class="login-icone" style="font-size:46px;">💳</div>
         <h2><?= traduz('pago_marca_titulo') ?></h2>
         <p><?= traduz('pago_marca_subtitulo') ?></p>
@@ -283,32 +291,24 @@ $mostra_pagamento = $plano_selecionado !== null;
 <script>
 (function() {
     var stripe = Stripe('<?= STRIPE_PUBLISHABLE_KEY ?>');
-    var elements = stripe.elements();
+    var clientSecret = <?= json_encode($client_secret) ?>;
+    var tipoConfirmacao = <?= json_encode($tipo_confirmacao) ?>;
+    var elements = stripe.elements({ clientSecret: clientSecret });
 
     var sufixo = window.matchMedia('(min-width: 840px)').matches ? 'desktop' : 'mobile';
     var form = document.getElementById('payment-form-' + sufixo);
 
     if (form) {
-        var card = elements.create('card', {
-            style: {
-                base: {
-                    fontFamily: "'Nunito', sans-serif",
-                    fontSize: '15px',
-                    fontWeight: '600',
-                    color: '#1f2733',
-                    '::placeholder': { color: '#94a3b8' }
-                },
-                invalid: { color: '#ef4444' }
-            },
-            hidePostalCode: true
+        var paymentElement = elements.create('payment', {
+            fields: { billingDetails: { name: 'never' } }
         });
-        card.mount('#card-element-' + sufixo);
+        paymentElement.mount('#card-element-' + sufixo);
 
         var btn = document.getElementById('btn-pagar-' + sufixo);
         var erros = document.getElementById('card-errors-' + sufixo);
         var textoOriginal = btn.textContent;
 
-        card.on('change', function(e) {
+        paymentElement.on('change', function(e) {
             erros.textContent = e.error ? e.error.message : '';
         });
 
@@ -318,11 +318,18 @@ $mostra_pagamento = $plano_selecionado !== null;
             btn.textContent = '<?= traduz('pago_processando') ?>';
             form.classList.add('pago-loading');
 
-            stripe.confirmCardPayment('<?= $client_secret ?>', {
-                payment_method: {
-                    card: card,
-                    billing_details: { name: document.getElementById('card-name-' + sufixo).value }
-                }
+            var confirmar = tipoConfirmacao === 'setup' ? stripe.confirmSetup : stripe.confirmPayment;
+
+            confirmar({
+                elements: elements,
+                clientSecret: clientSecret,
+                confirmParams: {
+                    return_url: window.location.href,
+                    payment_method_data: {
+                        billing_details: { name: document.getElementById('card-name-' + sufixo).value }
+                    }
+                },
+                redirect: 'if_required'
             }).then(function(result) {
                 if (result.error) {
                     erros.textContent = result.error.message;

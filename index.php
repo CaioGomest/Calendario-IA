@@ -4,6 +4,7 @@ require_once __DIR__ . '/funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/funcoes/funcoesPlanos.php';
 require_once __DIR__ . '/funcoes/funcoesConfiguracao.php';
 require_once __DIR__ . '/funcoes/funcoesAfiliados.php';
+require_once __DIR__ . '/funcoes/funcoesComponentes.php';
 
 iniciaSessao();
 
@@ -59,10 +60,7 @@ $sufixo_ciclo = [
 <body>
 
 <nav class="barra-nav">
-  <a class="marca" href="/">
-    <span class="logo"><span data-bot="ink" data-size="24"></span></span>
-    <?= htmlspecialchars(nomeApp()) ?>
-  </a>
+  <?php renderizaMarca('ink', 24, '/'); ?>
   <a class="entrar" href="cliente/login"><?= traduz('lp_login') ?></a>
 </nav>
 

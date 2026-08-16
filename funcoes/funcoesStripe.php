@@ -71,7 +71,7 @@ function criaAssinaturaStripe($customer_id, $dados) {
         'items[0][price]' => $preco['id'],
         'payment_behavior' => 'default_incomplete',
         'payment_settings[save_default_payment_method]' => 'on_subscription',
-        'expand[]' => 'latest_invoice.payment_intent',
+        'expand' => ['latest_invoice.confirmation_secret', 'pending_setup_intent'],
         'metadata[id_usuario]' => $dados['id_usuario'],
         'metadata[id_plano]' => $dados['id_plano'],
     ];

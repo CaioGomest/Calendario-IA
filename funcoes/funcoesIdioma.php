@@ -29,3 +29,8 @@ function traduz($chave) {
     }
     return $valor;
 }
+
+function mesAbreviado($mes_numero) {
+    $lista = explode(',', traduz('meses_abrev'));
+    return $lista[$mes_numero - 1] ?? '';
+}

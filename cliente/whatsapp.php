@@ -3,6 +3,7 @@ require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
 
 iniciaSessao();
 exigeLoginCliente();
@@ -46,7 +47,7 @@ $codigos_pais = listaCodigosPaisTelefone();
 
 <div class="vista-mobile">
   <div class="barra-topo">
-    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+    <?php renderizaMarca('ink', 20); ?>
     <a class="botao botao-contorno botao-pequeno" href="google"><?= traduz('botao_atras') ?></a>
   </div>
   <div class="conteudo-pagina espacado centralizado">
@@ -77,17 +78,13 @@ $codigos_pais = listaCodigosPaisTelefone();
       <p class="tela-subtitulo" style="text-align:center;font-size:13px;"><?= traduz('whatsapp_aviso') ?></p>
       <button type="submit" class="botao botao-whatsapp" style="width:100%;"><?= traduz('botao_conectar_whatsapp') ?></button>
     </form>
-
-    <?php if (MODO_DEV): ?>
-      <a class="dica" style="text-align:center;display:block;margin-top:4px;" href="home">🧪 Modo desarrollo: pular sem conectar</a>
-    <?php endif; ?>
   </div>
 </div>
 
 <div class="vista-desktop">
   <div class="cadastro-estrutura">
     <div class="cadastro-marca">
-      <div class="marca"><span class="logo"><span data-bot="white" data-size="22"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+      <?php renderizaMarca('white', 22); ?>
       <div class="login-icone" style="font-size:46px;">💬</div>
       <h2><?= traduz('whatsapp_titulo_desktop') ?></h2>
       <p><?= traduz('whatsapp_subtitulo_desktop') ?></p>
@@ -120,9 +117,6 @@ $codigos_pais = listaCodigosPaisTelefone();
             </div>
           </div>
           <button type="submit" class="botao botao-whatsapp botao-espaco"><?= traduz('botao_conectar_whatsapp') ?></button>
-          <?php if (MODO_DEV): ?>
-            <a class="dica" style="text-align:center;display:block;margin-top:8px;" href="home">🧪 Modo desarrollo: pular sem conectar</a>
-          <?php endif; ?>
         </form>
       </div>
     </div>

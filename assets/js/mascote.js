@@ -35,9 +35,10 @@
       if (el.dataset.botDone) return;
       var mode = MODES[el.getAttribute('data-bot')] || MODES.ink;
       el.innerHTML = botSVG(mode);
+      var svg = el.querySelector('svg');
+      svg.style.display = 'block';
       var size = el.getAttribute('data-size');
       if (size) {
-        var svg = el.querySelector('svg');
         svg.style.width = size + 'px';
         svg.style.height = size + 'px';
       }

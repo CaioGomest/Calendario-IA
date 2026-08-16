@@ -7,6 +7,8 @@ require_once __DIR__ . '/../../funcoes/funcoesStripe.php';
 require_once __DIR__ . '/../../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../../funcoes/funcoesPlanos.php';
 require_once __DIR__ . '/../../funcoes/funcoesAfiliados.php';
+require_once __DIR__ . '/../../funcoes/funcoesEmail.php';
+require_once __DIR__ . '/../../funcoes/funcoesIdioma.php';
 
 $payload = file_get_contents('php://input');
 $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
@@ -85,6 +87,10 @@ switch ($tipo) {
                 atualizaPlanoUsuario((int)$usuario['id_usuario'], 'ativo', $expira_em);
                 atualizaStripeUsuario((int)$usuario['id_usuario'], $customer_id, $subscription_id);
 
+                if (!empty($usuario['pagamento_falhou'])) {
+                    atualizaPagamentoFalhouUsuario((int)$usuario['id_usuario'], false);
+                }
+
                 $valor_pago = ((int) ($objeto['amount_paid'] ?? 0)) / 100;
                 if ($valor_pago > 0) {
                     $id_pagamento = registraPagamento([
@@ -115,6 +121,20 @@ switch ($tipo) {
         $usuario = $customer_id ? buscaUsuarioPorStripeCustomer($customer_id) : null;
 
         if ($usuario) {
+            atualizaPagamentoFalhouUsuario((int)$usuario['id_usuario'], true);
+
+            $protocolo = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $link = $protocolo . '://' . $_SERVER['HTTP_HOST'] . '/cliente/conta';
+
+            $assunto = sprintf(traduz('email_pagamento_falhou_assunto'), nomeApp());
+            $corpo = sprintf(traduz('email_pagamento_falhou_corpo'),
+                htmlspecialchars($usuario['nome']),
+                $link,
+                $link,
+                nomeApp()
+            );
+            enviaEmail($usuario['email'], $assunto, $corpo);
+
             error_log("Stripe: pagamento falhou para usuario {$usuario['id_usuario']} (customer {$customer_id})");
         }
         break;

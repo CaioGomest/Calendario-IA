@@ -5,13 +5,31 @@ require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesGoogle.php';
 require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
 require_once __DIR__ . '/../funcoes/funcoesStripe.php';
+require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
 
 iniciaSessao();
 exigeLoginCliente();
 
 $pagina_atual = 'conta';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+$eh_pedido_portal = ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'portal_stripe')
+    || ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['abrir'] ?? '') === 'cartao');
+
+$erro_portal = '';
+if ($eh_pedido_portal) {
+    $usuario_portal = buscaUsuarioPorId(usuarioLogadoId());
+    if (!empty($usuario_portal['stripe_customer_id'])) {
+        $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
+            . '://' . $_SERVER['HTTP_HOST']
+            . dirname($_SERVER['SCRIPT_NAME']);
+        $portal = criaPortalSession($usuario_portal['stripe_customer_id'], $base_url . '/conta');
+        if (!isset($portal['error'])) {
+            header('Location: ' . $portal['url']);
+            exit;
+        }
+    }
+    $erro_portal = traduz('conta_erro_portal_stripe');
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $acao = $_POST['acao'] ?? '';
 
     if ($acao === 'sair') {
@@ -43,20 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         atualizaPlanoUsuario(usuarioLogadoId(), 'cancelado', null);
         atualizaStripeUsuario(usuarioLogadoId(), $usuario_cancel['stripe_customer_id'] ?? null, null);
-    }
-
-    if ($acao === 'portal_stripe') {
-        $usuario_portal = buscaUsuarioPorId(usuarioLogadoId());
-        if (!empty($usuario_portal['stripe_customer_id'])) {
-            $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
-                . '://' . $_SERVER['HTTP_HOST']
-                . dirname($_SERVER['SCRIPT_NAME']);
-            $portal = criaPortalSession($usuario_portal['stripe_customer_id'], $base_url . '/conta');
-            if (!isset($portal['error'])) {
-                header('Location: ' . $portal['url']);
-                exit;
-            }
-        }
     }
 
     if ($acao === 'cambiar_plano' && !empty($_POST['id_plano'])) {
@@ -130,7 +134,7 @@ $sufixo_ciclo = [
     'anual' => traduz('lp_ciclo_anual'),
 ];
 $data_expira_fmt = $usuario['plano_expira_em']
-    ? date('d', strtotime($usuario['plano_expira_em'])) . ' ' . strtolower(date('M', strtotime($usuario['plano_expira_em']))) . ' ' . date('Y', strtotime($usuario['plano_expira_em']))
+    ? date('d', strtotime($usuario['plano_expira_em'])) . ' ' . mesAbreviado((int) date('n', strtotime($usuario['plano_expira_em']))) . ' ' . date('Y', strtotime($usuario['plano_expira_em']))
     : '—';
 
 $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 'recordatorio_1h', 1440 => 'recordatorio_1d'];
@@ -151,7 +155,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
 
 <div class="vista-mobile">
   <div class="barra-topo">
-    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+    <?php renderizaMarca('ink', 20); ?>
     <span class="selo <?= $badge_cor ?>"><?= htmlspecialchars($badge_plano) ?></span>
   </div>
   <div class="conteudo-pagina espacado">
@@ -170,8 +174,11 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
           <span class="selo verde"><?= htmlspecialchars($preco_plano_texto) ?></span>
         </div>
         <div class="assinatura-datas"><?= $texto_datas ?></div>
+        <?php if ($erro_portal): ?>
+        <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro_portal) ?></p>
+        <?php endif; ?>
         <div class="assinatura-acoes">
-          <button type="button" class="botao botao-contorno botao-pequeno"><?= traduz('botao_cambiar_tarjeta') ?></button>
+          <form method="post" action="conta" style="display:inline;"><input type="hidden" name="acao" value="portal_stripe" /><button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_cambiar_tarjeta') ?></button></form>
           <button type="button" class="botao botao-perigo botao-pequeno"><?= traduz('botao_cancelar_plan') ?></button>
         </div>
       </div>
@@ -263,6 +270,9 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
                 <span class="selo verde"><?= htmlspecialchars($preco_plano_texto) ?></span>
               </div>
               <div class="assinatura-datas"><?= $texto_datas ?></div>
+              <?php if ($erro_portal): ?>
+              <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro_portal) ?></p>
+              <?php endif; ?>
               <div class="assinatura-acoes">
                 <?php if ($planos_disponiveis): ?>
                 <button type="button" class="botao botao-contorno botao-pequeno" onclick="abrirModal('modal-plano')" style="color:var(--primary);"><?= traduz('modal_cambiar_plan') ?></button>

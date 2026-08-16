@@ -227,6 +227,12 @@ function atualizaStripeUsuario($id_usuario, $stripe_customer_id, $stripe_subscri
     $stmt->execute([$stripe_customer_id, $stripe_subscription_id, $id_usuario]);
 }
 
+function atualizaPagamentoFalhouUsuario($id_usuario, $pagamento_falhou) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('UPDATE usuarios SET pagamento_falhou = ? WHERE id_usuario = ?');
+    $stmt->execute([$pagamento_falhou ? 1 : 0, $id_usuario]);
+}
+
 function buscaUsuarioPorStripeCustomer($stripe_customer_id) {
     $pdo = conexao();
     $stmt = $pdo->prepare('SELECT * FROM usuarios WHERE stripe_customer_id = ? AND deletado = 0');

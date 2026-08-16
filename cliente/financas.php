@@ -3,6 +3,7 @@ require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesFinancas.php';
+require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
 
 iniciaSessao();
 exigeLoginCliente();
@@ -308,7 +309,7 @@ ob_start();
 <!-- ══════ MOBILE ══════ -->
 <div class="vista-mobile">
   <div class="barra-topo">
-    <div class="marca"><span class="logo"><span data-bot="ink" data-size="20"></span></span> <?= htmlspecialchars(nomeApp()) ?></div>
+    <?php renderizaMarca('ink', 20); ?>
     <div class="fin-seletor-mes">
       <a href="?mes=<?= $mes_ant ?>&ano=<?= $ano_ant ?>">‹</a>
       <span class="mes-label"><?= $nome_mes_atual ?> <?= $ano_atual ?></span>
