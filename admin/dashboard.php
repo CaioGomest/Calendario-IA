@@ -4,6 +4,7 @@ require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesEventos.php';
 require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
 require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
+require_once __DIR__ . '/../funcoes/funcoesIA.php';
 
 iniciaSessao();
 exigeLoginAdmin();
@@ -21,7 +22,17 @@ $novos_mes = contaUsuariosNovosEsteMes();
 $receita_estimada = calculaReceitaTotal();
 $cancelados_mes = contaCanceladosEsteMes();
 $plano_detalhado = contaUsuariosPorPlanoDetalhado();
-$eventos_recentes = listaEventosRecentes(6);
+
+$novos_recentes = listaNovosUsuariosRecentes(10);
+$cancelamentos_recentes = listaCancelamentosRecentes(10);
+$atividade_recente = array_merge(
+    array_map(function ($u) { return ['tipo' => 'novo', 'nome' => $u['nome'], 'email' => $u['email'], 'data' => $u['criado_em']]; }, $novos_recentes),
+    array_map(function ($u) { return ['tipo' => 'cancelado', 'nome' => $u['nome'], 'email' => $u['email'], 'data' => $u['cancelado_em']]; }, $cancelamentos_recentes)
+);
+usort($atividade_recente, function ($a, $b) { return strcmp($b['data'], $a['data']); });
+$atividade_recente = array_slice($atividade_recente, 0, 10);
+
+$uso_ia = resumoUsoIA(30);
 
 $usuarios_por_dia = contaUsuariosPorDia(30);
 $cancelamentos_por_dia = contaCancelamentosPorDia(30);
@@ -143,12 +154,79 @@ $simbolo = simboloMoeda();
             <h2 class="painel-titulo"><?= traduz('dash_grafico_usuarios') ?></h2>
           </div>
           <div class="grafico-container"><canvas id="grafico-usuarios"></canvas></div>
+          <?php if ($atividade_recente): ?>
+          <table style="margin-top:8px;">
+            <thead>
+              <tr>
+                <th><?= traduz('admin_tipo') ?></th>
+                <th><?= traduz('admin_usuario') ?></th>
+                <th><?= traduz('admin_data') ?></th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($atividade_recente as $a): ?>
+              <tr>
+                <td><span class="selo <?= $a['tipo'] === 'novo' ? 'verde' : 'vermelho' ?>"><?= $a['tipo'] === 'novo' ? traduz('admin_atividade_novo_usuario') : traduz('admin_cancelamento') ?></span></td>
+                <td style="color:var(--ink);font-weight:600;"><?= htmlspecialchars($a['nome']) ?><br><span style="color:var(--ink-4);font-weight:500;font-size:12px;"><?= htmlspecialchars($a['email']) ?></span></td>
+                <td><?= date('d/m H:i', strtotime($a['data'])) ?></td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+          <?php else: ?>
+          <div class="estado-vazio">
+            <div class="icone-vazio">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
+            </div>
+            <?= traduz('admin_sem_atividade_recente') ?>
+          </div>
+          <?php endif; ?>
         </div>
       </div>
 
-      <!-- Resumo operacional + Eventos recentes -->
+      <!-- Uso de IA -->
       <div class="grade-graficos">
-        <div class="painel">
+        <div class="painel" style="grid-column: 1 / -1;">
+          <div class="painel-cabecalho">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-4)"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 2v10l7 7"/></svg>
+            <h2 class="painel-titulo"><?= traduz('dash_uso_ia') ?></h2>
+          </div>
+          <?php if ($uso_ia): ?>
+          <table>
+            <thead>
+              <tr>
+                <th><?= traduz('dash_ia_provedor') ?></th>
+                <th><?= traduz('dash_ia_mensagens') ?></th>
+                <th><?= traduz('dash_ia_tokens') ?></th>
+                <th><?= traduz('dash_ia_custo') ?></th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($uso_ia as $linha): ?>
+              <tr>
+                <td style="color:var(--ink);font-weight:600;text-transform:capitalize;"><?= htmlspecialchars($linha['provedor']) ?></td>
+                <td><?= (int) $linha['total_mensagens'] ?></td>
+                <td><?= number_format((int) $linha['tokens_entrada'] + (int) $linha['tokens_saida'], 0, ',', '.') ?></td>
+                <td><?= $linha['custo_brl'] !== null ? ('R$' . number_format($linha['custo_brl'], 2, ',', '.')) : '—' ?></td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+          <div style="padding:10px 20px 16px;font-size:12px;color:var(--ink-4);"><?= traduz('dash_ia_nota_custo') ?></div>
+          <?php else: ?>
+          <div class="estado-vazio">
+            <div class="icone-vazio">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 2v10l7 7"/></svg>
+            </div>
+            <?= traduz('dash_ia_sem_dados') ?>
+          </div>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- Resumo operacional -->
+      <div class="grade-graficos">
+        <div class="painel" style="grid-column: 1 / -1;">
           <div class="painel-cabecalho">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-4)"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
             <h2 class="painel-titulo"><?= traduz('dash_resumo') ?></h2>
@@ -183,39 +261,6 @@ $simbolo = simboloMoeda();
               <b><?= $total_mensagens ?></b>
             </div>
           </div>
-        </div>
-        <div class="painel">
-          <div class="painel-cabecalho">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-4)"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <h2 class="painel-titulo"><?= traduz('admin_eventos_recentes') ?></h2>
-          </div>
-          <?php if ($eventos_recentes): ?>
-          <table>
-            <thead>
-              <tr>
-                <th><?= traduz('admin_titulo') ?></th>
-                <th><?= traduz('admin_usuario') ?></th>
-                <th><?= traduz('admin_data') ?></th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach ($eventos_recentes as $ev): ?>
-              <tr>
-                <td style="color:var(--ink);font-weight:600;"><?= htmlspecialchars($ev['titulo']) ?></td>
-                <td><?= htmlspecialchars($ev['nome_usuario']) ?></td>
-                <td><?= date('d/m H:i', strtotime($ev['data_inicio'])) ?></td>
-              </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
-          <?php else: ?>
-          <div class="estado-vazio">
-            <div class="icone-vazio">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            </div>
-            <?= traduz('admin_nenhum_evento') ?>
-          </div>
-          <?php endif; ?>
         </div>
       </div>
 

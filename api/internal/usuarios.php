@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../../funcoes/funcoesConfiguracao.php';
 require_once __DIR__ . '/../../funcoes/funcoesGoogle.php';
+require_once __DIR__ . '/../../funcoes/funcoesEventos.php';
 
 if (!validaSecretInterno()) {
     http_response_code(401);
@@ -36,6 +37,9 @@ if (!$usuario) {
     exit;
 }
 
+$mensagens_hoje = contaMensagensHojePorUsuario($usuario['id_usuario']);
+$limite_mensagens = limiteDiarioMensagens();
+
 echo json_encode(['ok' => true, 'data' => [
     'id_usuario' => (int) $usuario['id_usuario'],
     'nome' => $usuario['nome'],
@@ -51,4 +55,7 @@ echo json_encode(['ok' => true, 'data' => [
     'token_refresh_google' => decifraTokenGoogle($usuario['token_refresh_google']),
     'token_google_expira_em' => $usuario['token_google_expira_em'],
     'idioma' => buscaConfiguracao('idioma_padrao') ?? IDIOMA_PADRAO,
+    'mensagens_hoje' => $mensagens_hoje,
+    'limite_diario_mensagens' => $limite_mensagens,
+    'limite_atingido' => $mensagens_hoje >= $limite_mensagens,
 ]]);

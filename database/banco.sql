@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     telefone VARCHAR(20) NULL,
     plano ENUM('trial', 'ativo', 'cancelado') NOT NULL DEFAULT 'trial',
     plano_expira_em DATETIME NULL,
+    cancelado_em DATETIME NULL,
+    id_plano INT NULL,
     ativo TINYINT(1) NOT NULL DEFAULT 1,
     token_acesso_google TEXT NULL,
     token_refresh_google TEXT NULL,
@@ -47,6 +49,8 @@ CREATE TABLE IF NOT EXISTS logs_mensagens (
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
 );
+
+CREATE INDEX idx_logs_usuario_dia ON logs_mensagens (id_usuario, direcao, criado_em);
 
 CREATE TABLE IF NOT EXISTS sessoes_conversa (
     id_sessao INT AUTO_INCREMENT PRIMARY KEY,
@@ -131,6 +135,34 @@ CREATE TABLE IF NOT EXISTS transacoes (
 
 CREATE INDEX idx_transacoes_usuario_data ON transacoes (id_usuario, data_transacao);
 CREATE INDEX idx_transacoes_usuario_tipo ON transacoes (id_usuario, tipo, data_transacao);
+
+CREATE TABLE IF NOT EXISTS recorrencias (
+    id_recorrencia INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    descricao VARCHAR(255) NOT NULL,
+    valor DECIMAL(12,2) NOT NULL,
+    categoria VARCHAR(50) NOT NULL DEFAULT 'outros',
+    ciclo ENUM('semanal', 'mensal', 'anual') NOT NULL DEFAULT 'mensal',
+    data_inicio DATE NOT NULL,
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    cancelado_em DATETIME NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
+);
+
+CREATE INDEX idx_recorrencias_usuario ON recorrencias (id_usuario, ativo);
+
+CREATE TABLE IF NOT EXISTS logs_ia_uso (
+    id_log INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NULL,
+    provedor VARCHAR(20) NOT NULL,
+    tokens_entrada INT NULL,
+    tokens_saida INT NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
+);
+
+CREATE INDEX idx_logs_ia_uso_provedor_data ON logs_ia_uso (provedor, criado_em);
 
 CREATE TABLE IF NOT EXISTS afiliados (
     id_afiliado INT AUTO_INCREMENT PRIMARY KEY,

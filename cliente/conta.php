@@ -86,7 +86,7 @@ if ($eh_pedido_portal) {
 
 $usuario = buscaUsuarioPorId(usuarioLogadoId());
 $inicial_nome = mb_strtoupper(mb_substr($usuario['nome'], 0, 1));
-$plano_conta = buscaPlanoSugerido();
+$plano_conta = !empty($usuario['id_plano']) ? buscaPlanoPorId($usuario['id_plano']) : buscaPlanoSugerido();
 $sufixo_conta = [
     'mensal' => traduz('upgrade_ciclo_mensal'),
     'trimestral' => traduz('upgrade_ciclo_trimestral'),

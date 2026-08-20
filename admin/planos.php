@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
 require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
+require_once __DIR__ . '/../funcoes/funcoesConfiguracao.php';
 
 iniciaSessao();
 exigeLoginAdmin();
@@ -9,6 +10,7 @@ exigeLoginAdmin();
 $pagina_atual = 'planos';
 $msg_sucesso = '';
 $msg_erro = '';
+$moeda_atual = moedaSistema();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     $acao = $_POST['acao'];
@@ -251,7 +253,7 @@ $nomes_ciclo = [
           </div>
         </div>
         <div class="campo">
-          <label><?= traduz('admin_preco') ?> (MXN)</label>
+          <label><?= traduz('admin_preco') ?> (<?= htmlspecialchars($moeda_atual) ?>)</label>
           <div class="campo-entrada">
             <input type="number" name="preco" step="0.01" min="0.01" placeholder="64.00" required />
           </div>
@@ -327,7 +329,7 @@ $nomes_ciclo = [
           </div>
         </div>
         <div class="campo">
-          <label><?= traduz('admin_preco') ?> (MXN)</label>
+          <label><?= traduz('admin_preco') ?> (<?= htmlspecialchars($moeda_atual) ?>)</label>
           <div class="campo-entrada">
             <input type="number" name="preco" id="editar-preco" step="0.01" min="0.01" required />
           </div>

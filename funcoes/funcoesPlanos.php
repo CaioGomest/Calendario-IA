@@ -143,6 +143,16 @@ function registraPagamento($dados) {
     return (int) $pdo->lastInsertId();
 }
 
+function listaPagamentosUsuario($id_usuario, $limite = 20) {
+    garanteTabelaPagamentos();
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM pagamentos WHERE id_usuario = ? ORDER BY criado_em DESC LIMIT ?');
+    $stmt->bindValue(1, $id_usuario, PDO::PARAM_INT);
+    $stmt->bindValue(2, $limite, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 function calculaReceitaMensal() {
     garanteTabelaPagamentos();
     $pdo = conexao();

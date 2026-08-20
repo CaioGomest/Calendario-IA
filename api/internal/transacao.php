@@ -65,10 +65,38 @@ if ($metodo === 'GET') {
 
     $resultado = listaTransacoes($id_usuario, $filtro);
 
+    $periodo_inicio = null;
+    $periodo_fim = null;
     if (!empty($filtro['data_inicio']) && !empty($filtro['data_fim'])) {
-        $resultado['resumo'] = resumoPeriodo($id_usuario, $filtro['data_inicio'], $filtro['data_fim']);
+        $periodo_inicio = $filtro['data_inicio'];
+        $periodo_fim = $filtro['data_fim'];
+        $resultado['resumo'] = resumoPeriodo($id_usuario, $periodo_inicio, $periodo_fim);
     } elseif (!empty($filtro['mes']) && !empty($filtro['ano'])) {
-        $resultado['resumo'] = resumoMensal($id_usuario, (int) $filtro['mes'], (int) $filtro['ano']);
+        $mes = (int) $filtro['mes'];
+        $ano = (int) $filtro['ano'];
+        $periodo_inicio = sprintf('%04d-%02d-01', $ano, $mes);
+        $periodo_fim = date('Y-m-t', strtotime($periodo_inicio));
+        $resultado['resumo'] = resumoMensal($id_usuario, $mes, $ano);
+    }
+
+    if ($periodo_inicio && $periodo_fim && (empty($filtro['tipo']) || $filtro['tipo'] === 'saida')) {
+        $ocorrencias = calculaOcorrenciasRecorrentes($id_usuario, $periodo_inicio, $periodo_fim);
+        if (!empty($filtro['categoria'])) {
+            $ocorrencias = array_values(array_filter($ocorrencias, function ($o) use ($filtro) {
+                return $o['categoria'] === $filtro['categoria'];
+            }));
+        }
+        if ($ocorrencias) {
+            $resultado['transacoes'] = array_merge($resultado['transacoes'], $ocorrencias);
+            usort($resultado['transacoes'], function ($a, $b) {
+                return strcmp($b['data_transacao'], $a['data_transacao']);
+            });
+            if (isset($resultado['resumo'])) {
+                $soma_ocorrencias = array_sum(array_column($ocorrencias, 'valor'));
+                $resultado['resumo']['total_saidas'] += $soma_ocorrencias;
+                $resultado['resumo']['saldo'] -= $soma_ocorrencias;
+            }
+        }
     }
 
     echo json_encode(['ok' => true, 'data' => $resultado]);

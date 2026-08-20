@@ -39,14 +39,22 @@ switch ($tipo) {
 
         if ($usuario) {
             $expira_em = null;
+            $plano_novo = null;
+            $id_plano_novo = null;
             if ($subscription_id) {
                 $sub = stripeRequest('GET', '/v1/subscriptions/' . $subscription_id);
-                if (!isset($sub['error']) && !empty($sub['current_period_end'])) {
-                    $expira_em = date('Y-m-d H:i:s', (int)$sub['current_period_end']);
+                if (!isset($sub['error'])) {
+                    if (!empty($sub['current_period_end'])) {
+                        $expira_em = date('Y-m-d H:i:s', (int)$sub['current_period_end']);
+                    }
+                    $plano_novo = mapeiaStatusStripeParaPlano($sub['status'] ?? '');
+                    $id_plano_novo = (int)($sub['metadata']['id_plano'] ?? 0) ?: null;
                 }
             }
 
-            atualizaPlanoUsuario((int)$usuario['id_usuario'], 'ativo', $expira_em);
+            if ($plano_novo !== null) {
+                atualizaPlanoUsuario((int)$usuario['id_usuario'], $plano_novo, $expira_em, $id_plano_novo);
+            }
             atualizaStripeUsuario((int)$usuario['id_usuario'], $customer_id, $subscription_id);
         }
         break;
@@ -58,8 +66,12 @@ switch ($tipo) {
         if ($usuario && !empty($objeto['current_period_end'])) {
             $expira_em = date('Y-m-d H:i:s', (int)$objeto['current_period_end']);
             $status = $objeto['status'] ?? '';
-            $plano = in_array($status, ['active', 'trialing']) ? 'ativo' : $usuario['plano'];
-            atualizaPlanoUsuario((int)$usuario['id_usuario'], $plano, $expira_em);
+            $plano = mapeiaStatusStripeParaPlano($status);
+            if ($plano === null) {
+                $plano = $usuario['plano'];
+            }
+            $id_plano_novo = (int)($objeto['metadata']['id_plano'] ?? 0) ?: null;
+            atualizaPlanoUsuario((int)$usuario['id_usuario'], $plano, $expira_em, $id_plano_novo);
         }
         break;
 
@@ -80,11 +92,13 @@ switch ($tipo) {
 
         if ($usuario && $subscription_id) {
             $sub = stripeRequest('GET', '/v1/subscriptions/' . $subscription_id);
-            if (!isset($sub['error']) && in_array($sub['status'] ?? '', ['active', 'trialing'])) {
+            $status_mapeado = mapeiaStatusStripeParaPlano($sub['status'] ?? '');
+            if (!isset($sub['error']) && $status_mapeado !== null) {
                 $expira_em = !empty($sub['current_period_end'])
                     ? date('Y-m-d H:i:s', (int)$sub['current_period_end'])
                     : null;
-                atualizaPlanoUsuario((int)$usuario['id_usuario'], 'ativo', $expira_em);
+                $id_plano_novo = (int)($sub['metadata']['id_plano'] ?? 0) ?: null;
+                atualizaPlanoUsuario((int)$usuario['id_usuario'], $status_mapeado, $expira_em, $id_plano_novo);
                 atualizaStripeUsuario((int)$usuario['id_usuario'], $customer_id, $subscription_id);
 
                 if (!empty($usuario['pagamento_falhou'])) {

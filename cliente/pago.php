@@ -21,6 +21,7 @@ $erro_pago = '';
 $client_secret = '';
 $tipo_confirmacao = '';
 $subscription_id = '';
+$setup_intent_id = '';
 $plano_selecionado = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
@@ -32,25 +33,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
             $map = ['mensal' => '+1 month', 'trimestral' => '+3 months', 'anual' => '+1 year'];
             $expira = date('Y-m-d H:i:s', strtotime($map[$plano_dev['ciclo']] ?? '+1 month'));
         }
-        atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira);
+        atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira, $plano_dev['id_plano'] ?? null);
         header('Location: google');
         exit;
     }
 
     $sub_id = $_POST['subscription_id'] ?? '';
-    if ($sub_id !== '') {
+    $setup_id_confirma = $_POST['setup_intent_id'] ?? '';
+
+    if ($setup_id_confirma !== '') {
+        $id_plano_confirma = (int)($_POST['id_plano'] ?? 0);
+        $plano_confirma = $id_plano_confirma ? buscaPlanoPorId($id_plano_confirma) : null;
+        $usuario = buscaUsuarioPorId(usuarioLogadoId());
+        $stripe_customer_id = $usuario['stripe_customer_id'] ?? '';
+        $setup_intent = buscaSetupIntentStripe($setup_id_confirma);
+
+        if ($plano_confirma && $stripe_customer_id && !isset($setup_intent['error'])
+            && ($setup_intent['status'] ?? '') === 'succeeded' && !empty($setup_intent['payment_method'])) {
+            definePagamentoPadraoStripe($stripe_customer_id, $setup_intent['payment_method']);
+
+            $assinatura = criaAssinaturaStripe($stripe_customer_id, [
+                'nome_plano' => $plano_confirma['nome'],
+                'preco' => $plano_confirma['preco'],
+                'ciclo' => $plano_confirma['ciclo'],
+                'id_plano' => $plano_confirma['id_plano'],
+                'id_usuario' => usuarioLogadoId(),
+                'dias_teste' => $plano_confirma['dias_teste'] ?? 0,
+            ]);
+
+            if (!isset($assinatura['error']) && in_array($assinatura['status'] ?? '', ['active', 'trialing'])) {
+                $fim_periodo = fimPeriodoAssinaturaStripe($assinatura);
+                $expira_em = $fim_periodo
+                    ? date('Y-m-d H:i:s', (int)$fim_periodo)
+                    : date('Y-m-d H:i:s', strtotime('+1 month'));
+                atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em);
+                atualizaStripeUsuario(usuarioLogadoId(), $stripe_customer_id, $assinatura['id']);
+                header('Location: google');
+                exit;
+            }
+        }
+        $erro_pago = traduz('pago_erro_stripe');
+    } elseif ($sub_id !== '') {
         $sub = buscaAssinaturaStripe($sub_id);
         if (!isset($sub['error']) && in_array($sub['status'] ?? '', ['active', 'trialing'])) {
-            $expira_em = !empty($sub['current_period_end'])
-                ? date('Y-m-d H:i:s', (int)$sub['current_period_end'])
+            $fim_periodo = fimPeriodoAssinaturaStripe($sub);
+            $expira_em = $fim_periodo
+                ? date('Y-m-d H:i:s', (int)$fim_periodo)
                 : date('Y-m-d H:i:s', strtotime('+1 month'));
             atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em);
             atualizaStripeUsuario(usuarioLogadoId(), $sub['customer'] ?? '', $sub_id);
             header('Location: google');
             exit;
         }
+        $erro_pago = traduz('pago_erro_stripe');
+    } else {
+        $erro_pago = traduz('pago_erro_stripe');
     }
-    $erro_pago = traduz('pago_erro_stripe');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['escolher_plano'])) {
@@ -69,28 +107,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['escolher_plano'])) {
                 $stripe_customer_id = $cliente['id'];
                 atualizaStripeUsuario(usuarioLogadoId(), $stripe_customer_id, null);
             }
+        } else {
+            removePagamentoPadraoStripe($stripe_customer_id);
         }
 
-        if (!$erro_pago) {
+        $dias_teste = (int)($plano_selecionado['dias_teste'] ?? 0);
+
+        if (!$erro_pago && $dias_teste > 0) {
+            $setup_intent = criaSetupIntentStripe($stripe_customer_id);
+            if (isset($setup_intent['error'])) {
+                $erro_pago = traduz('pago_erro_stripe');
+            } else {
+                $client_secret = $setup_intent['client_secret'];
+                $setup_intent_id = $setup_intent['id'];
+                $tipo_confirmacao = 'setup';
+            }
+        } elseif (!$erro_pago) {
             $assinatura = criaAssinaturaStripe($stripe_customer_id, [
                 'nome_plano' => $plano_selecionado['nome'],
                 'preco' => $plano_selecionado['preco'],
                 'ciclo' => $plano_selecionado['ciclo'],
                 'id_plano' => $plano_selecionado['id_plano'],
                 'id_usuario' => usuarioLogadoId(),
-                'dias_teste' => $plano_selecionado['dias_teste'] ?? 0,
+                'dias_teste' => 0,
             ]);
 
             if (isset($assinatura['error'])) {
                 $erro_pago = traduz('pago_erro_stripe');
             } else {
                 $subscription_id = $assinatura['id'];
-                if (!empty($assinatura['pending_setup_intent']['client_secret'])) {
-                    $client_secret = $assinatura['pending_setup_intent']['client_secret'];
-                    $tipo_confirmacao = 'setup';
-                } else {
-                    $client_secret = $assinatura['latest_invoice']['confirmation_secret']['client_secret'] ?? '';
-                    $tipo_confirmacao = 'payment';
+                $client_secret = $assinatura['latest_invoice']['confirmation_secret']['client_secret'] ?? '';
+                $tipo_confirmacao = 'payment';
+
+                if ($client_secret === '') {
+                    cancelaAssinaturaStripe($subscription_id);
+                    $erro_pago = traduz('pago_erro_stripe');
+                    $subscription_id = '';
                 }
             }
         }
@@ -134,7 +186,7 @@ $mostra_pagamento = $plano_selecionado !== null;
 
 <?php if ($mostra_pagamento): ?>
   <?php
-  $form_cartao = function($sufixo) use ($erro_pago, $subscription_id, $plano_selecionado) { ?>
+  $form_cartao = function($sufixo) use ($erro_pago, $subscription_id, $setup_intent_id, $plano_selecionado) { ?>
       <?php if ($erro_pago): ?>
       <div class="erro-msg" style="margin-bottom:12px;"><?= htmlspecialchars($erro_pago) ?></div>
       <?php endif; ?>
@@ -150,6 +202,8 @@ $mostra_pagamento = $plano_selecionado !== null;
         <form id="payment-form-<?= $sufixo ?>" method="post" action="pago">
           <input type="hidden" name="confirmar" value="1" />
           <input type="hidden" name="subscription_id" value="<?= htmlspecialchars($subscription_id) ?>" />
+          <input type="hidden" name="setup_intent_id" value="<?= htmlspecialchars($setup_intent_id) ?>" />
+          <input type="hidden" name="id_plano" value="<?= (int)$plano_selecionado['id_plano'] ?>" />
           <div class="campo" style="margin-top:0;">
             <label><?= traduz('campo_nombre_tarjeta') ?></label>
             <div class="input"><input type="text" id="card-name-<?= $sufixo ?>" placeholder="Mariana López" required /></div>
@@ -320,16 +374,21 @@ $mostra_pagamento = $plano_selecionado !== null;
 
             var confirmar = tipoConfirmacao === 'setup' ? stripe.confirmSetup : stripe.confirmPayment;
 
-            confirmar({
-                elements: elements,
-                clientSecret: clientSecret,
-                confirmParams: {
-                    return_url: window.location.href,
-                    payment_method_data: {
-                        billing_details: { name: document.getElementById('card-name-' + sufixo).value }
-                    }
-                },
-                redirect: 'if_required'
+            elements.submit().then(function(submitResult) {
+                if (submitResult.error) {
+                    return submitResult;
+                }
+                return confirmar({
+                    elements: elements,
+                    clientSecret: clientSecret,
+                    confirmParams: {
+                        return_url: window.location.href,
+                        payment_method_data: {
+                            billing_details: { name: document.getElementById('card-name-' + sufixo).value }
+                        }
+                    },
+                    redirect: 'if_required'
+                });
             }).then(function(result) {
                 if (result.error) {
                     erros.textContent = result.error.message;

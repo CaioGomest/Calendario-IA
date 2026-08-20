@@ -60,6 +60,34 @@ function criaPrecoStripe($dados) {
     ]);
 }
 
+function removePagamentoPadraoStripe($customer_id) {
+    return stripeRequest('POST', '/v1/customers/' . $customer_id, [
+        'invoice_settings[default_payment_method]' => '',
+    ]);
+}
+
+function definePagamentoPadraoStripe($customer_id, $payment_method_id) {
+    return stripeRequest('POST', '/v1/customers/' . $customer_id, [
+        'invoice_settings[default_payment_method]' => $payment_method_id,
+    ]);
+}
+
+function criaSetupIntentStripe($customer_id) {
+    return stripeRequest('POST', '/v1/setup_intents', [
+        'customer' => $customer_id,
+        'usage' => 'off_session',
+        'payment_method_types[]' => 'card',
+    ]);
+}
+
+function buscaSetupIntentStripe($setup_intent_id) {
+    return stripeRequest('GET', '/v1/setup_intents/' . $setup_intent_id);
+}
+
+function fimPeriodoAssinaturaStripe($sub) {
+    return $sub['items']['data'][0]['current_period_end'] ?? $sub['current_period_end'] ?? null;
+}
+
 function criaAssinaturaStripe($customer_id, $dados) {
     $preco = criaPrecoStripe($dados);
     if (isset($preco['error'])) {
@@ -78,6 +106,7 @@ function criaAssinaturaStripe($customer_id, $dados) {
 
     if (!empty($dados['dias_teste']) && (int)$dados['dias_teste'] > 0) {
         $params['trial_period_days'] = (int)$dados['dias_teste'];
+        $params['trial_settings[end_behavior][missing_payment_method]'] = 'cancel';
     }
 
     return stripeRequest('POST', '/v1/subscriptions', $params);
@@ -85,6 +114,12 @@ function criaAssinaturaStripe($customer_id, $dados) {
 
 function buscaAssinaturaStripe($subscription_id) {
     return stripeRequest('GET', '/v1/subscriptions/' . $subscription_id);
+}
+
+function mapeiaStatusStripeParaPlano($status) {
+    if ($status === 'trialing') return 'trial';
+    if ($status === 'active') return 'ativo';
+    return null;
 }
 
 function cicloDaAssinaturaStripe($sub) {

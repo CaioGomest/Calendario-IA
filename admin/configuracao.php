@@ -42,6 +42,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         exit;
     }
 
+    if ($_POST['acao'] === 'salvar_limites') {
+        $limite = (int) ($_POST['limite_diario_mensagens'] ?? 40);
+        if ($limite < 1) $limite = 1;
+        salvaConfiguracao('limite_diario_mensagens', (string) $limite);
+        header('Location: configuracao?sucesso=1');
+        exit;
+    }
+
     if ($_POST['acao'] === 'salvar_contato') {
         $email_remetente = trim($_POST['email_remetente'] ?? '');
         $email_suporte = trim($_POST['email_suporte'] ?? '');
@@ -145,6 +153,29 @@ $variaveis = [
               <option value="USD" <?= $moeda_atual === 'USD' ? 'selected' : '' ?>>US$ — Dólar (USD)</option>
               <option value="MXN" <?= $moeda_atual === 'MXN' ? 'selected' : '' ?>>MX$ — Peso (MXN)</option>
             </select>
+          </div>
+          <div class="config-form-footer">
+            <button type="button" class="botao-pequeno botao-primario-pequeno btn-confirmar"><?= traduz('admin_salvar_prefs') ?></button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Limites -->
+      <form method="post" action="configuracao">
+        <input type="hidden" name="acao" value="salvar_limites" />
+        <div class="config-card" style="margin-bottom:16px;">
+          <div class="config-card-header">
+            <span class="icone-titulo">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            </span>
+            <h2><?= traduz('admin_limites') ?></h2>
+          </div>
+          <div class="config-form-item">
+            <div class="config-item-info">
+              <b><?= traduz('admin_limite_diario_mensagens') ?></b>
+              <span><?= traduz('admin_limite_diario_mensagens_desc') ?></span>
+            </div>
+            <input type="number" name="limite_diario_mensagens" min="1" value="<?= (int) limiteDiarioMensagens() ?>" required />
           </div>
           <div class="config-form-footer">
             <button type="button" class="botao-pequeno botao-primario-pequeno btn-confirmar"><?= traduz('admin_salvar_prefs') ?></button>

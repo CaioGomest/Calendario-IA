@@ -44,6 +44,18 @@ function contaTotalMensagens() {
     return (int) $pdo->query('SELECT COUNT(*) FROM logs_mensagens')->fetchColumn();
 }
 
+// nota: usa CURDATE() do servidor MySQL, nao o fuso do usuario — simplificacao aceitavel pra v1
+function contaMensagensHojePorUsuario($id_usuario) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare(
+        "SELECT COUNT(*) FROM logs_mensagens
+         WHERE id_usuario = ? AND direcao = 'entrada'
+         AND criado_em >= CURDATE() AND criado_em < CURDATE() + INTERVAL 1 DAY"
+    );
+    $stmt->execute([$id_usuario]);
+    return (int) $stmt->fetchColumn();
+}
+
 function insereEvento($dados) {
     $pdo = conexao();
     $stmt = $pdo->prepare('INSERT INTO eventos (id_usuario, titulo, descricao, data_inicio, data_fim, id_google_event, lembrete) VALUES (?, ?, ?, ?, ?, ?, ?)');
@@ -106,14 +118,6 @@ function contaMensagensPorDia($dias = 30) {
          GROUP BY DATE(criado_em) ORDER BY dia ASC"
     );
     $stmt->execute([$dias]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-function listaEventosRecentes($limite = 10) {
-    $pdo = conexao();
-    $stmt = $pdo->prepare('SELECT e.*, u.nome AS nome_usuario FROM eventos e JOIN usuarios u ON e.id_usuario = u.id_usuario ORDER BY e.criado_em DESC LIMIT ?');
-    $stmt->bindValue(1, $limite, PDO::PARAM_INT);
-    $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 

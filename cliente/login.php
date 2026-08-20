@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form class="form-area" method="post" action="login">
       <h2 class="form-titulo"><?= traduz('login_titulo') ?></h2>
       <?php if ($erro): ?>
-        <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro) ?></p>
+        <div class="erro-msg" style="margin-bottom:12px;"><?= htmlspecialchars($erro) ?></div>
       <?php endif; ?>
       <div class="campo">
         <label><?= traduz('campo_email') ?></label>

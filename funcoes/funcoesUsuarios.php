@@ -39,13 +39,17 @@ function buscaUsuarioPorId($id_usuario) {
 }
 
 function planoUsuarioAtivo($usuario) {
-    if (($usuario['plano'] ?? '') !== 'ativo') {
-        return false;
+    $plano = $usuario['plano'] ?? '';
+    if ($plano === 'ativo') {
+        if (empty($usuario['plano_expira_em'])) {
+            return true;
+        }
+        return new DateTime($usuario['plano_expira_em']) >= new DateTime();
     }
-    if (empty($usuario['plano_expira_em'])) {
-        return true;
+    if ($plano === 'trial' && !empty($usuario['id_plano']) && !empty($usuario['plano_expira_em'])) {
+        return new DateTime($usuario['plano_expira_em']) >= new DateTime();
     }
-    return new DateTime($usuario['plano_expira_em']) >= new DateTime();
+    return false;
 }
 
 function exigeAssinaturaAtiva($usuario) {
@@ -67,10 +71,16 @@ function insereUsuario($dados) {
     return (int) $pdo->lastInsertId();
 }
 
-function atualizaPlanoUsuario($id_usuario, $plano, $plano_expira_em) {
+function atualizaPlanoUsuario($id_usuario, $plano, $plano_expira_em, $id_plano = null) {
     $pdo = conexao();
-    $stmt = $pdo->prepare('UPDATE usuarios SET plano = ?, plano_expira_em = ? WHERE id_usuario = ?');
-    $stmt->execute([$plano, $plano_expira_em, $id_usuario]);
+    $cancelado_em = $plano === 'cancelado' ? date('Y-m-d H:i:s') : null;
+    if ($id_plano !== null) {
+        $stmt = $pdo->prepare('UPDATE usuarios SET plano = ?, plano_expira_em = ?, cancelado_em = ?, id_plano = ? WHERE id_usuario = ?');
+        $stmt->execute([$plano, $plano_expira_em, $cancelado_em, $id_plano, $id_usuario]);
+    } else {
+        $stmt = $pdo->prepare('UPDATE usuarios SET plano = ?, plano_expira_em = ?, cancelado_em = ? WHERE id_usuario = ?');
+        $stmt->execute([$plano, $plano_expira_em, $cancelado_em, $id_usuario]);
+    }
 }
 
 function atualizaTokensGoogle($id_usuario, $token_acesso, $token_refresh, $token_expira_em) {
@@ -99,20 +109,20 @@ function atualizaAntecedenciaLembrete($id_usuario, $antecedencia_min) {
 
 function listaUsuarios($filtro = []) {
     $pdo = conexao();
-    $sql = 'SELECT * FROM usuarios';
+    $sql = 'SELECT u.*, p.nome AS nome_plano FROM usuarios u LEFT JOIN planos p ON p.id_plano = u.id_plano';
     $params = [];
-    $condicoes = ['deletado = 0'];
+    $condicoes = ['u.deletado = 0'];
 
     if (!empty($filtro['plano'])) {
-        $condicoes[] = 'plano = ?';
+        $condicoes[] = 'u.plano = ?';
         $params[] = $filtro['plano'];
     }
     if (isset($filtro['ativo'])) {
-        $condicoes[] = 'ativo = ?';
+        $condicoes[] = 'u.ativo = ?';
         $params[] = (int) $filtro['ativo'];
     }
     if (!empty($filtro['busca'])) {
-        $condicoes[] = '(nome LIKE ? OR email LIKE ? OR telefone LIKE ?)';
+        $condicoes[] = '(u.nome LIKE ? OR u.email LIKE ? OR u.telefone LIKE ?)';
         $termo = '%' . $filtro['busca'] . '%';
         $params[] = $termo;
         $params[] = $termo;
@@ -120,7 +130,7 @@ function listaUsuarios($filtro = []) {
     }
 
     $sql .= ' WHERE ' . implode(' AND ', $condicoes);
-    $sql .= ' ORDER BY criado_em DESC';
+    $sql .= ' ORDER BY u.criado_em DESC';
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
@@ -255,6 +265,22 @@ function contaCancelamentosPorDia($dias = 30) {
 function contaCancelados() {
     $pdo = conexao();
     return (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE plano = 'cancelado' AND deletado = 0")->fetchColumn();
+}
+
+function listaNovosUsuariosRecentes($limite = 10) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT nome, email, criado_em FROM usuarios WHERE deletado = 0 ORDER BY criado_em DESC LIMIT ?');
+    $stmt->bindValue(1, $limite, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function listaCancelamentosRecentes($limite = 10) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare("SELECT nome, email, cancelado_em FROM usuarios WHERE plano = 'cancelado' AND cancelado_em IS NOT NULL AND deletado = 0 ORDER BY cancelado_em DESC LIMIT ?");
+    $stmt->bindValue(1, $limite, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 function contaCanceladosEsteMes() {

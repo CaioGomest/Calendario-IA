@@ -715,6 +715,15 @@ table tr:hover td { background: var(--line-soft); }
     color: var(--red);
 }
 
+.botao-acao.icone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+}
+
 .estado-vazio {
     text-align: center;
     padding: 48px 20px;

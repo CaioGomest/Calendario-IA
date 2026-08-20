@@ -2,6 +2,9 @@
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
+require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
+require_once __DIR__ . '/../funcoes/funcoesConfiguracao.php';
+require_once __DIR__ . '/../funcoes/funcoesEventos.php';
 
 iniciaSessao();
 exigeLoginAdmin();
@@ -161,6 +164,7 @@ $usuarios = listaUsuarios($filtro);
               <th><?= traduz('admin_telefone') ?></th>
               <th><?= traduz('admin_plano') ?></th>
               <th><?= traduz('admin_status') ?></th>
+              <th><?= traduz('admin_msgs_hoje') ?></th>
               <th><?= traduz('admin_cadastro') ?></th>
               <th style="text-align:right;"><?= traduz('admin_acoes') ?></th>
             </tr>
@@ -168,7 +172,7 @@ $usuarios = listaUsuarios($filtro);
           <tbody>
             <?php foreach ($usuarios as $u): ?>
             <tr>
-              <td style="color:var(--ink);font-weight:600;"><?= htmlspecialchars($u['nome']) ?></td>
+              <td style="color:var(--ink);font-weight:600;white-space:nowrap;"><?= htmlspecialchars($u['nome']) ?></td>
               <td><?= htmlspecialchars($u['email']) ?></td>
               <td><?= htmlspecialchars($u['telefone'] ?: '—') ?></td>
               <td>
@@ -179,16 +183,62 @@ $usuarios = listaUsuarios($filtro);
                       'cancelado' => 'vermelho',
                       default => 'neutro',
                   };
+
+                  if ($u['plano'] === 'trial' && $u['plano_expira_em']) {
+                      $rotulo_data = traduz('admin_trial_termina');
+                      $valor_data = date('d/m/Y H:i', strtotime($u['plano_expira_em']));
+                  } elseif ($u['plano'] === 'ativo' && $u['plano_expira_em']) {
+                      $rotulo_data = traduz('admin_proxima_cobranca');
+                      $valor_data = date('d/m/Y H:i', strtotime($u['plano_expira_em']));
+                  } elseif ($u['plano'] === 'cancelado' && !empty($u['cancelado_em'])) {
+                      $rotulo_data = traduz('admin_cancelado_em');
+                      $valor_data = date('d/m/Y H:i', strtotime($u['cancelado_em']));
+                  } else {
+                      $rotulo_data = traduz('admin_proxima_cobranca');
+                      $valor_data = '—';
+                  }
+
+                  $pagamentos_usuario = array_map(function ($p) {
+                      return [
+                          'data' => date('d/m/Y', strtotime($p['criado_em'])),
+                          'valor' => simboloMoeda() . number_format((float) $p['valor'], 2, ',', '.'),
+                          'ciclo' => ucfirst($p['ciclo']),
+                      ];
+                  }, listaPagamentosUsuario($u['id_usuario']));
+
+                  $mensagens_hoje_usuario = contaMensagensHojePorUsuario($u['id_usuario']);
+                  $limite_mensagens_usuario = limiteDiarioMensagens();
+                  $cor_msgs = $mensagens_hoje_usuario >= $limite_mensagens_usuario ? 'vermelho' : ($mensagens_hoje_usuario >= $limite_mensagens_usuario * 0.8 ? 'ambar' : 'neutro');
+
+                  $u_visualizar = $u;
+                  $u_visualizar['cor_plano'] = $cor_plano;
+                  $u_visualizar['rotulo_data'] = $rotulo_data;
+                  $u_visualizar['valor_data'] = $valor_data;
+                  $u_visualizar['cadastro_fmt'] = date('d/m/Y', strtotime($u['criado_em']));
+                  $u_visualizar['pagamentos'] = $pagamentos_usuario;
+                  $u_visualizar['mensagens_hoje'] = $mensagens_hoje_usuario;
+                  $u_visualizar['limite_mensagens'] = $limite_mensagens_usuario;
                 ?>
-                <span class="selo <?= $cor_plano ?>"><?= htmlspecialchars(ucfirst($u['plano'])) ?></span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-weight:600;color:var(--ink);"><?= htmlspecialchars($u['nome_plano'] ?? '—') ?></span>
+                  <span class="selo <?= $cor_plano ?>"><?= htmlspecialchars(ucfirst($u['plano'])) ?></span>
+                </div>
               </td>
               <td><span class="selo <?= $u['ativo'] ? 'verde' : 'vermelho' ?>"><span class="ponto"></span> <?= $u['ativo'] ? traduz('admin_ativo') : traduz('admin_inativo') ?></span></td>
+              <td><span class="selo <?= $cor_msgs ?>"><?= $mensagens_hoje_usuario ?>/<?= $limite_mensagens_usuario ?></span></td>
               <td><?= date('d/m/Y', strtotime($u['criado_em'])) ?></td>
-              <td style="text-align:right;display:flex;gap:4px;justify-content:flex-end;">
-                <button type="button" class="botao-acao" onclick="abrirEditar(<?= htmlspecialchars(json_encode($u, JSON_HEX_APOS | JSON_HEX_TAG)) ?>)"><?= traduz('admin_editar') ?></button>
+              <td style="text-align:right;display:flex;gap:2px;justify-content:flex-end;">
+                <button type="button" class="botao-acao icone" title="<?= traduz('admin_visualizar') ?>" onclick="abrirVisualizar(<?= htmlspecialchars(json_encode($u_visualizar, JSON_HEX_APOS | JSON_HEX_TAG)) ?>)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <button type="button" class="botao-acao icone" title="<?= traduz('admin_editar') ?>" onclick="abrirEditar(<?= htmlspecialchars(json_encode($u, JSON_HEX_APOS | JSON_HEX_TAG)) ?>)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                </button>
                 <form method="post" action="usuarios?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? ''])) ?>" style="display:inline;" onsubmit="return confirm('<?= traduz('admin_confirmar_apagar') ?>')">
                   <input type="hidden" name="id_usuario" value="<?= $u['id_usuario'] ?>" />
-                  <button type="submit" name="acao" value="apagar" class="botao-acao perigo"><?= traduz('admin_apagar') ?></button>
+                  <button type="submit" name="acao" value="apagar" class="botao-acao icone perigo" title="<?= traduz('admin_apagar') ?>">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
                 </form>
               </td>
             </tr>
@@ -319,7 +369,75 @@ $usuarios = listaUsuarios($filtro);
   </div>
 </div>
 
+<!-- Modal Visualizar Usuário -->
+<div id="modal-visualizar" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('aberto')">
+  <div class="modal">
+    <div class="modal-header">
+      <h2><?= traduz('admin_detalhes_usuario') ?></h2>
+      <button type="button" class="modal-fechar" onclick="this.closest('.modal-overlay').classList.remove('aberto')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="resumo-linha"><span><?= traduz('admin_nome') ?></span><b id="ver-nome"></b></div>
+      <div class="resumo-linha"><span><?= traduz('admin_email_col') ?></span><b id="ver-email"></b></div>
+      <div class="resumo-linha"><span><?= traduz('admin_telefone') ?></span><b id="ver-telefone"></b></div>
+      <div class="resumo-linha"><span><?= traduz('admin_plano') ?></span><b id="ver-plano"></b></div>
+      <div class="resumo-linha"><span id="ver-rotulo-data"></span><b id="ver-valor-data"></b></div>
+      <div class="resumo-linha"><span><?= traduz('admin_msgs_hoje') ?></span><b id="ver-msgs-hoje"></b></div>
+      <div class="resumo-linha"><span><?= traduz('admin_cadastro') ?></span><b id="ver-cadastro"></b></div>
+      <div style="margin-top:16px;">
+        <div class="secao-rotulo" style="margin-bottom:8px;"><?= traduz('admin_historico_pagamentos') ?></div>
+        <table id="ver-tabela-pagamentos" style="display:none;">
+          <thead>
+            <tr>
+              <th><?= traduz('admin_data') ?></th>
+              <th><?= traduz('admin_valor') ?></th>
+              <th><?= traduz('admin_ciclo') ?></th>
+            </tr>
+          </thead>
+          <tbody id="ver-pagamentos-body"></tbody>
+        </table>
+        <div id="ver-sem-pagamentos" class="estado-vazio" style="display:none;">
+          <?= traduz('admin_sem_pagamentos') ?>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="botao-pequeno botao-fantasma" onclick="this.closest('.modal-overlay').classList.remove('aberto')"><?= traduz('admin_fechar') ?></button>
+    </div>
+  </div>
+</div>
+
 <script>
+function abrirVisualizar(u) {
+    document.getElementById('ver-nome').textContent = u.nome;
+    document.getElementById('ver-email').textContent = u.email;
+    document.getElementById('ver-telefone').textContent = u.telefone || '—';
+    document.getElementById('ver-plano').innerHTML = (u.nome_plano || '—') + ' &middot; <span class="selo ' + u.cor_plano + '">' + u.plano.charAt(0).toUpperCase() + u.plano.slice(1) + '</span>';
+    document.getElementById('ver-rotulo-data').textContent = u.rotulo_data || '—';
+    document.getElementById('ver-valor-data').textContent = u.valor_data || '—';
+    document.getElementById('ver-msgs-hoje').textContent = (u.mensagens_hoje ?? '—') + '/' + (u.limite_mensagens ?? '—');
+    document.getElementById('ver-cadastro').textContent = u.cadastro_fmt || '—';
+
+    var tbody = document.getElementById('ver-pagamentos-body');
+    tbody.innerHTML = '';
+    if (u.pagamentos && u.pagamentos.length) {
+        u.pagamentos.forEach(function (p) {
+            var tr = document.createElement('tr');
+            tr.innerHTML = '<td>' + p.data + '</td><td>' + p.valor + '</td><td>' + p.ciclo + '</td>';
+            tbody.appendChild(tr);
+        });
+        document.getElementById('ver-tabela-pagamentos').style.display = '';
+        document.getElementById('ver-sem-pagamentos').style.display = 'none';
+    } else {
+        document.getElementById('ver-tabela-pagamentos').style.display = 'none';
+        document.getElementById('ver-sem-pagamentos').style.display = '';
+    }
+
+    document.getElementById('modal-visualizar').classList.add('aberto');
+}
+
 function abrirEditar(u) {
     document.getElementById('editar-id').value = u.id_usuario;
     document.getElementById('editar-nome').value = u.nome;

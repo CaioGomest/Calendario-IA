@@ -98,6 +98,14 @@ function nomeApp() {
     return $nome;
 }
 
+function limiteDiarioMensagens() {
+    static $limite = null;
+    if ($limite === null) {
+        $limite = (int) (buscaConfiguracao('limite_diario_mensagens') ?? 40);
+    }
+    return $limite;
+}
+
 function versaoAsset($caminho_relativo) {
     $caminho_absoluto = __DIR__ . '/../' . $caminho_relativo;
     return file_exists($caminho_absoluto) ? filemtime($caminho_absoluto) : time();

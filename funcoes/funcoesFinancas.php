@@ -226,6 +226,89 @@ function entradasPorCategoria($id_usuario, $mes, $ano) {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+function insereRecorrencia($dados) {
+    $pdo = conexao();
+    $categoria = $dados['categoria'] ?? 'outros';
+    if (!validaCategoria($categoria)) {
+        $categoria = 'outros';
+    }
+    $ciclo = in_array($dados['ciclo'] ?? '', ['semanal', 'mensal', 'anual'], true) ? $dados['ciclo'] : 'mensal';
+    $stmt = $pdo->prepare(
+        'INSERT INTO recorrencias (id_usuario, descricao, valor, categoria, ciclo, data_inicio)
+         VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    $stmt->execute([
+        $dados['id_usuario'],
+        $dados['descricao'],
+        $dados['valor'],
+        $categoria,
+        $ciclo,
+        $dados['data_inicio'],
+    ]);
+    return (int) $pdo->lastInsertId();
+}
+
+function listaRecorrenciasAtivasUsuario($id_usuario) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM recorrencias WHERE id_usuario = ? AND ativo = 1 ORDER BY data_inicio ASC');
+    $stmt->execute([$id_usuario]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function buscaRecorrenciaPorId($id_recorrencia) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM recorrencias WHERE id_recorrencia = ?');
+    $stmt->execute([$id_recorrencia]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function cancelaRecorrencia($id_recorrencia) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('UPDATE recorrencias SET ativo = 0, cancelado_em = NOW() WHERE id_recorrencia = ?');
+    $stmt->execute([$id_recorrencia]);
+    return $stmt->rowCount() > 0;
+}
+
+// projeta as ocorrencias de cada recorrencia dentro do periodo pedido, sem gravar nada no banco
+function calculaOcorrenciasRecorrentes($id_usuario, $periodo_inicio, $periodo_fim) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare(
+        "SELECT * FROM recorrencias
+         WHERE id_usuario = ? AND data_inicio <= ?
+           AND (ativo = 1 OR cancelado_em > ?)"
+    );
+    $stmt->execute([$id_usuario, $periodo_fim, $periodo_inicio]);
+    $recorrencias = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $intervalos = ['semanal' => '+1 week', 'mensal' => '+1 month', 'anual' => '+1 year'];
+    $inicio_periodo_ts = strtotime($periodo_inicio);
+    $fim_periodo_ts = strtotime($periodo_fim);
+
+    $ocorrencias = [];
+    foreach ($recorrencias as $r) {
+        $intervalo = $intervalos[$r['ciclo']] ?? '+1 month';
+        $cancelado_ts = $r['cancelado_em'] ? strtotime($r['cancelado_em']) : null;
+        $data_ts = strtotime($r['data_inicio']);
+
+        while ($data_ts <= $fim_periodo_ts) {
+            if ($data_ts >= $inicio_periodo_ts && ($cancelado_ts === null || $data_ts < $cancelado_ts)) {
+                $ocorrencias[] = [
+                    'id_transacao' => null,
+                    'tipo' => 'saida',
+                    'valor' => $r['valor'],
+                    'descricao' => $r['descricao'],
+                    'categoria' => $r['categoria'],
+                    'data_transacao' => date('Y-m-d', $data_ts),
+                    'recorrente' => true,
+                ];
+            }
+            $data_ts = strtotime($intervalo, $data_ts);
+        }
+    }
+
+    return $ocorrencias;
+}
+
 function resumoUltimos6Meses($id_usuario, $mes, $ano) {
     $pdo = conexao();
     $meses = [];
