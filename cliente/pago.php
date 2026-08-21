@@ -10,6 +10,12 @@ require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
 iniciaSessao();
 exigeLoginCliente();
 
+$usuario = buscaUsuarioPorId(usuarioLogadoId());
+if ($usuario['plano'] === 'ativo' && planoUsuarioAtivo($usuario)) {
+    header('Location: conta');
+    exit;
+}
+
 $planos_ativos = listaPlanos(['ativo' => 1]);
 $sufixo_pago = [
     'mensal' => traduz('upgrade_ciclo_mensal'),
@@ -44,7 +50,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
     if ($setup_id_confirma !== '') {
         $id_plano_confirma = (int)($_POST['id_plano'] ?? 0);
         $plano_confirma = $id_plano_confirma ? buscaPlanoPorId($id_plano_confirma) : null;
-        $usuario = buscaUsuarioPorId(usuarioLogadoId());
         $stripe_customer_id = $usuario['stripe_customer_id'] ?? '';
         $setup_intent = buscaSetupIntentStripe($setup_id_confirma);
 
@@ -96,7 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['escolher_plano'])) {
     $plano_selecionado = $id_escolhido ? buscaPlanoPorId($id_escolhido) : null;
 
     if ($plano_selecionado && !MODO_DEV) {
-        $usuario = buscaUsuarioPorId(usuarioLogadoId());
         $stripe_customer_id = $usuario['stripe_customer_id'] ?? '';
 
         if (empty($stripe_customer_id)) {

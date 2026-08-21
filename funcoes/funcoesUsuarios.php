@@ -285,7 +285,7 @@ function listaCancelamentosRecentes($limite = 10) {
 
 function contaCanceladosEsteMes() {
     $pdo = conexao();
-    return (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE plano = 'cancelado' AND deletado = 0 AND criado_em >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetchColumn();
+    return (int) $pdo->query("SELECT COUNT(*) FROM usuarios WHERE plano = 'cancelado' AND deletado = 0 AND cancelado_em >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetchColumn();
 }
 
 function criaTokenRecuperacao($id_usuario) {

@@ -85,6 +85,7 @@ switch ($tipo) {
         }
         break;
 
+    case 'invoice.paid':
     case 'invoice.payment_succeeded':
         $customer_id = $objeto['customer'] ?? '';
         $subscription_id = $objeto['subscription'] ?? '';
@@ -137,6 +138,18 @@ switch ($tipo) {
         if ($usuario) {
             atualizaPagamentoFalhouUsuario((int)$usuario['id_usuario'], true);
 
+            $valor_falho = ((int) ($objeto['amount_due'] ?? $objeto['total'] ?? 0)) / 100;
+            if ($valor_falho > 0) {
+                registraPagamento([
+                    'id_usuario' => (int)$usuario['id_usuario'],
+                    'id_plano' => (int) ($objeto['parent']['subscription_details']['metadata']['id_plano'] ?? 0) ?: null,
+                    'ciclo' => 'mensal',
+                    'valor' => $valor_falho,
+                    'status' => 'falhou',
+                    'stripe_invoice_id' => $objeto['id'] ?? null,
+                ]);
+            }
+
             $protocolo = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
             $link = $protocolo . '://' . $_SERVER['HTTP_HOST'] . '/cliente/conta';
 
@@ -150,6 +163,33 @@ switch ($tipo) {
             enviaEmail($usuario['email'], $assunto, $corpo);
 
             error_log("Stripe: pagamento falhou para usuario {$usuario['id_usuario']} (customer {$customer_id})");
+        }
+        break;
+
+    case 'charge.refunded':
+        $customer_id = $objeto['customer'] ?? '';
+        $invoice_id = $objeto['invoice'] ?? '';
+
+        if (!$invoice_id && !empty($objeto['payment_intent'])) {
+            $pi = stripeRequest('GET', '/v1/payment_intents/' . $objeto['payment_intent']);
+            $invoice_id = $pi['payment_details']['order_reference'] ?? '';
+        }
+
+        $usuario = $customer_id ? buscaUsuarioPorStripeCustomer($customer_id) : null;
+
+        if ($usuario && $invoice_id) {
+            $pagamento = buscaPagamentoPorInvoice($invoice_id);
+
+            if ($pagamento && $pagamento['status'] === 'pago') {
+                $era_mais_recente = ehPagamentoMaisRecentePago((int)$usuario['id_usuario'], $pagamento['criado_em']);
+                marcaPagamentoReembolsado($invoice_id);
+
+                if ($era_mais_recente && !empty($usuario['stripe_subscription_id'])) {
+                    cancelaAssinaturaStripe($usuario['stripe_subscription_id']);
+                    atualizaPlanoUsuario((int)$usuario['id_usuario'], 'cancelado', null);
+                    atualizaStripeUsuario((int)$usuario['id_usuario'], $customer_id, null);
+                }
+            }
         }
         break;
 }

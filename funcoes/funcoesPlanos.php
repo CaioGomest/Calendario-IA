@@ -130,17 +130,41 @@ function registraPagamento($dados) {
     garanteTabelaPagamentos();
     $pdo = conexao();
     $stmt = $pdo->prepare(
-        'INSERT IGNORE INTO pagamentos (id_usuario, id_plano, ciclo, valor, stripe_invoice_id, criado_em) VALUES (?, ?, ?, ?, ?, ?)'
+        'INSERT IGNORE INTO pagamentos (id_usuario, id_plano, ciclo, valor, status, stripe_invoice_id, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
     $stmt->execute([
         $dados['id_usuario'],
         $dados['id_plano'] ?: null,
         $dados['ciclo'] ?? 'mensal',
         $dados['valor'],
+        $dados['status'] ?? 'pago',
         $dados['stripe_invoice_id'] ?? null,
         $dados['criado_em'] ?? date('Y-m-d H:i:s'),
     ]);
     return (int) $pdo->lastInsertId();
+}
+
+function marcaPagamentoReembolsado($stripe_invoice_id) {
+    garanteTabelaPagamentos();
+    $pdo = conexao();
+    $stmt = $pdo->prepare("UPDATE pagamentos SET status = 'reembolsado' WHERE stripe_invoice_id = ? AND status = 'pago'");
+    $stmt->execute([$stripe_invoice_id]);
+}
+
+function buscaPagamentoPorInvoice($stripe_invoice_id) {
+    garanteTabelaPagamentos();
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM pagamentos WHERE stripe_invoice_id = ?');
+    $stmt->execute([$stripe_invoice_id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function ehPagamentoMaisRecentePago($id_usuario, $criado_em) {
+    garanteTabelaPagamentos();
+    $pdo = conexao();
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM pagamentos WHERE id_usuario = ? AND status = 'pago' AND criado_em > ?");
+    $stmt->execute([$id_usuario, $criado_em]);
+    return (int) $stmt->fetchColumn() === 0;
 }
 
 function listaPagamentosUsuario($id_usuario, $limite = 20) {
@@ -151,6 +175,95 @@ function listaPagamentosUsuario($id_usuario, $limite = 20) {
     $stmt->bindValue(2, $limite, PDO::PARAM_INT);
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function _condicoesPagamentos($filtro) {
+    $params = [];
+    $condicoes = [];
+
+    if (!empty($filtro['busca'])) {
+        $condicoes[] = '(u.nome LIKE ? OR u.email LIKE ?)';
+        $termo = '%' . $filtro['busca'] . '%';
+        $params[] = $termo;
+        $params[] = $termo;
+    }
+    if (!empty($filtro['id_plano'])) {
+        $condicoes[] = 'p.id_plano = ?';
+        $params[] = (int) $filtro['id_plano'];
+    }
+    if (!empty($filtro['id_usuario'])) {
+        $condicoes[] = 'p.id_usuario = ?';
+        $params[] = (int) $filtro['id_usuario'];
+    }
+    if (!empty($filtro['data_inicio'])) {
+        $condicoes[] = 'DATE(p.criado_em) >= ?';
+        $params[] = $filtro['data_inicio'];
+    }
+    if (!empty($filtro['data_fim'])) {
+        $condicoes[] = 'DATE(p.criado_em) <= ?';
+        $params[] = $filtro['data_fim'];
+    }
+    if (!empty($filtro['status'])) {
+        $condicoes[] = 'p.status = ?';
+        $params[] = $filtro['status'];
+    }
+    if (!empty($filtro['tipo']) && in_array($filtro['tipo'], ['novas', 'renovacoes'], true)) {
+        $comparador = $filtro['tipo'] === 'novas' ? '=' : '>';
+        $condicoes[] = "p.status = 'pago' AND p.criado_em $comparador (
+            SELECT MIN(p3.criado_em) FROM pagamentos p3 WHERE p3.id_usuario = p.id_usuario AND p3.status = 'pago'
+        )";
+    }
+
+    return [$condicoes, $params];
+}
+
+function listaPagamentos($filtro = [], $pagina = 1, $por_pagina = 30) {
+    garanteTabelaPagamentos();
+    $pdo = conexao();
+    $sql = "SELECT p.*, u.nome AS nome_usuario, u.email AS email_usuario, pl.nome AS nome_plano,
+            CASE
+                WHEN p.status != 'pago' THEN NULL
+                WHEN p.criado_em = (SELECT MIN(p3.criado_em) FROM pagamentos p3 WHERE p3.id_usuario = p.id_usuario AND p3.status = 'pago') THEN 'nova'
+                ELSE 'renovacao'
+            END AS tipo_pagamento
+            FROM pagamentos p
+            JOIN usuarios u ON u.id_usuario = p.id_usuario
+            LEFT JOIN planos pl ON pl.id_plano = p.id_plano";
+
+    [$condicoes, $params] = _condicoesPagamentos($filtro);
+    if ($condicoes) {
+        $sql .= ' WHERE ' . implode(' AND ', $condicoes);
+    }
+    $sql .= ' ORDER BY p.criado_em DESC';
+
+    $pagina = max(1, (int) $pagina);
+    $por_pagina = max(1, (int) $por_pagina);
+    $sql .= ' LIMIT ' . $por_pagina . ' OFFSET ' . (($pagina - 1) * $por_pagina);
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function resumoPagamentos($filtro = []) {
+    garanteTabelaPagamentos();
+    $pdo = conexao();
+    [$condicoes, $params] = _condicoesPagamentos($filtro);
+
+    $sql = "SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN p.status = 'pago' THEN p.valor ELSE 0 END), 0) AS receita
+            FROM pagamentos p
+            JOIN usuarios u ON u.id_usuario = p.id_usuario";
+    if ($condicoes) {
+        $sql .= ' WHERE ' . implode(' AND ', $condicoes);
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $linha = $stmt->fetch(PDO::FETCH_ASSOC);
+    return [
+        'total' => (int) $linha['total'],
+        'receita' => (float) $linha['receita'],
+    ];
 }
 
 function calculaReceitaMensal() {
@@ -169,8 +282,9 @@ function calculaReceitaMensal() {
             SELECT p1.id_usuario, p1.valor, p1.ciclo
             FROM pagamentos p1
             INNER JOIN (
-                SELECT id_usuario, MAX(criado_em) AS ultimo_em FROM pagamentos GROUP BY id_usuario
+                SELECT id_usuario, MAX(criado_em) AS ultimo_em FROM pagamentos WHERE status = 'pago' GROUP BY id_usuario
             ) p2 ON p2.id_usuario = p1.id_usuario AND p2.ultimo_em = p1.criado_em
+            WHERE p1.status = 'pago'
         ) ultimo ON ultimo.id_usuario = u.id_usuario
         WHERE u.deletado = 0 AND u.plano = 'ativo'"
     );
@@ -180,7 +294,7 @@ function calculaReceitaMensal() {
 function calculaReceitaTotal() {
     garanteTabelaPagamentos();
     $pdo = conexao();
-    return (float) $pdo->query('SELECT COALESCE(SUM(valor), 0) FROM pagamentos')->fetchColumn();
+    return (float) $pdo->query("SELECT COALESCE(SUM(valor), 0) FROM pagamentos WHERE status = 'pago'")->fetchColumn();
 }
 
 function receitaPorMes($meses = 6) {
@@ -190,7 +304,7 @@ function receitaPorMes($meses = 6) {
     $stmt = $pdo->prepare(
         "SELECT DATE_FORMAT(criado_em, '%Y-%m') AS mes, SUM(valor) AS total
          FROM pagamentos
-         WHERE criado_em >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
+         WHERE status = 'pago' AND criado_em >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
          GROUP BY mes ORDER BY mes ASC"
     );
     $stmt->execute([$meses]);
@@ -209,6 +323,39 @@ function receitaPorMes($meses = 6) {
         ];
     }
     return $resultado;
+}
+
+function contaNovasAssinaturasMes() {
+    garanteTabelaPagamentos();
+    $pdo = conexao();
+    return (int) $pdo->query(
+        "SELECT COUNT(*) FROM (
+            SELECT id_usuario, MIN(criado_em) AS primeiro_pagamento
+            FROM pagamentos WHERE status = 'pago' GROUP BY id_usuario
+        ) t WHERE t.primeiro_pagamento >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+    )->fetchColumn();
+}
+
+function contaRenovacoesMes() {
+    garanteTabelaPagamentos();
+    $pdo = conexao();
+    return (int) $pdo->query(
+        "SELECT COUNT(*) FROM pagamentos p
+         WHERE p.status = 'pago'
+         AND p.criado_em >= DATE_FORMAT(NOW(), '%Y-%m-01')
+         AND p.criado_em > (
+             SELECT MIN(p2.criado_em) FROM pagamentos p2
+             WHERE p2.id_usuario = p.id_usuario AND p2.status = 'pago'
+         )"
+    )->fetchColumn();
+}
+
+function contaFalhasMes() {
+    garanteTabelaPagamentos();
+    $pdo = conexao();
+    return (int) $pdo->query(
+        "SELECT COUNT(*) FROM pagamentos WHERE status = 'falhou' AND criado_em >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+    )->fetchColumn();
 }
 
 function contaPlanos() {

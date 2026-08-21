@@ -65,7 +65,11 @@ if ($eh_pedido_portal) {
 
     if ($acao === 'cambiar_plano' && !empty($_POST['id_plano'])) {
         $plano_escolhido = buscaPlanoPorId((int) $_POST['id_plano']);
-        if ($plano_escolhido && $plano_escolhido['ativo']) {
+        $usuario_cambiar = buscaUsuarioPorId(usuarioLogadoId());
+
+        $mesmo_plano = !empty($usuario_cambiar['id_plano']) && (int) $usuario_cambiar['id_plano'] === (int) ($plano_escolhido['id_plano'] ?? 0);
+
+        if ($plano_escolhido && $plano_escolhido['ativo'] && !$mesmo_plano) {
             if (MODO_DEV) {
                 $expira = null;
                 if ($plano_escolhido['ciclo'] === 'mensal') {
@@ -75,7 +79,35 @@ if ($eh_pedido_portal) {
                 } elseif ($plano_escolhido['ciclo'] === 'anual') {
                     $expira = date('Y-m-d H:i:s', strtotime('+1 year'));
                 }
-                atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira);
+                atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira, $plano_escolhido['id_plano']);
+            } elseif ($usuario_cambiar['plano'] === 'ativo' && !empty($usuario_cambiar['stripe_subscription_id'])) {
+                $assinatura_atual = buscaAssinaturaStripe($usuario_cambiar['stripe_subscription_id']);
+                $item_id = $assinatura_atual['items']['data'][0]['id'] ?? null;
+
+                if (!isset($assinatura_atual['error']) && $item_id) {
+                    $novo_preco = criaPrecoStripe([
+                        'nome_plano' => $plano_escolhido['nome'],
+                        'preco' => $plano_escolhido['preco'],
+                        'ciclo' => $plano_escolhido['ciclo'],
+                    ]);
+
+                    if (!isset($novo_preco['error'])) {
+                        $assinatura_atualizada = atualizaAssinaturaStripe(
+                            $usuario_cambiar['stripe_subscription_id'], $item_id, $novo_preco['id']
+                        );
+                        if (!isset($assinatura_atualizada['error'])) {
+                            $fim_periodo = fimPeriodoAssinaturaStripe($assinatura_atualizada);
+                            $expira_em = $fim_periodo ? date('Y-m-d H:i:s', (int) $fim_periodo) : $usuario_cambiar['plano_expira_em'];
+                            atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em, $plano_escolhido['id_plano']);
+                        } else {
+                            $_SESSION['erro_plano'] = traduz('conta_erro_cambiar_plano');
+                        }
+                    } else {
+                        $_SESSION['erro_plano'] = traduz('conta_erro_cambiar_plano');
+                    }
+                } else {
+                    $_SESSION['erro_plano'] = traduz('conta_erro_cambiar_plano');
+                }
             }
         }
     }
@@ -83,6 +115,9 @@ if ($eh_pedido_portal) {
     header('Location: conta');
     exit;
 }
+
+$erro_plano = $_SESSION['erro_plano'] ?? '';
+unset($_SESSION['erro_plano']);
 
 $usuario = buscaUsuarioPorId(usuarioLogadoId());
 $inicial_nome = mb_strtoupper(mb_substr($usuario['nome'], 0, 1));
@@ -176,6 +211,9 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
         <div class="assinatura-datas"><?= $texto_datas ?></div>
         <?php if ($erro_portal): ?>
         <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro_portal) ?></p>
+        <?php endif; ?>
+        <?php if ($erro_plano): ?>
+        <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro_plano) ?></p>
         <?php endif; ?>
         <div class="assinatura-acoes">
           <form method="post" action="conta" style="display:inline;"><input type="hidden" name="acao" value="portal_stripe" /><button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_cambiar_tarjeta') ?></button></form>

@@ -116,6 +116,18 @@ function buscaAssinaturaStripe($subscription_id) {
     return stripeRequest('GET', '/v1/subscriptions/' . $subscription_id);
 }
 
+// proration_behavior=none: os planos aqui sao baratos (R$1-R$33/mes), cobranca
+// fracionada imediata (create_prorations) arrisca ficar abaixo do minimo do
+// processador de cartao ou deixar credito residual preso. O novo preco so
+// vale a partir do proximo ciclo, mesma logica que atualizaPlanoUsuario ja usa.
+function atualizaAssinaturaStripe($subscription_id, $item_id, $novo_price_id) {
+    return stripeRequest('POST', '/v1/subscriptions/' . $subscription_id, [
+        'items[0][id]' => $item_id,
+        'items[0][price]' => $novo_price_id,
+        'proration_behavior' => 'none',
+    ]);
+}
+
 function mapeiaStatusStripeParaPlano($status) {
     if ($status === 'trialing') return 'trial';
     if ($status === 'active') return 'ativo';

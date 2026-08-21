@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS pagamentos (
     id_plano INT NULL,
     ciclo ENUM('mensal', 'trimestral', 'anual') NOT NULL DEFAULT 'mensal',
     valor DECIMAL(10,2) NOT NULL,
+    status ENUM('pago', 'falhou', 'reembolsado') NOT NULL DEFAULT 'pago',
     stripe_invoice_id VARCHAR(255) NULL UNIQUE,
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
