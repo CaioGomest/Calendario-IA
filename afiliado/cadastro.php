@@ -23,6 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'As senhas não coincidem.';
     } elseif (buscaAfiliadoPorEmail($email)) {
         $erro = 'Já existe um afiliado com este e-mail.';
+    } elseif (!verificaRecaptcha($_POST['recaptcha_token'] ?? '', 'afiliado_cadastro')) {
+        $erro = 'Não foi possível confirmar que você não é um robô. Tente novamente.';
     } else {
         insereAfiliado(['nome' => $nome, 'email' => $email, 'senha' => $senha, 'ativo' => 0]);
         $enviado = true;
@@ -40,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="../assets/css/cliente.css?v=<?= versaoAsset('assets/css/cliente.css') ?>" />
+<?php if (RECAPTCHA_SITE_KEY): ?>
+<script src="https://www.google.com/recaptcha/api.js?render=<?= urlencode(RECAPTCHA_SITE_KEY) ?>"></script>
+<?php endif; ?>
 </head>
 <body>
 <div class="login-estrutura">
@@ -96,6 +101,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
   </div>
 </div>
+<script>window.RECAPTCHA_SITE_KEY = <?= json_encode(RECAPTCHA_SITE_KEY) ?>;</script>
 <script src="../assets/js/mascote.js"></script>
+<script src="../assets/js/recaptcha.js"></script>
+<?php if (!$enviado): ?>
+<script>
+document.querySelector('.login-form form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var form = this;
+    obtemTokenRecaptcha('afiliado_cadastro').then(function (token) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'recaptcha_token';
+        input.value = token;
+        form.appendChild(input);
+        form.submit();
+    });
+});
+</script>
+<?php endif; ?>
 </body>
 </html>

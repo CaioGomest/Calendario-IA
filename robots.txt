@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /afiliado/
+Disallow: /api/
+Disallow: /cliente/
+
+Sitemap: https://bipoia.com/sitemap.xml

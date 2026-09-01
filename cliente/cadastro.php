@@ -26,6 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = traduz('erro_senha_confirmacao');
     } elseif (buscaUsuarioPorEmail($email)) {
         $erro = traduz('erro_email_existente');
+    } elseif (!verificaRecaptcha($_POST['recaptcha_token'] ?? '', 'cadastro')) {
+        $erro = traduz('erro_recaptcha');
     } else {
         $id_usuario = insereUsuario(['nome' => $nome, 'email' => $email, 'senha' => $senha]);
 
@@ -60,6 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="../assets/css/cliente.css?v=<?= versaoAsset('assets/css/cliente.css') ?>" />
+<?php if (RECAPTCHA_SITE_KEY): ?>
+<script src="https://www.google.com/recaptcha/api.js?render=<?= urlencode(RECAPTCHA_SITE_KEY) ?>"></script>
+<?php endif; ?>
 </head>
 <body>
 
@@ -159,8 +164,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 </div>
 
+<script>window.RECAPTCHA_SITE_KEY = <?= json_encode(RECAPTCHA_SITE_KEY) ?>;</script>
 <script src="../assets/js/mascote.js"></script>
 <script src="../assets/js/senha.js"></script>
+<script src="../assets/js/recaptcha.js"></script>
 <script src="../assets/js/cadastro.js"></script>
 </body>
 </html>

@@ -3,6 +3,7 @@
 return [
     'erro_login_invalido' => 'E-mail ou senha incorretos.',
     'erro_email_existente' => 'Já existe uma conta com este e-mail.',
+    'erro_recaptcha' => 'Não foi possível confirmar que você não é um robô. Tente novamente.',
     'erro_campos_invalidos' => 'Por favor, preencha todos os campos corretamente.',
     'erro_senha_fraca' => 'A senha deve ter ao menos 8 caracteres, com maiúscula, minúscula, número e caractere especial.',
     'erro_senha_confirmacao' => 'As senhas não coincidem.',

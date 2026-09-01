@@ -7,6 +7,25 @@ function validaSecretInterno() {
     return $secret !== '' && $secret === INTERNAL_SECRET;
 }
 
+function verificaRecaptcha($token, $acao_esperada, $limite = 0.5) {
+    if (MODO_DEV || !RECAPTCHA_SECRET_KEY) return true;
+    if (!$token) return false;
+
+    $ch = curl_init('https://www.google.com/recaptcha/api/siteverify');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query(['secret' => RECAPTCHA_SECRET_KEY, 'response' => $token]),
+        CURLOPT_TIMEOUT => 10,
+    ]);
+    $dados = json_decode(curl_exec($ch), true) ?: [];
+    curl_close($ch);
+
+    return !empty($dados['success'])
+        && ($dados['action'] ?? '') === $acao_esperada
+        && ($dados['score'] ?? 0) >= $limite;
+}
+
 function iniciaSessao() {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();

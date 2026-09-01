@@ -8,10 +8,15 @@
       botao.disabled = true;
       botao.textContent = '...';
 
-      fetch('cadastro', {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body: new FormData(form)
+      obtemTokenRecaptcha('cadastro').then(function (token) {
+        var formData = new FormData(form);
+        formData.append('recaptcha_token', token);
+
+        return fetch('cadastro', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: formData
+        });
       })
         .then(function (r) { return r.json(); })
         .then(function (resposta) {

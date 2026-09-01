@@ -13,7 +13,7 @@ $erro = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
 
-    if ($email !== '') {
+    if ($email !== '' && verificaRecaptcha($_POST['recaptcha_token'] ?? '', 'recuperar')) {
         $usuario = buscaUsuarioPorEmail($email);
         if ($usuario) {
             $token = criaTokenRecuperacao((int)$usuario['id_usuario']);
@@ -48,6 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="../assets/css/cliente.css?v=<?= versaoAsset('assets/css/cliente.css') ?>" />
+<?php if (RECAPTCHA_SITE_KEY): ?>
+<script src="https://www.google.com/recaptcha/api.js?render=<?= urlencode(RECAPTCHA_SITE_KEY) ?>"></script>
+<?php endif; ?>
 </head>
 <body>
 <div class="login-estrutura">
@@ -74,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro) ?></p>
       <?php endif; ?>
 
-      <form method="post" action="recuperar">
+      <form method="post" action="recuperar" id="form-recuperar">
         <div class="campo">
           <label><?= traduz('campo_email') ?></label>
           <div class="input"><span class="input-icone">✉️</span><input type="email" name="email" placeholder="<?= traduz('email_placeholder') ?>" required /></div>
@@ -86,6 +89,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 
 </div>
+<script>window.RECAPTCHA_SITE_KEY = <?= json_encode(RECAPTCHA_SITE_KEY) ?>;</script>
 <script src="../assets/js/mascote.js"></script>
+<script src="../assets/js/recaptcha.js"></script>
+<script>
+document.getElementById('form-recuperar').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var form = this;
+    obtemTokenRecaptcha('recuperar').then(function (token) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'recaptcha_token';
+        input.value = token;
+        form.appendChild(input);
+        form.submit();
+    });
+});
+</script>
 </body>
 </html>
