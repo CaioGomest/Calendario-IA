@@ -12,7 +12,6 @@ exigeLoginCliente();
 $pagina_atual = 'home';
 
 $usuario = buscaUsuarioPorId(usuarioLogadoId());
-exigeAssinaturaAtiva($usuario);
 
 $eventos_google = [];
 $token_acesso = garanteTokenGoogleValido($usuario['id_usuario']);
@@ -42,7 +41,7 @@ $eventos_semana = count(array_filter($eventos_google, function ($e) {
     return $inicio >= $agora && $inicio <= $fim_semana;
 }));
 $agora = new DateTime();
-$expirado = $usuario['plano_expira_em'] && new DateTime($usuario['plano_expira_em']) < $agora;
+$expirado = assinaturaExpirada($usuario);
 $dias_restantes_trial = (!$expirado && $usuario['plano_expira_em'])
     ? (int) $agora->diff(new DateTime($usuario['plano_expira_em']))->days
     : 0;
@@ -74,7 +73,7 @@ $pagamento_falhou = !empty($usuario['pagamento_falhou']);
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg" />
-<title><?= htmlspecialchars(nomeApp()) ?> — <?= traduz('menu_inicio') ?></title>
+<title><?= htmlspecialchars(nomeApp()) ?> - <?= traduz('menu_inicio') ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -114,6 +113,19 @@ $pagamento_falhou = !empty($usuario['pagamento_falhou']);
     </div>
 
     <div>
+      <div class="secao-rotulo"><?= traduz('home_eventos_titulo') ?></div>
+      <?php if (!$proximos_eventos): ?>
+      <div class="nota-caixa"><?= traduz('home_sin_eventos') ?></div>
+      <?php endif; ?>
+      <?php foreach ($proximos_eventos as $evento): ?>
+      <div class="evento">
+        <div class="evento-data"><b><?= htmlspecialchars($evento['dia']) ?></b><span><?= htmlspecialchars($evento['mes']) ?></span></div>
+        <div class="evento-info"><b><?= htmlspecialchars($evento['titulo']) ?></b><span><?= htmlspecialchars($evento['detalhe']) ?></span></div>
+      </div>
+      <?php endforeach; ?>
+    </div>
+
+    <div>
       <div class="secao-rotulo"><?= traduz('home_conexiones_titulo') ?></div>
       <div class="conexao">
         <span class="conexao-icone google">📅</span>
@@ -125,19 +137,6 @@ $pagamento_falhou = !empty($usuario['pagamento_falhou']);
         <div class="conexao-info"><b><?= traduz('home_whatsapp_label') ?></b><span><?= $whatsapp_conectado ? htmlspecialchars($usuario['telefone']) : '—' ?></span></div>
         <span class="selo <?= $whatsapp_conectado ? 'verde' : 'ambar' ?>"><span class="ponto"></span> <?= traduz($whatsapp_conectado ? 'home_activo' : 'home_pendiente') ?></span>
       </div>
-    </div>
-
-    <div>
-      <div class="secao-rotulo"><?= traduz('home_eventos_titulo') ?></div>
-      <?php if (!$proximos_eventos): ?>
-      <div class="nota-caixa"><?= traduz('home_sin_eventos') ?></div>
-      <?php endif; ?>
-      <?php foreach ($proximos_eventos as $evento): ?>
-      <div class="evento">
-        <div class="evento-data"><b><?= htmlspecialchars($evento['dia']) ?></b><span><?= htmlspecialchars($evento['mes']) ?></span></div>
-        <div class="evento-info"><b><?= htmlspecialchars($evento['titulo']) ?></b><span><?= htmlspecialchars($evento['detalhe']) ?></span></div>
-      </div>
-      <?php endforeach; ?>
     </div>
 
     <div class="nota-caixa"><?= traduz('home_micro_note') ?></div>

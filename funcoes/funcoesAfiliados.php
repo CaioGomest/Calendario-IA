@@ -4,12 +4,12 @@ require_once __DIR__ . '/../config/conexao.php';
 require_once __DIR__ . '/../config/config.php';
 
 function geraCodigoAfiliadoUnico($nome) {
-    $base = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', substr($nome, 0, 8)));
-    if ($base === '') {
-        $base = 'AFF';
-    }
+    $caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     do {
-        $codigo = $base . rand(100, 999);
+        $codigo = '';
+        for ($i = 0; $i < 6; $i++) {
+            $codigo .= $caracteres[random_int(0, strlen($caracteres) - 1)];
+        }
     } while (buscaAfiliadoPorCodigo($codigo));
     return $codigo;
 }
@@ -91,6 +91,17 @@ function buscaIndicacaoPorUsuario($id_usuario) {
     $stmt = $pdo->prepare('SELECT * FROM afiliados_indicacoes WHERE id_usuario_indicado = ?');
     $stmt->execute([$id_usuario]);
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function atribuiIndicacaoAfiliadoPorCookie($id_usuario) {
+    if (empty($_COOKIE['afiliado_ref']) || buscaIndicacaoPorUsuario($id_usuario)) {
+        return;
+    }
+    $codigo = validaCookieAfiliadoAssinado($_COOKIE['afiliado_ref']);
+    $afiliado = $codigo ? buscaAfiliadoPorCodigo($codigo) : null;
+    if ($afiliado) {
+        insereIndicacaoAfiliado($afiliado['id_afiliado'], $id_usuario);
+    }
 }
 
 function registraComissaoAfiliado($id_indicacao, $id_pagamento, $valor) {

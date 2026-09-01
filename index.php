@@ -8,11 +8,6 @@ require_once __DIR__ . '/funcoes/funcoesComponentes.php';
 
 iniciaSessao();
 
-if (usuarioLogadoId()) {
-    header('Location: cliente/home');
-    exit;
-}
-
 if (!empty($_GET['ref']) && empty($_COOKIE['afiliado_ref'])) {
     $afiliado_ref = buscaAfiliadoPorCodigo($_GET['ref']);
     if ($afiliado_ref) {
@@ -23,6 +18,11 @@ if (!empty($_GET['ref']) && empty($_COOKIE['afiliado_ref'])) {
         ]);
         registraCliqueAfiliado($afiliado_ref['id_afiliado']);
     }
+}
+
+if (usuarioLogadoId()) {
+    header('Location: cliente/home');
+    exit;
 }
 
 $planos_ativos = listaPlanos(['ativo' => 1]);
@@ -52,6 +52,16 @@ $sufixo_ciclo = [
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg" />
 <title><?= traduz('lp_title') ?></title>
+<meta name="description" content="<?= htmlspecialchars(traduz('lp_hero_lead')) ?>" />
+<link rel="canonical" href="https://bipoia.com/" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://bipoia.com/" />
+<meta property="og:title" content="<?= htmlspecialchars(traduz('lp_title')) ?>" />
+<meta property="og:description" content="<?= htmlspecialchars(traduz('lp_hero_lead')) ?>" />
+<meta property="og:locale" content="es_MX" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="<?= htmlspecialchars(traduz('lp_title')) ?>" />
+<meta name="twitter:description" content="<?= htmlspecialchars(traduz('lp_hero_lead')) ?>" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -145,6 +155,9 @@ $sufixo_ciclo = [
     <div class="beneficio revelar d2"><span class="icone">🌙</span><b><?= traduz('lp_ben4_title') ?></b><span><?= traduz('lp_ben4_text') ?></span></div>
     <div class="beneficio revelar d3"><span class="icone">🔒</span><b><?= traduz('lp_ben5_title') ?></b><span><?= traduz('lp_ben5_text') ?></span></div>
     <div class="beneficio revelar d3"><span class="icone"><?= traduz('lp_ben6_flag') ?></span><b><?= traduz('lp_ben6_title') ?></b><span><?= traduz('lp_ben6_text') ?></span></div>
+    <div class="beneficio revelar d1"><span class="icone">💰</span><b><?= traduz('lp_ben7_title') ?></b><span><?= traduz('lp_ben7_text') ?></span></div>
+    <div class="beneficio revelar d2"><span class="icone">🧾</span><b><?= traduz('lp_ben8_title') ?></b><span><?= traduz('lp_ben8_text') ?></span></div>
+    <div class="beneficio revelar d3"><span class="icone">🔁</span><b><?= traduz('lp_ben9_title') ?></b><span><?= traduz('lp_ben9_text') ?></span></div>
   </div>
 </section>
 
@@ -229,6 +242,10 @@ $sufixo_ciclo = [
       <button><?= traduz('lp_faq5_q') ?><span class="mais-menos"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
       <div class="resposta"><p><?= traduz('lp_faq5_a') ?></p></div>
     </div>
+    <div class="pergunta revelar d3">
+      <button><?= traduz('lp_faq6_q') ?><span class="mais-menos"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
+      <div class="resposta"><p><?= traduz('lp_faq6_a') ?></p></div>
+    </div>
   </div>
 </section>
 
@@ -298,7 +315,10 @@ $sufixo_ciclo = [
     {who:'ele',text:<?= json_encode(traduz('lp_demo_them1')) ?>, time:<?= json_encode(traduz('lp_demo_stamp1')) ?>},
     {who:'eu',  text:<?= json_encode(traduz('lp_demo_me2')) ?>, time:'10:33'},
     {who:'digitando'},
-    {who:'ele',text:<?= json_encode(traduz('lp_demo_them2')) ?>, time:<?= json_encode(traduz('lp_demo_stamp2')) ?>}
+    {who:'ele',text:<?= json_encode(traduz('lp_demo_them2')) ?>, time:<?= json_encode(traduz('lp_demo_stamp2')) ?>},
+    {who:'eu',  text:<?= json_encode(traduz('lp_demo_me3')) ?>, time:'10:34'},
+    {who:'digitando'},
+    {who:'ele',text:<?= json_encode(traduz('lp_demo_them3')) ?>, time:<?= json_encode(traduz('lp_demo_stamp3')) ?>}
   ];
   function el(cls){ var d=document.createElement('div'); d.className=cls; return d; }
   function addBubble(item){

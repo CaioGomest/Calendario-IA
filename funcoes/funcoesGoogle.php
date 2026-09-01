@@ -86,8 +86,8 @@ function garanteTokenGoogleValido($id_usuario) {
     $tokens = buscaTokensGoogle($id_usuario);
     if (!$tokens || !$tokens['token_acesso_google']) return null;
 
-    $expira = new DateTime($tokens['token_google_expira_em']);
-    $agora = new DateTime();
+    $expira = new DateTime($tokens['token_google_expira_em'], new DateTimeZone('UTC'));
+    $agora = new DateTime('now', new DateTimeZone('UTC'));
 
     if ($expira > $agora) {
         return $tokens['token_acesso_google'];
@@ -112,7 +112,7 @@ function garanteTokenGoogleValido($id_usuario) {
 
     if (empty($resposta['access_token'])) return null;
 
-    $nova_expiracao = date('Y-m-d H:i:s', time() + $resposta['expires_in']);
+    $nova_expiracao = gmdate('Y-m-d H:i:s', time() + $resposta['expires_in']);
     renovaTokenGoogle($id_usuario, $resposta['access_token'], $nova_expiracao);
 
     return $resposta['access_token'];

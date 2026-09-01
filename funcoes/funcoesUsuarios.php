@@ -143,12 +143,29 @@ function deletaUsuario($id_usuario) {
     $stmt->execute([$id_usuario]);
 }
 
-function contaUsuariosPorPlano() {
+function assinaturaExpirada($usuario, $horas_carencia = HORAS_CARENCIA_ASSINATURA) {
+    if (empty($usuario['plano_expira_em'])) return false;
+    $limite = (new DateTime())->modify("-{$horas_carencia} hours");
+    return new DateTime($usuario['plano_expira_em']) < $limite;
+}
+
+function contaUsuariosPorPlano($horas_carencia = HORAS_CARENCIA_ASSINATURA) {
     $pdo = conexao();
-    $stmt = $pdo->query('SELECT plano, COUNT(*) as total FROM usuarios WHERE deletado = 0 GROUP BY plano');
+    $limite = (new DateTime())->modify("-{$horas_carencia} hours")->format('Y-m-d H:i:s');
+    $stmt = $pdo->prepare(
+        "SELECT
+            CASE
+                WHEN plano = 'ativo' AND (plano_expira_em IS NULL OR plano_expira_em >= ?) THEN 'ativo'
+                WHEN plano = 'ativo' THEN 'expirado'
+                ELSE plano
+            END AS plano_efetivo,
+            COUNT(*) AS total
+         FROM usuarios WHERE deletado = 0 GROUP BY plano_efetivo"
+    );
+    $stmt->execute([$limite]);
     $resultado = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $resultado[$row['plano']] = (int) $row['total'];
+        $resultado[$row['plano_efetivo']] = (int) $row['total'];
     }
     return $resultado;
 }
@@ -184,6 +201,11 @@ function atualizaUsuario($id_usuario, $dados) {
     if (isset($dados['plano_expira_em'])) {
         $campos[] = 'plano_expira_em = ?';
         $params[] = $dados['plano_expira_em'] ?: null;
+    }
+
+    if (isset($dados['id_plano'])) {
+        $campos[] = 'id_plano = ?';
+        $params[] = $dados['id_plano'] ?: null;
     }
 
     if (empty($campos)) return;

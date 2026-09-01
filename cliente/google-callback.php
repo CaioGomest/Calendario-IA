@@ -41,7 +41,7 @@ $nome = $perfil['name'] ?? $email;
 $token_acesso = $tokens['access_token'];
 $token_refresh = $tokens['refresh_token'] ?? null;
 $token_expira_em = isset($tokens['expires_in'])
-    ? date('Y-m-d H:i:s', time() + (int)$tokens['expires_in'])
+    ? gmdate('Y-m-d H:i:s', time() + (int)$tokens['expires_in'])
     : null;
 
 $usuario = buscaUsuarioPorEmail($email);

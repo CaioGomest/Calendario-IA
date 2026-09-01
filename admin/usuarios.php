@@ -12,6 +12,7 @@ exigeLoginAdmin();
 $pagina_atual = 'usuarios';
 $msg_sucesso = '';
 $msg_erro = '';
+$planos_catalogo = listaPlanos();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     $acao = $_POST['acao'];
@@ -51,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         $telefone = trim($_POST['telefone'] ?? '');
         $plano = $_POST['plano'] ?? 'trial';
         $plano_expira_em = $_POST['plano_expira_em'] ?? '';
+        $id_plano = (int) ($_POST['id_plano'] ?? 0);
 
         if (!$nome || !$email) {
             $msg_erro = traduz('admin_erro_nome_email');
@@ -71,6 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
                     'telefone' => $telefone,
                     'plano' => $plano,
                     'plano_expira_em' => $plano_expira_em,
+                    'id_plano' => $id_plano,
                 ]);
                 $msg_sucesso = traduz('admin_usuario_atualizado');
             }
@@ -107,7 +110,7 @@ $usuarios = listaUsuarios($filtro);
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg" />
-<title><?= htmlspecialchars(nomeApp()) ?> — <?= traduz('admin_usuarios') ?></title>
+<title><?= htmlspecialchars(nomeApp()) ?> - <?= traduz('admin_usuarios') ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -163,7 +166,7 @@ $usuarios = listaUsuarios($filtro);
               <th><?= traduz('admin_email_col') ?></th>
               <th><?= traduz('admin_telefone') ?></th>
               <th><?= traduz('admin_plano') ?></th>
-              <th><?= traduz('admin_status') ?></th>
+              <th><?= traduz('admin_status_conta') ?></th>
               <th><?= traduz('admin_msgs_hoje') ?></th>
               <th><?= traduz('admin_cadastro') ?></th>
               <th style="text-align:right;"><?= traduz('admin_acoes') ?></th>
@@ -360,6 +363,17 @@ $usuarios = listaUsuarios($filtro);
             <input type="datetime-local" name="plano_expira_em" id="editar-plano-expira" />
           </div>
         </div>
+        <div class="campo">
+          <label><?= traduz('admin_plano_catalogo') ?></label>
+          <div class="campo-entrada">
+            <select name="id_plano" id="editar-id-plano">
+              <option value=""><?= traduz('admin_plano_nenhum') ?></option>
+              <?php foreach ($planos_catalogo as $p): ?>
+              <option value="<?= $p['id_plano'] ?>"><?= htmlspecialchars($p['nome']) ?> (<?= simboloMoeda() . number_format((float) $p['preco'], 0) ?>/<?= $p['ciclo'] ?>)</option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="botao-pequeno botao-fantasma" onclick="this.closest('.modal-overlay').classList.remove('aberto')"><?= traduz('admin_cancelar') ?></button>
@@ -444,6 +458,7 @@ function abrirEditar(u) {
     document.getElementById('editar-email').value = u.email;
     document.getElementById('editar-telefone').value = u.telefone || '';
     document.getElementById('editar-plano').value = u.plano;
+    document.getElementById('editar-id-plano').value = u.id_plano || '';
     var expira = u.plano_expira_em || '';
     if (expira) {
         expira = expira.replace(' ', 'T').substring(0, 16);

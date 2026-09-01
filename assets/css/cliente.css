@@ -1382,7 +1382,10 @@ body {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    min-height: 100vh;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
 }
 
 .sidebar-marca {
@@ -1793,6 +1796,10 @@ body {
 }
 
 /* PLANOS NO MODAL */
+#modal-plano .modal-caixa {
+    max-width: 680px;
+}
+
 .modal-planos {
     display: flex;
     gap: 12px;

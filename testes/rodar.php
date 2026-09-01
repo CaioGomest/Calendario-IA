@@ -49,7 +49,7 @@ $todos_ok = $resultados['falha'] === 0;
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Testes — CalendarioIA</title>
+    <title>Testes - CalendarioIA</title>
     <style>
         body { font-family: monospace; max-width: 720px; margin: 40px auto; padding: 0 20px; background: #0f172a; color: #e2e8f0; }
         h1 { font-size: 1.1rem; color: #94a3b8; margin-bottom: 24px; }

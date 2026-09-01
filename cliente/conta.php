@@ -121,7 +121,13 @@ unset($_SESSION['erro_plano']);
 
 $usuario = buscaUsuarioPorId(usuarioLogadoId());
 $inicial_nome = mb_strtoupper(mb_substr($usuario['nome'], 0, 1));
-$plano_conta = !empty($usuario['id_plano']) ? buscaPlanoPorId($usuario['id_plano']) : buscaPlanoSugerido();
+if (!empty($usuario['id_plano'])) {
+    $plano_conta = buscaPlanoPorId($usuario['id_plano']);
+} elseif ($usuario['plano'] !== 'ativo') {
+    $plano_conta = buscaPlanoSugerido();
+} else {
+    $plano_conta = null;
+}
 $sufixo_conta = [
     'mensal' => traduz('upgrade_ciclo_mensal'),
     'trimestral' => traduz('upgrade_ciclo_trimestral'),
@@ -132,7 +138,7 @@ $preco_plano_texto = $plano_conta
     : '';
 
 $agora = new DateTime();
-$expirado = $usuario['plano_expira_em'] && new DateTime($usuario['plano_expira_em']) < $agora;
+$expirado = assinaturaExpirada($usuario);
 
 if ($usuario['plano_expira_em']) {
     $data_expira = new DateTime($usuario['plano_expira_em']);
@@ -173,6 +179,35 @@ $data_expira_fmt = $usuario['plano_expira_em']
     : '—';
 
 $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 'recordatorio_1h', 1440 => 'recordatorio_1d'];
+
+$historico_pagamentos = listaPagamentos(['id_usuario' => $usuario['id_usuario']], 1, 10);
+$rotulo_status_pagamento = ['pago' => traduz('admin_pago'), 'falhou' => traduz('admin_falhou'), 'reembolsado' => traduz('admin_reembolsado')];
+$cor_status_pagamento = ['pago' => 'verde', 'falhou' => 'vermelho', 'reembolsado' => 'ambar'];
+
+$secao_historico = function ($classe_rotulo = 'secao-rotulo') use ($historico_pagamentos, $rotulo_status_pagamento, $cor_status_pagamento) {
+    if (!$historico_pagamentos) {
+        return;
+    }
+    ?>
+    <div class="<?= $classe_rotulo ?>"><?= traduz('conta_historico_titulo') ?></div>
+    <div>
+      <?php foreach ($historico_pagamentos as $p): ?>
+      <div class="fin-item" style="cursor:default;">
+        <div class="fin-item-icone" style="background: var(--soft-tint);">💳</div>
+        <div class="fin-item-info">
+          <div class="fin-item-nome"><?= htmlspecialchars($p['nome_plano'] ?? '—') ?></div>
+          <div class="fin-item-meta">
+            <span><?= date('d/m/Y', strtotime($p['criado_em'])) ?></span>
+            <span>·</span>
+            <span class="selo <?= $cor_status_pagamento[$p['status']] ?? 'neutro' ?>"><span class="ponto"></span> <?= $rotulo_status_pagamento[$p['status']] ?? $p['status'] ?></span>
+          </div>
+        </div>
+        <div class="fin-item-valor"><?= simboloMoeda() . number_format((float) $p['valor'], 2) ?></div>
+      </div>
+      <?php endforeach; ?>
+    </div>
+    <?php
+};
 ?>
 <!DOCTYPE html>
 <html lang="es-MX">
@@ -180,7 +215,7 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg" />
-<title><?= htmlspecialchars(nomeApp()) ?> — <?= traduz('conta_titulo') ?></title>
+<title><?= htmlspecialchars(nomeApp()) ?> - <?= traduz('conta_titulo') ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -220,6 +255,10 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
           <button type="button" class="botao botao-perigo botao-pequeno"><?= traduz('botao_cancelar_plan') ?></button>
         </div>
       </div>
+    </div>
+
+    <div>
+      <?php $secao_historico(); ?>
     </div>
 
     <div>
@@ -319,6 +358,8 @@ $opcoes_recordatorio = [15 => 'recordatorio_15', 30 => 'recordatorio_30', 60 => 
                 <button type="button" class="botao botao-perigo botao-pequeno" onclick="abrirModal('modal-cancelar')"><?= traduz('botao_cancelar_plan') ?></button>
               </div>
             </div>
+
+            <?php $secao_historico('secao-rotulo-desktop'); ?>
 
             <div class="secao-rotulo-desktop"><?= traduz('sesion_titulo') ?></div>
             <form method="post" action="conta">

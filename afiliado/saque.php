@@ -51,18 +51,15 @@ $cor_status = ['pendente' => 'ambar', 'pago' => 'verde', 'recusado' => 'vermelho
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg" />
-<title><?= htmlspecialchars(nomeApp()) ?> — Saques</title>
+<title><?= htmlspecialchars(nomeApp()) ?> - Saques</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="../assets/css/cliente.css?v=<?= versaoAsset('assets/css/cliente.css') ?>" />
 <style>
-.afiliado-cards { display: flex; gap: 16px; flex-wrap: wrap; margin: 20px 0; max-width: 420px; }
-.afiliado-card { flex: 1; min-width: 160px; background: var(--surface, #fff); border: 1px solid var(--border, #eee); border-radius: 12px; padding: 16px; }
-.afiliado-card b { display: block; font-size: 22px; margin-top: 4px; }
-.afiliado-form-saque { background: var(--surface, #fff); border: 1px solid var(--border, #eee); border-radius: 12px; padding: 16px; margin: 16px 0; max-width: 420px; }
-.afiliado-tabela { width: 100%; border-collapse: collapse; margin-top: 12px; }
-.afiliado-tabela th, .afiliado-tabela td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border, #eee); font-size: 14px; }
+.afiliado-conteudo { max-width: 480px; }
+.afiliado-form-saque { margin: 16px 0; }
+.afiliado-form-saque .campo:first-child { margin-top: 0; }
 </style>
 </head>
 <body>
@@ -71,6 +68,8 @@ $cor_status = ['pendente' => 'ambar', 'pago' => 'verde', 'recusado' => 'vermelho
 ob_start();
 ?>
 
+<div class="afiliado-conteudo">
+
 <?php if ($msg_sucesso): ?>
 <div class="sucesso-msg" style="margin-bottom:12px;"><?= htmlspecialchars($msg_sucesso) ?></div>
 <?php endif; ?>
@@ -78,11 +77,14 @@ ob_start();
 <div class="erro-msg" style="margin-bottom:12px;"><?= htmlspecialchars($msg_erro) ?></div>
 <?php endif; ?>
 
-<div class="afiliado-cards">
-  <div class="afiliado-card">Saldo disponível<b>$<?= number_format($saldo_disponivel, 2) ?></b></div>
+<div class="fin-resumo-grid" style="grid-template-columns: 1fr;">
+  <div class="fin-resumo-card">
+    <div class="resumo-label">Saldo disponível</div>
+    <div class="resumo-valor">$<?= number_format($saldo_disponivel, 2) ?></div>
+  </div>
 </div>
 
-<form class="afiliado-form-saque" method="post" action="saque">
+<form class="cartao afiliado-form-saque" method="post" action="saque">
   <div class="campo">
     <label>Valor do saque</label>
     <div class="input"><span class="input-icone">$</span><input type="text" name="valor" placeholder="0.00" required /></div>
@@ -97,22 +99,27 @@ ob_start();
 
 <h2 class="tela-subtitulo">Histórico de saques</h2>
 <?php if ($saques): ?>
-<table class="afiliado-tabela">
-  <thead><tr><th>Data</th><th>Valor</th><th>PayPal</th><th>Status</th></tr></thead>
-  <tbody>
-    <?php foreach ($saques as $s): ?>
-    <tr>
-      <td><?= date('d/m/Y', strtotime($s['criado_em'])) ?></td>
-      <td>$<?= number_format($s['valor'], 2) ?></td>
-      <td><?= htmlspecialchars($s['email_paypal']) ?></td>
-      <td><span class="selo <?= $cor_status[$s['status']] ?>"><span class="ponto"></span> <?= $rotulo_status[$s['status']] ?></span></td>
-    </tr>
-    <?php endforeach; ?>
-  </tbody>
-</table>
+<div class="fin-lista">
+  <?php foreach ($saques as $s): ?>
+  <div class="fin-item" style="cursor:default;">
+    <div class="fin-item-icone" style="background: var(--soft-tint);">💰</div>
+    <div class="fin-item-info">
+      <div class="fin-item-nome">$<?= number_format($s['valor'], 2) ?></div>
+      <div class="fin-item-meta">
+        <span><?= date('d/m/Y', strtotime($s['criado_em'])) ?></span>
+        <span>·</span>
+        <span><?= htmlspecialchars($s['email_paypal']) ?></span>
+      </div>
+    </div>
+    <span class="selo <?= $cor_status[$s['status']] ?>"><span class="ponto"></span> <?= $rotulo_status[$s['status']] ?></span>
+  </div>
+  <?php endforeach; ?>
+</div>
 <?php else: ?>
 <p class="dica">Nenhum saque solicitado ainda.</p>
 <?php endif; ?>
+
+</div>
 
 <?php $conteudo_saque = ob_get_clean(); ?>
 

@@ -118,7 +118,7 @@ switch ($tipo) {
 
                     if ($id_pagamento > 0) {
                         $indicacao = buscaIndicacaoPorUsuario((int)$usuario['id_usuario']);
-                        if ($indicacao) {
+                        if ($indicacao && strtotime($indicacao['criado_em']) >= strtotime('-12 months')) {
                             $afiliado = buscaAfiliadoPorId($indicacao['id_afiliado']);
                             if ($afiliado) {
                                 $valor_comissao = round($valor_pago * $afiliado['comissao_percentual'] / 100, 2);

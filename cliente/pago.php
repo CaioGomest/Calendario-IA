@@ -4,6 +4,7 @@ require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
 require_once __DIR__ . '/../funcoes/funcoesStripe.php';
+require_once __DIR__ . '/../funcoes/funcoesAfiliados.php';
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
 
@@ -40,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
             $expira = date('Y-m-d H:i:s', strtotime($map[$plano_dev['ciclo']] ?? '+1 month'));
         }
         atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira, $plano_dev['id_plano'] ?? null);
+        atribuiIndicacaoAfiliadoPorCookie(usuarioLogadoId());
         header('Location: google');
         exit;
     }
@@ -71,22 +73,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
                 $expira_em = $fim_periodo
                     ? date('Y-m-d H:i:s', (int)$fim_periodo)
                     : date('Y-m-d H:i:s', strtotime('+1 month'));
-                atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em);
+                atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em, $plano_confirma['id_plano']);
                 atualizaStripeUsuario(usuarioLogadoId(), $stripe_customer_id, $assinatura['id']);
+                atribuiIndicacaoAfiliadoPorCookie(usuarioLogadoId());
                 header('Location: google');
                 exit;
             }
         }
         $erro_pago = traduz('pago_erro_stripe');
     } elseif ($sub_id !== '') {
+        $id_plano_confirma = (int)($_POST['id_plano'] ?? 0);
+        $plano_confirma = $id_plano_confirma ? buscaPlanoPorId($id_plano_confirma) : null;
         $sub = buscaAssinaturaStripe($sub_id);
         if (!isset($sub['error']) && in_array($sub['status'] ?? '', ['active', 'trialing'])) {
             $fim_periodo = fimPeriodoAssinaturaStripe($sub);
             $expira_em = $fim_periodo
                 ? date('Y-m-d H:i:s', (int)$fim_periodo)
                 : date('Y-m-d H:i:s', strtotime('+1 month'));
-            atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em);
+            atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em, $plano_confirma['id_plano'] ?? null);
             atualizaStripeUsuario(usuarioLogadoId(), $sub['customer'] ?? '', $sub_id);
+            atribuiIndicacaoAfiliadoPorCookie(usuarioLogadoId());
             header('Location: google');
             exit;
         }
@@ -161,7 +167,7 @@ $mostra_pagamento = $plano_selecionado !== null;
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg" />
-<title><?= htmlspecialchars(nomeApp()) ?> — <?= traduz('pago_titulo') ?></title>
+<title><?= htmlspecialchars(nomeApp()) ?> - <?= traduz('pago_titulo') ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -269,7 +275,7 @@ $mostra_pagamento = $plano_selecionado !== null;
   <div class="vista-mobile">
     <div class="barra-topo">
       <?php renderizaMarca('ink', 20); ?>
-      <a class="botao botao-contorno botao-pequeno" href="cadastro"><?= traduz('botao_atras') ?></a>
+      <a class="botao botao-contorno botao-pequeno" href="home"><?= traduz('pago_pular') ?></a>
     </div>
     <div class="conteudo-pagina espacado">
       <div class="etapa-cabecalho">
@@ -315,8 +321,13 @@ $mostra_pagamento = $plano_selecionado !== null;
             <div class="cadastro-progresso-barras"><span class="completo"></span><span class="completo"></span><span></span><span></span></div>
             <span class="cadastro-progresso-rotulo"><?= traduz('pago_step_label') ?></span>
           </div>
-          <h2 class="form-titulo"><?= traduz('pago_escolha_plano') ?></h2>
-          <p class="form-subtitulo"><?= traduz('pago_escolha_subtitulo') ?></p>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+            <div>
+              <h2 class="form-titulo"><?= traduz('pago_escolha_plano') ?></h2>
+              <p class="form-subtitulo"><?= traduz('pago_escolha_subtitulo') ?></p>
+            </div>
+            <a class="botao botao-contorno botao-pequeno" href="home" style="white-space:nowrap;"><?= traduz('pago_pular') ?></a>
+          </div>
 
           <div class="grade-planos-pago">
             <?php foreach ($planos_ativos as $p): ?>
