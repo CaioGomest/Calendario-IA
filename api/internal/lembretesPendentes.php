@@ -5,6 +5,7 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../../funcoes/funcoesEventos.php';
+require_once __DIR__ . '/../../funcoes/funcoesConfiguracao.php';
 
 if (!validaSecretInterno()) {
     http_response_code(401);
@@ -30,6 +31,7 @@ $data = array_map(function ($e) {
         'antecedencia_lembrete_min' => (int) $e['antecedencia_lembrete_min'],
         'modo_silencio' => (bool) $e['modo_silencio'],
         'fuso_horario' => $e['fuso_horario'],
+        'idioma' => $e['idioma'] ?? null ?: (buscaConfiguracao('idioma_padrao') ?? IDIOMA_PADRAO),
     ];
 }, $pendentes);
 

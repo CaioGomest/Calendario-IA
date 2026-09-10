@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     token_refresh_google TEXT NULL,
     token_google_expira_em DATETIME NULL,
     fuso_horario VARCHAR(50) NOT NULL DEFAULT 'America/Mexico_City',
+    idioma VARCHAR(10) NULL,
     modo_silencio TINYINT(1) NOT NULL DEFAULT 0,
     antecedencia_lembrete_min INT NOT NULL DEFAULT 30,
     token_recuperacao VARCHAR(255) NULL,
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     deletado TINYINT(1) NOT NULL DEFAULT 0
 );
 
+-- data_inicio/data_fim sao gravados em UTC (instante absoluto), nunca no fuso do usuario -- ver funcoesEventos.php::listaEventosPendentesLembrete
 CREATE TABLE IF NOT EXISTS eventos (
     id_evento INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT NOT NULL,

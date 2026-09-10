@@ -6,6 +6,7 @@ require_once __DIR__ . '/../funcoes/funcoesGoogle.php';
 require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
 require_once __DIR__ . '/../funcoes/funcoesStripe.php';
 require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
+require_once __DIR__ . '/../funcoes/funcoesEmail.php';
 
 iniciaSessao();
 exigeLoginCliente();
@@ -41,6 +42,15 @@ if ($eh_pedido_portal) {
     if ($acao === 'alternar_modo_silencio') {
         $usuario_atual = buscaUsuarioPorId(usuarioLogadoId());
         atualizaModoSilencio(usuarioLogadoId(), !$usuario_atual['modo_silencio']);
+    }
+
+    if ($acao === 'mudar_idioma' && in_array($_POST['idioma'] ?? '', listaIdiomasDisponiveis(), true)) {
+        atualizaIdiomaUsuario(usuarioLogadoId(), $_POST['idioma']);
+        $_SESSION['idioma'] = $_POST['idioma'];
+    }
+
+    if ($acao === 'mudar_fuso' && in_array($_POST['fuso_horario'] ?? '', listaFusosHorariosComuns(), true)) {
+        atualizaFusoHorarioUsuario(usuarioLogadoId(), $_POST['fuso_horario']);
     }
 
     if ($acao === 'definir_recordatorio') {
@@ -80,6 +90,7 @@ if ($eh_pedido_portal) {
                     $expira = date('Y-m-d H:i:s', strtotime('+1 year'));
                 }
                 atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira, $plano_escolhido['id_plano']);
+                enviaEmailPlanoAlterado($usuario_cambiar, $plano_escolhido);
             } elseif ($usuario_cambiar['plano'] === 'ativo' && !empty($usuario_cambiar['stripe_subscription_id'])) {
                 $assinatura_atual = buscaAssinaturaStripe($usuario_cambiar['stripe_subscription_id']);
                 $item_id = $assinatura_atual['items']['data'][0]['id'] ?? null;
@@ -99,6 +110,7 @@ if ($eh_pedido_portal) {
                             $fim_periodo = fimPeriodoAssinaturaStripe($assinatura_atualizada);
                             $expira_em = $fim_periodo ? date('Y-m-d H:i:s', (int) $fim_periodo) : $usuario_cambiar['plano_expira_em'];
                             atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em, $plano_escolhido['id_plano']);
+                            enviaEmailPlanoAlterado($usuario_cambiar, $plano_escolhido);
                         } else {
                             $_SESSION['erro_plano'] = traduz('conta_erro_cambiar_plano');
                         }
@@ -286,6 +298,26 @@ $secao_historico = function ($classe_rotulo = 'secao-rotulo') use ($historico_pa
           </div>
         </div>
       </div>
+      <form method="post" action="conta" class="config-linha">
+        <input type="hidden" name="acao" value="mudar_idioma" />
+        <span class="config-icone">🌐</span>
+        <div class="config-info"><b><?= traduz('idioma_titulo') ?></b><span><?= traduz('idioma_sub') ?></span></div>
+        <select name="idioma" onchange="this.form.submit()">
+          <?php foreach (listaIdiomasDisponiveis() as $codigo): ?>
+          <option value="<?= htmlspecialchars($codigo) ?>" <?= $codigo === $_SESSION['idioma'] ? 'selected' : '' ?>><?= htmlspecialchars(nomeIdioma($codigo)) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </form>
+      <form method="post" action="conta" class="config-linha">
+        <input type="hidden" name="acao" value="mudar_fuso" />
+        <span class="config-icone">🕐</span>
+        <div class="config-info"><b><?= traduz('fuso_titulo') ?></b><span><?= traduz('fuso_sub') ?></span></div>
+        <select name="fuso_horario" data-valor-atual="<?= htmlspecialchars($usuario['fuso_horario']) ?>" onchange="confirmarMudancaFuso(this)">
+          <?php foreach (listaFusosHorariosComuns() as $fuso): ?>
+          <option value="<?= htmlspecialchars($fuso) ?>" <?= $fuso === $usuario['fuso_horario'] ? 'selected' : '' ?>><?= htmlspecialchars(nomeFusoHorario($fuso)) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </form>
     </div>
 
     <div>
@@ -393,6 +425,26 @@ $secao_historico = function ($classe_rotulo = 'secao-rotulo') use ($historico_pa
                 </div>
               </div>
             </div>
+            <form method="post" action="conta" class="config-linha">
+              <input type="hidden" name="acao" value="mudar_idioma" />
+              <span class="config-icone">🌐</span>
+              <div class="config-info"><b><?= traduz('idioma_titulo') ?></b><span><?= traduz('idioma_sub') ?></span></div>
+              <select name="idioma" onchange="this.form.submit()">
+                <?php foreach (listaIdiomasDisponiveis() as $codigo): ?>
+                <option value="<?= htmlspecialchars($codigo) ?>" <?= $codigo === $_SESSION['idioma'] ? 'selected' : '' ?>><?= htmlspecialchars(nomeIdioma($codigo)) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </form>
+            <form method="post" action="conta" class="config-linha">
+              <input type="hidden" name="acao" value="mudar_fuso" />
+              <span class="config-icone">🕐</span>
+              <div class="config-info"><b><?= traduz('fuso_titulo') ?></b><span><?= traduz('fuso_sub') ?></span></div>
+              <select name="fuso_horario" data-valor-atual="<?= htmlspecialchars($usuario['fuso_horario']) ?>" onchange="confirmarMudancaFuso(this)">
+                <?php foreach (listaFusosHorariosComuns() as $fuso): ?>
+                <option value="<?= htmlspecialchars($fuso) ?>" <?= $fuso === $usuario['fuso_horario'] ? 'selected' : '' ?>><?= htmlspecialchars(nomeFusoHorario($fuso)) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </form>
 
             <div class="secao-rotulo-desktop"><?= traduz('conexiones_titulo') ?></div>
             <div class="conexao">
@@ -496,10 +548,42 @@ $secao_historico = function ($classe_rotulo = 'secao-rotulo') use ($historico_pa
   </div>
 </div>
 
+<!-- Modal: Trocar fuso horario -->
+<div id="modal-fuso" class="modal-fundo" onclick="if(event.target===this)fusoCancelar()">
+  <div class="modal-caixa">
+    <button type="button" class="modal-fechar" onclick="fusoCancelar()">✕</button>
+    <div class="modal-icone">🕐</div>
+    <h2 class="modal-titulo"><?= traduz('modal_fuso_titulo') ?></h2>
+    <p class="modal-sub"><?= traduz('modal_fuso_sub') ?></p>
+    <div class="modal-alerta">
+      <span class="alerta-icone">⚠️</span>
+      <span class="alerta-texto"><?= traduz('modal_fuso_alerta') ?></span>
+    </div>
+    <button type="button" class="botao-primario-grande" onclick="fusoCancelar()"><?= traduz('modal_fuso_mantener') ?></button>
+    <button type="button" class="botao-contorno-grande" onclick="fusoConfirmar()"><?= traduz('modal_fuso_confirmar') ?></button>
+  </div>
+</div>
+
 <script src="../assets/js/mascote.js"></script>
 <script>
 function abrirModal(id){ document.getElementById(id).classList.add('aberto'); }
 function fecharModal(id){ document.getElementById(id).classList.remove('aberto'); }
+
+let formFusoPendente = null;
+let valorFusoAnterior = null;
+function confirmarMudancaFuso(select){
+  formFusoPendente = select.form;
+  valorFusoAnterior = select.getAttribute('data-valor-atual');
+  abrirModal('modal-fuso');
+}
+function fusoConfirmar(){
+  fecharModal('modal-fuso');
+  if (formFusoPendente) formFusoPendente.submit();
+}
+function fusoCancelar(){
+  if (formFusoPendente) formFusoPendente.querySelector('select[name="fuso_horario"]').value = valorFusoAnterior;
+  fecharModal('modal-fuso');
+}
 
 function selecionarPlano(el){
   document.querySelectorAll('.plano-opcao').forEach(function(o){ o.classList.remove('selecionado'); });

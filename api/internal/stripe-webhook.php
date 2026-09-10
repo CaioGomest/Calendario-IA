@@ -88,16 +88,15 @@ switch ($tipo) {
     case 'invoice.paid':
     case 'invoice.payment_succeeded':
         $customer_id = $objeto['customer'] ?? '';
-        $subscription_id = $objeto['subscription'] ?? '';
+        $subscription_id = $objeto['subscription'] ?? $objeto['parent']['subscription_details']['subscription'] ?? '';
         $usuario = $customer_id ? buscaUsuarioPorStripeCustomer($customer_id) : null;
 
         if ($usuario && $subscription_id) {
             $sub = stripeRequest('GET', '/v1/subscriptions/' . $subscription_id);
             $status_mapeado = mapeiaStatusStripeParaPlano($sub['status'] ?? '');
             if (!isset($sub['error']) && $status_mapeado !== null) {
-                $expira_em = !empty($sub['current_period_end'])
-                    ? date('Y-m-d H:i:s', (int)$sub['current_period_end'])
-                    : null;
+                $periodo_fim = $sub['current_period_end'] ?? $sub['items']['data'][0]['current_period_end'] ?? null;
+                $expira_em = !empty($periodo_fim) ? date('Y-m-d H:i:s', (int)$periodo_fim) : null;
                 $id_plano_novo = (int)($sub['metadata']['id_plano'] ?? 0) ?: null;
                 atualizaPlanoUsuario((int)$usuario['id_usuario'], $status_mapeado, $expira_em, $id_plano_novo);
                 atualizaStripeUsuario((int)$usuario['id_usuario'], $customer_id, $subscription_id);

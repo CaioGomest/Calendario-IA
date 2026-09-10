@@ -103,6 +103,64 @@ h1, h2, h3 { margin: 0; }
 
 .barra-nav .entrar:hover { background: var(--soft-tint); }
 
+.nav-direita { display: flex; align-items: center; gap: 12px; }
+
+.idioma-pill { position: relative; }
+
+.idioma-pill-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1.8px solid #cdddf8;
+    background: #fff;
+    border-radius: 30px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: .18s;
+}
+
+.idioma-pill-btn:hover { background: var(--soft-tint); }
+.idioma-pill-btn svg:first-child { display: block; border-radius: 2px; }
+.idioma-chevron { color: var(--ink-soft); transition: transform .18s; }
+.idioma-pill.aberto .idioma-chevron { transform: rotate(180deg); }
+
+.idioma-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 160px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 12px 28px rgba(20, 30, 60, .14);
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 40;
+}
+
+.idioma-pill.aberto .idioma-menu { display: flex; }
+
+.idioma-opcao {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    transition: .15s;
+}
+
+.idioma-opcao svg:first-child { display: block; border-radius: 2px; flex-shrink: 0; }
+.idioma-opcao span { flex: 1; }
+.idioma-opcao:hover { background: var(--soft-tint); }
+.idioma-check { color: var(--accent); flex-shrink: 0; }
+
 /* SEÇÕES */
 section { position: relative; }
 
@@ -204,7 +262,7 @@ section { position: relative; }
 
 .social { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-soft); font-weight: 700; margin-top: 2px; }
 .avatares { display: flex; }
-.avatares i { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; margin-left: -7px; display: block; }
+.avatares i { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; margin-left: -7px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 .avatares i:first-child { margin-left: 0; }
 
 /* PASSOS */

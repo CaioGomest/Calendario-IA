@@ -5,6 +5,7 @@ require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
 require_once __DIR__ . '/../funcoes/funcoesStripe.php';
 require_once __DIR__ . '/../funcoes/funcoesAfiliados.php';
+require_once __DIR__ . '/../funcoes/funcoesEmail.php';
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
 
@@ -16,6 +17,8 @@ if ($usuario['plano'] === 'ativo' && planoUsuarioAtivo($usuario)) {
     header('Location: conta');
     exit;
 }
+
+$eh_ajax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
 
 $planos_ativos = listaPlanos(['ativo' => 1]);
 $sufixo_pago = [
@@ -41,7 +44,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
             $expira = date('Y-m-d H:i:s', strtotime($map[$plano_dev['ciclo']] ?? '+1 month'));
         }
         atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira, $plano_dev['id_plano'] ?? null);
+        if ($plano_dev) enviaEmailAssinaturaAtiva($usuario, $plano_dev);
         atribuiIndicacaoAfiliadoPorCookie(usuarioLogadoId());
+        if ($eh_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true, 'data' => ['redirect' => 'google']]);
+            exit;
+        }
         header('Location: google');
         exit;
     }
@@ -74,8 +83,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
                     ? date('Y-m-d H:i:s', (int)$fim_periodo)
                     : date('Y-m-d H:i:s', strtotime('+1 month'));
                 atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em, $plano_confirma['id_plano']);
+                enviaEmailAssinaturaAtiva($usuario, $plano_confirma);
                 atualizaStripeUsuario(usuarioLogadoId(), $stripe_customer_id, $assinatura['id']);
                 atribuiIndicacaoAfiliadoPorCookie(usuarioLogadoId());
+                if ($eh_ajax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['ok' => true, 'data' => ['redirect' => 'google']]);
+                    exit;
+                }
                 header('Location: google');
                 exit;
             }
@@ -91,14 +106,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
                 ? date('Y-m-d H:i:s', (int)$fim_periodo)
                 : date('Y-m-d H:i:s', strtotime('+1 month'));
             atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em, $plano_confirma['id_plano'] ?? null);
+            if ($plano_confirma) enviaEmailAssinaturaAtiva($usuario, $plano_confirma);
             atualizaStripeUsuario(usuarioLogadoId(), $sub['customer'] ?? '', $sub_id);
             atribuiIndicacaoAfiliadoPorCookie(usuarioLogadoId());
+            if ($eh_ajax) {
+                header('Content-Type: application/json');
+                echo json_encode(['ok' => true, 'data' => ['redirect' => 'google']]);
+                exit;
+            }
             header('Location: google');
             exit;
         }
         $erro_pago = traduz('pago_erro_stripe');
     } else {
         $erro_pago = traduz('pago_erro_stripe');
+    }
+
+    if ($eh_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => false, 'erro' => $erro_pago]);
+        exit;
     }
 }
 
@@ -165,6 +192,7 @@ $mostra_pagamento = $plano_selecionado !== null;
 <html lang="es-MX">
 <head>
 <meta charset="UTF-8" />
+<meta name="view-transition" content="same-origin" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg" />
 <title><?= htmlspecialchars(nomeApp()) ?> - <?= traduz('pago_titulo') ?></title>
@@ -209,7 +237,7 @@ $mostra_pagamento = $plano_selecionado !== null;
           <button type="submit" class="botao botao-primario botao-espaco" style="width:100%;"><?= traduz('pago_botao_checkout') ?></button>
         </form>
       <?php else: ?>
-        <form id="payment-form-<?= $sufixo ?>" method="post" action="pago">
+        <form id="payment-form-<?= $sufixo ?>" method="post" action="pago" class="form-transicao">
           <input type="hidden" name="confirmar" value="1" />
           <input type="hidden" name="subscription_id" value="<?= htmlspecialchars($subscription_id) ?>" />
           <input type="hidden" name="setup_intent_id" value="<?= htmlspecialchars($setup_intent_id) ?>" />
@@ -275,11 +303,10 @@ $mostra_pagamento = $plano_selecionado !== null;
   <div class="vista-mobile">
     <div class="barra-topo">
       <?php renderizaMarca('ink', 20); ?>
-      <a class="botao botao-contorno botao-pequeno" href="home"><?= traduz('pago_pular') ?></a>
     </div>
     <div class="conteudo-pagina espacado">
       <div class="etapa-cabecalho">
-        <div class="progresso"><span class="completo"></span><span class="completo"></span><span></span><span></span></div>
+        <div class="progresso"><span class="completo"></span><span class="completo"></span><span class="completo"></span><span></span><span></span></div>
         <span class="etapa-rotulo"><?= traduz('pago_step_label') ?></span>
       </div>
       <h1 class="tela-titulo"><?= traduz('pago_escolha_plano') ?></h1>
@@ -304,6 +331,7 @@ $mostra_pagamento = $plano_selecionado !== null;
         </div>
         <?php endforeach; ?>
       </div>
+      <div class="link-central" style="margin-top:14px;"><a class="link" href="home"><?= traduz('pago_pular') ?></a></div>
     </div>
   </div>
 
@@ -318,16 +346,11 @@ $mostra_pagamento = $plano_selecionado !== null;
       <div class="cadastro-form">
         <div class="form-area">
           <div class="cadastro-progresso">
-            <div class="cadastro-progresso-barras"><span class="completo"></span><span class="completo"></span><span></span><span></span></div>
+            <div class="cadastro-progresso-barras"><span class="completo"></span><span class="completo"></span><span class="completo"></span><span></span><span></span></div>
             <span class="cadastro-progresso-rotulo"><?= traduz('pago_step_label') ?></span>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-            <div>
-              <h2 class="form-titulo"><?= traduz('pago_escolha_plano') ?></h2>
-              <p class="form-subtitulo"><?= traduz('pago_escolha_subtitulo') ?></p>
-            </div>
-            <a class="botao botao-contorno botao-pequeno" href="home" style="white-space:nowrap;"><?= traduz('pago_pular') ?></a>
-          </div>
+          <h2 class="form-titulo"><?= traduz('pago_escolha_plano') ?></h2>
+          <p class="form-subtitulo"><?= traduz('pago_escolha_subtitulo') ?></p>
 
           <div class="grade-planos-pago">
             <?php foreach ($planos_ativos as $p): ?>
@@ -348,6 +371,7 @@ $mostra_pagamento = $plano_selecionado !== null;
             </div>
             <?php endforeach; ?>
           </div>
+          <div class="link-central" style="margin-top:14px;"><a class="link" href="home"><?= traduz('pago_pular') ?></a></div>
         </div>
       </div>
     </div>
@@ -356,6 +380,7 @@ $mostra_pagamento = $plano_selecionado !== null;
 <?php endif; ?>
 
 <script src="../assets/js/mascote.js"></script>
+<script src="../assets/js/form-ajax.js"></script>
 <?php if (!MODO_DEV && $client_secret): ?>
 <script>
 (function() {
@@ -410,9 +435,26 @@ $mostra_pagamento = $plano_selecionado !== null;
                     btn.disabled = false;
                     btn.textContent = textoOriginal;
                     form.classList.remove('pago-loading');
-                } else {
-                    form.submit();
+                    return;
                 }
+                fetch('pago', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: new FormData(form)
+                }).then(function (r) { return r.json(); })
+                    .then(function (resp) {
+                        if (resp.ok) {
+                            navegaComTransicao(form, resp.data.redirect);
+                            return;
+                        }
+                        erros.textContent = resp.erro;
+                        btn.disabled = false;
+                        btn.textContent = textoOriginal;
+                        form.classList.remove('pago-loading');
+                    })
+                    .catch(function () {
+                        form.submit();
+                    });
             });
         });
     }

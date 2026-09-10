@@ -74,7 +74,7 @@ function insereEvento($dados) {
 function listaEventosPendentesLembrete() {
     $pdo = conexao();
     $stmt = $pdo->query(
-        "SELECT e.*, u.telefone, u.antecedencia_lembrete_min, u.modo_silencio, u.fuso_horario
+        "SELECT e.*, u.telefone, u.antecedencia_lembrete_min, u.modo_silencio, u.fuso_horario, u.idioma
          FROM eventos e
          JOIN usuarios u ON e.id_usuario = u.id_usuario
          WHERE e.lembrete = 1
@@ -86,9 +86,8 @@ function listaEventosPendentesLembrete() {
     $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     return array_values(array_filter($eventos, function ($e) {
-        $fuso = new DateTimeZone($e['fuso_horario'] ?: 'America/Mexico_City');
-        $inicio = new DateTime($e['data_inicio'], $fuso);
-        $agora = new DateTime('now', $fuso);
+        $inicio = new DateTime($e['data_inicio'], new DateTimeZone('UTC'));
+        $agora = new DateTime('now', new DateTimeZone('UTC'));
         return $inicio >= $agora;
     }));
 }

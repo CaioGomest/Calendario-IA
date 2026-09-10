@@ -101,6 +101,18 @@ function atualizaModoSilencio($id_usuario, $modo_silencio) {
     $stmt->execute([$modo_silencio ? 1 : 0, $id_usuario]);
 }
 
+function atualizaIdiomaUsuario($id_usuario, $idioma) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('UPDATE usuarios SET idioma = ? WHERE id_usuario = ?');
+    $stmt->execute([$idioma, $id_usuario]);
+}
+
+function atualizaFusoHorarioUsuario($id_usuario, $fuso) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('UPDATE usuarios SET fuso_horario = ? WHERE id_usuario = ?');
+    $stmt->execute([$fuso, $id_usuario]);
+}
+
 function atualizaAntecedenciaLembrete($id_usuario, $antecedencia_min) {
     $pdo = conexao();
     $stmt = $pdo->prepare('UPDATE usuarios SET antecedencia_lembrete_min = ? WHERE id_usuario = ?');

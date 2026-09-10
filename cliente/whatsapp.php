@@ -9,6 +9,8 @@ iniciaSessao();
 exigeLoginCliente();
 exigeAssinaturaAtiva(buscaUsuarioPorId(usuarioLogadoId()));
 
+$eh_ajax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+
 $erro_whatsapp = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $codigo_pais = trim($_POST['codigo_pais'] ?? '');
@@ -23,10 +25,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $erro_whatsapp = traduz('erro_telefone_existe');
             } else {
                 atualizaTelefoneUsuario(usuarioLogadoId(), $telefone_formatado);
+                if ($eh_ajax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['ok' => true, 'data' => ['redirect' => 'home']]);
+                    exit;
+                }
                 header('Location: home');
                 exit;
             }
         }
+    } else {
+        $erro_whatsapp = traduz('erro_campos_invalidos');
+    }
+
+    if ($eh_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => false, 'erro' => $erro_whatsapp]);
+        exit;
     }
 }
 $codigos_pais = listaCodigosPaisTelefone();
@@ -35,6 +50,7 @@ $codigos_pais = listaCodigosPaisTelefone();
 <html lang="es-MX">
 <head>
 <meta charset="UTF-8" />
+<meta name="view-transition" content="same-origin" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg" />
 <title><?= htmlspecialchars(nomeApp()) ?> - <?= traduz('whatsapp_titulo') ?></title>
@@ -52,7 +68,7 @@ $codigos_pais = listaCodigosPaisTelefone();
   </div>
   <div class="conteudo-pagina espacado centralizado">
     <div class="etapa-cabecalho" style="width:100%;">
-      <div class="progresso"><span class="completo"></span><span class="completo"></span><span class="completo"></span><span class="completo"></span></div>
+      <div class="progresso"><span class="completo"></span><span class="completo"></span><span class="completo"></span><span class="completo"></span><span class="completo"></span></div>
       <span class="etapa-rotulo"><?= traduz('whatsapp_step_label') ?></span>
     </div>
     <div class="icone-grande">💬</div>
@@ -63,7 +79,7 @@ $codigos_pais = listaCodigosPaisTelefone();
     <div class="erro-msg" style="margin-bottom:10px;"><?= htmlspecialchars($erro_whatsapp) ?></div>
     <?php endif; ?>
 
-    <form method="post" action="whatsapp" style="width:100%;">
+    <form method="post" action="whatsapp" class="form-transicao form-whatsapp" style="width:100%;">
       <div class="campo">
         <label><?= traduz('campo_whatsapp') ?></label>
         <div style="display:flex; gap:8px;">
@@ -96,7 +112,7 @@ $codigos_pais = listaCodigosPaisTelefone();
     <div class="cadastro-form">
       <div class="form-area">
         <div class="cadastro-progresso">
-          <div class="cadastro-progresso-barras"><span class="completo"></span><span class="completo"></span><span class="completo"></span><span class="completo"></span></div>
+          <div class="cadastro-progresso-barras"><span class="completo"></span><span class="completo"></span><span class="completo"></span><span class="completo"></span><span class="completo"></span></div>
           <span class="cadastro-progresso-rotulo"><?= traduz('whatsapp_step_label') ?></span>
         </div>
         <h2 class="form-titulo"><?= traduz('whatsapp_titulo') ?></h2>
@@ -104,7 +120,7 @@ $codigos_pais = listaCodigosPaisTelefone();
         <?php if ($erro_whatsapp): ?>
         <div class="erro-msg" style="margin-bottom:10px;"><?= htmlspecialchars($erro_whatsapp) ?></div>
         <?php endif; ?>
-        <form method="post" action="whatsapp">
+        <form method="post" action="whatsapp" class="form-transicao form-whatsapp">
           <div class="campo">
             <label><?= traduz('campo_whatsapp') ?></label>
             <div style="display:flex; gap:8px;">
@@ -124,5 +140,15 @@ $codigos_pais = listaCodigosPaisTelefone();
 </div>
 
 <script src="../assets/js/mascote.js"></script>
+<script src="../assets/js/form-ajax.js"></script>
+<script>
+document.querySelectorAll('.form-whatsapp').forEach(function (form) {
+    enviaFormularioAjax(form, function (data) {
+        navegaComTransicao(form, data.redirect);
+    }, function (mensagem) {
+        mostraErroForm(form, mensagem);
+    });
+});
+</script>
 </body>
 </html>

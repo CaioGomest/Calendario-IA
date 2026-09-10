@@ -8,6 +8,16 @@ require_once __DIR__ . '/funcoes/funcoesComponentes.php';
 
 iniciaSessao();
 
+if (!empty($_GET['idioma']) && file_exists(__DIR__ . '/idiomas/' . $_GET['idioma'] . '.php')) {
+    setcookie('idioma', $_GET['idioma'], [
+        'expires' => time() + 365 * 24 * 60 * 60,
+        'path' => '/',
+        'samesite' => 'Lax',
+    ]);
+    header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?'));
+    exit;
+}
+
 if (!empty($_GET['ref']) && empty($_COOKIE['afiliado_ref'])) {
     $afiliado_ref = buscaAfiliadoPorCodigo($_GET['ref']);
     if ($afiliado_ref) {
@@ -37,7 +47,10 @@ $tem_teste_gratis = $max_dias_teste > 0;
 $email_suporte = buscaConfiguracao('email_suporte') ?? '';
 $instagram = buscaConfiguracao('instagram') ?? '';
 $tiktok = buscaConfiguracao('tiktok') ?? '';
-$link_suporte = buscaConfiguracao('link_suporte') ?? '';
+$link_suporte = linkSuporte();
+$idioma_atual = idiomaAtual();
+$bandeira_mx = '<svg viewBox="0 0 30 21" width="18" height="13"><rect width="10" height="21" fill="#006341"/><rect x="10" width="10" height="21" fill="#fff"/><rect x="20" width="10" height="21" fill="#ce1126"/><circle cx="15" cy="10.5" r="3.2" fill="#c8a951"/><path d="M15 8.2c-1.3 0-2.2 1-2.2 2.3 0 1.7 2.2 2.8 2.2 2.8s2.2-1.1 2.2-2.8c0-1.3-.9-2.3-2.2-2.3z" fill="#5a3a1a"/></svg>';
+$bandeira_br = '<svg viewBox="0 0 30 21" width="18" height="13"><rect width="30" height="21" fill="#009c3b"/><polygon points="15,2 28,10.5 15,19 2,10.5" fill="#ffdf00"/><circle cx="15" cy="10.5" r="5.2" fill="#002776"/></svg>';
 
 $sufixo_ciclo = [
     'mensal' => traduz('lp_ciclo_mensal'),
@@ -65,13 +78,31 @@ $sufixo_ciclo = [
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="assets/css/landing.css" />
+<link rel="stylesheet" href="assets/css/landing.css?v=<?= versaoAsset('assets/css/landing.css') ?>" />
 </head>
 <body>
 
 <nav class="barra-nav">
   <?php renderizaMarca('ink', 24, '/'); ?>
-  <a class="entrar" href="cliente/login"><?= traduz('lp_login') ?></a>
+  <div class="nav-direita">
+    <div class="idioma-pill" id="idiomaPill">
+      <button type="button" class="idioma-pill-btn" id="idiomaPillBtn">
+        <?= $idioma_atual === 'pt-BR' ? $bandeira_br : $bandeira_mx ?>
+        <svg class="idioma-chevron" viewBox="0 0 24 24" width="13" height="13"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="idioma-menu" id="idiomaMenu">
+        <a href="?idioma=es-MX" class="idioma-opcao">
+          <?= $bandeira_mx ?> <span>Español</span>
+          <?php if ($idioma_atual === 'es-MX'): ?><svg class="idioma-check" viewBox="0 0 24 24" width="14" height="14"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><?php endif; ?>
+        </a>
+        <a href="?idioma=pt-BR" class="idioma-opcao">
+          <?= $bandeira_br ?> <span>Português</span>
+          <?php if ($idioma_atual === 'pt-BR'): ?><svg class="idioma-check" viewBox="0 0 24 24" width="14" height="14"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><?php endif; ?>
+        </a>
+      </div>
+    </div>
+    <a class="entrar" href="cliente/login"><?= traduz('lp_login') ?></a>
+  </div>
 </nav>
 
 <!-- HERO -->
@@ -86,9 +117,9 @@ $sufixo_ciclo = [
     <div class="micro revelar d2"><?= $tem_teste_gratis ? traduz('lp_hero_micro') : traduz('lp_hero_micro_sem_teste') ?></div>
     <div class="social revelar d3">
       <span class="avatares">
-        <i style="background:#f4b740"></i>
-        <i style="background:#5187e8"></i>
-        <i style="background:#2f9e44"></i>
+        <i style="background:linear-gradient(135deg,#ffd166,#f4b740)"><svg viewBox="0 0 24 24" width="13" height="13" fill="#fff"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></i>
+        <i style="background:linear-gradient(135deg,#7aa8ff,#5187e8)"><svg viewBox="0 0 24 24" width="13" height="13" fill="#fff"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></i>
+        <i style="background:linear-gradient(135deg,#57c46e,#2f9e44)"><svg viewBox="0 0 24 24" width="13" height="13" fill="#fff"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></i>
       </span>
       <?= traduz('lp_hero_social') ?>
     </div>
@@ -289,9 +320,21 @@ $sufixo_ciclo = [
   <div class="copyright"><?= sprintf(traduz('lp_footer_copy'), date('Y')) ?></div>
 </footer>
 
-<script src="assets/js/mascote.js"></script>
+<script src="assets/js/mascote.js?v=<?= versaoAsset('assets/js/mascote.js') ?>"></script>
 <script>
 (function(){
+  var idiomaPill = document.getElementById('idiomaPill');
+  var idiomaPillBtn = document.getElementById('idiomaPillBtn');
+  if (idiomaPill && idiomaPillBtn) {
+    idiomaPillBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      idiomaPill.classList.toggle('aberto');
+    });
+    document.addEventListener('click', function(e){
+      if (!idiomaPill.contains(e.target)) idiomaPill.classList.remove('aberto');
+    });
+  }
+
   var io = new IntersectionObserver(function(entries){
     entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('visivel'); io.unobserve(e.target); } });
   },{threshold:.16, rootMargin:'0px 0px -8% 0px'});

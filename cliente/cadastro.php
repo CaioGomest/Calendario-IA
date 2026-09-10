@@ -5,6 +5,7 @@ require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesGoogle.php';
 require_once __DIR__ . '/../funcoes/funcoesAfiliados.php';
 require_once __DIR__ . '/../funcoes/funcoesComponentes.php';
+require_once __DIR__ . '/../funcoes/funcoesEmail.php';
 
 iniciaSessao();
 
@@ -31,16 +32,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $id_usuario = insereUsuario(['nome' => $nome, 'email' => $email, 'senha' => $senha]);
 
+        enviaEmailBoasVindas(['nome' => $nome, 'email' => $email]);
         atribuiIndicacaoAfiliadoPorCookie($id_usuario);
 
         fazLoginCliente(['id_usuario' => $id_usuario, 'nome' => $nome, 'email' => $email]);
 
         if ($eh_ajax) {
             header('Content-Type: application/json');
-            echo json_encode(['ok' => true, 'data' => ['redirect' => 'pago']]);
+            echo json_encode(['ok' => true, 'data' => ['redirect' => 'localizacao']]);
             exit;
         }
-        header('Location: pago');
+        header('Location: localizacao');
         exit;
     }
 
@@ -55,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="es-MX">
 <head>
 <meta charset="UTF-8" />
+<meta name="view-transition" content="same-origin" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg" />
 <title><?= htmlspecialchars(nomeApp()) ?> - <?= traduz('cadastro_titulo') ?></title>
@@ -75,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
   <div class="conteudo-pagina">
     <div class="etapa-cabecalho">
-      <div class="progresso"><span class="completo"></span><span></span><span></span><span></span></div>
+      <div class="progresso"><span class="completo"></span><span></span><span></span><span></span><span></span></div>
       <span class="etapa-rotulo"><?= traduz('cadastro_step_label') ?></span>
     </div>
     <h1 class="tela-titulo"><?= traduz('cadastro_titulo') ?></h1>
@@ -128,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="cadastro-form">
       <form class="form-area form-cadastro" method="post" action="cadastro">
         <div class="cadastro-progresso">
-          <div class="cadastro-progresso-barras"><span class="completo"></span><span></span><span></span><span></span></div>
+          <div class="cadastro-progresso-barras"><span class="completo"></span><span></span><span></span><span></span><span></span></div>
           <span class="cadastro-progresso-rotulo"><?= traduz('cadastro_step_label') ?></span>
         </div>
         <h2 class="form-titulo"><?= traduz('cadastro_titulo') ?></h2>

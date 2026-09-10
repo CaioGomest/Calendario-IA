@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/funcoesConfiguracao.php';
+require_once __DIR__ . '/funcoesIdioma.php';
 
 function leRespostaSmtp($conexao) {
     $resposta = '';
@@ -78,4 +79,30 @@ function enviaEmail($para, $assunto, $corpo_html) {
     }
 
     return enviaEmailMail($para, $assunto, $corpo_html, $remetente, $nome_app);
+}
+
+function linkClienteBase() {
+    $protocolo = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    return $protocolo . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/cliente';
+}
+
+function enviaEmailBoasVindas($usuario) {
+    $link = linkClienteBase() . '/home';
+    $assunto = sprintf(traduz('email_boas_vindas_assunto'), nomeApp());
+    $corpo = sprintf(traduz('email_boas_vindas_corpo'), htmlspecialchars($usuario['nome']), $link, nomeApp());
+    return enviaEmail($usuario['email'], $assunto, $corpo);
+}
+
+function enviaEmailAssinaturaAtiva($usuario, $plano) {
+    $link = linkClienteBase() . '/conta';
+    $assunto = sprintf(traduz('email_assinatura_ativa_assunto'), nomeApp());
+    $corpo = sprintf(traduz('email_assinatura_ativa_corpo'), htmlspecialchars($usuario['nome']), htmlspecialchars($plano['nome']), $link, nomeApp());
+    return enviaEmail($usuario['email'], $assunto, $corpo);
+}
+
+function enviaEmailPlanoAlterado($usuario, $plano) {
+    $link = linkClienteBase() . '/conta';
+    $assunto = sprintf(traduz('email_plano_alterado_assunto'), nomeApp());
+    $corpo = sprintf(traduz('email_plano_alterado_corpo'), htmlspecialchars($usuario['nome']), htmlspecialchars($plano['nome']), $link, nomeApp());
+    return enviaEmail($usuario['email'], $assunto, $corpo);
 }

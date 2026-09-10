@@ -2,26 +2,29 @@
 
 require_once __DIR__ . '/funcoesConfiguracao.php';
 
-function traduz($chave) {
-    static $textos = null;
-    if ($textos === null) {
+function idiomaAtual() {
+    static $idioma = null;
+    if ($idioma === null) {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
         require_once __DIR__ . '/../config/config.php';
 
-        $idioma = $_SESSION['idioma'] ?? null;
+        $idioma = $_SESSION['idioma'] ?? ($_COOKIE['idioma'] ?? null);
         if (!$idioma) {
             $idioma = buscaConfiguracao('idioma_padrao') ?? IDIOMA_PADRAO;
         }
-
-        $arquivo = __DIR__ . "/../idiomas/{$idioma}.php";
-        if (!file_exists($arquivo)) {
+        if (!file_exists(__DIR__ . "/../idiomas/{$idioma}.php")) {
             $idioma = IDIOMA_PADRAO;
-            $arquivo = __DIR__ . "/../idiomas/{$idioma}.php";
         }
+    }
+    return $idioma;
+}
 
-        $textos = require $arquivo;
+function traduz($chave) {
+    static $textos = null;
+    if ($textos === null) {
+        $textos = require __DIR__ . '/../idiomas/' . idiomaAtual() . '.php';
     }
     $valor = $textos[$chave] ?? $chave;
     if (strpos($valor, '%APP%') !== false) {

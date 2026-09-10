@@ -3,6 +3,7 @@ require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 require_once __DIR__ . '/../funcoes/funcoesGoogle.php';
+require_once __DIR__ . '/../funcoes/funcoesEmail.php';
 
 iniciaSessao();
 
@@ -51,6 +52,7 @@ if (!$usuario) {
     $id_novo = insereUsuarioGoogle($nome, $email);
     $usuario = buscaUsuarioPorId($id_novo);
     $novo = true;
+    enviaEmailBoasVindas($usuario);
 }
 
 atualizaTokensGoogle(

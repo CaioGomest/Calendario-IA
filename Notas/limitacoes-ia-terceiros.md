@@ -35,3 +35,14 @@ Respondemos o e-mail do Google (thread "API OAuth Dev Verification") explicando 
 1. Confirmar que a condição acima (billing pago / garantia de não-treinamento) está realmente satisfeita — não assumir.
 2. Reintroduzir os nodes no `n8n/fluxo-agente-whatsapp.json` (a estrutura de fallback antiga pode ser recriada seguindo o mesmo padrão dos nodes de Groq: HTTP Request → node de sucesso `Marcar X` → `Executar Acao`, com branch de erro pro próximo da cadeia).
 3. Avisar o Google se algo relevante mudar na arquitetura de dados (mesma thread de e-mail, ou nova verificação se pedirem).
+
+## Atualização 02/09/2026 — Mistral e OpenAI adicionados como fallback
+
+Pesquisa de custo (ver `Notas/custos-ia.md`) levantou 5 alternativas baratas. Duas foram escolhidas pra entrar como fallback (depois do Groq, antes da mensagem de erro genérica), por já terem garantia de não-treinamento **sem precisar de contrato enterprise**:
+
+- **Mistral** (`mistral-small-latest`) — API paga não é usada pra treinar os modelos deles (só o tier free "Experiment" entra em treinamento, e mesmo assim com opt-out). Fonte: [Mistral La Plateforme Data Retention Policy 2026](https://meetily.ai/llm-privacy/mistral).
+- **OpenAI** (`gpt-5-nano`) — dados da API nunca são usados pra treinar, política em vigor desde março/2023, sem precisar de tier especial. Fonte: [Enterprise privacy at OpenAI](https://openai.com/policies/api-data-usage-policies).
+
+Ordem no fluxo: Groq (principal) → Mistral (1º fallback) → OpenAI (2º fallback) → erro genérico. `Executar Acao` não precisou mudar (já é agnóstico de provedor, só espera formato de resposta OpenAI-compatible).
+
+**Diferença importante do caso DeepSeek**: aqui a garantia já vale no plano pago padrão (self-service, só ativar billing) — não precisa de contrato enterprise separado como seria necessário pro DeepSeek.

@@ -55,14 +55,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         $email_suporte = trim($_POST['email_suporte'] ?? '');
         $instagram = trim($_POST['instagram'] ?? '');
         $tiktok = trim($_POST['tiktok'] ?? '');
-        $link_suporte = trim($_POST['link_suporte'] ?? '');
+        $numero_suporte = preg_replace('/\D+/', '', $_POST['numero_suporte'] ?? '');
         $whatsapp_bot_numero = preg_replace('/\D+/', '', $_POST['whatsapp_bot_numero'] ?? '');
 
         salvaConfiguracao('email_remetente', $email_remetente);
         salvaConfiguracao('email_suporte', $email_suporte);
         salvaConfiguracao('instagram', $instagram);
         salvaConfiguracao('tiktok', $tiktok);
-        salvaConfiguracao('link_suporte', $link_suporte);
+        salvaConfiguracao('numero_suporte', $numero_suporte);
         salvaConfiguracao('whatsapp_bot_numero', $whatsapp_bot_numero);
 
         header('Location: configuracao?sucesso=1');
@@ -83,13 +83,10 @@ $email_remetente = buscaConfiguracao('email_remetente') ?? '';
 $email_suporte = buscaConfiguracao('email_suporte') ?? '';
 $instagram = buscaConfiguracao('instagram') ?? '';
 $tiktok = buscaConfiguracao('tiktok') ?? '';
-$link_suporte = buscaConfiguracao('link_suporte') ?? '';
+$numero_suporte = buscaConfiguracao('numero_suporte') ?? '';
 $whatsapp_bot_numero = buscaConfiguracao('whatsapp_bot_numero') ?? '';
 
-$nomes_idioma = [
-    'pt-BR' => 'Português (Brasil)',
-    'es-MX' => 'Español (México)',
-];
+$nomes_idioma = array_combine($idiomas_disponiveis, array_map('nomeIdioma', $idiomas_disponiveis));
 
 $variaveis = [
     ['nome' => 'APP_ENV', 'valor' => APP_ENV, 'descricao' => 'Ambiente / Entorno'],
@@ -214,7 +211,7 @@ $variaveis = [
             <select name="fuso_horario">
               <?php foreach ($fusos_disponiveis as $fuso): ?>
               <option value="<?= htmlspecialchars($fuso) ?>" <?= $fuso === $fuso_atual ? 'selected' : '' ?>>
-                <?= htmlspecialchars(str_replace(['_', '/'], [' ', ' / '], $fuso)) ?>
+                <?= htmlspecialchars(nomeFusoHorario($fuso)) ?>
               </option>
               <?php endforeach; ?>
             </select>
@@ -244,10 +241,10 @@ $variaveis = [
           </div>
           <div class="config-form-item">
             <div class="config-item-info">
-              <b><?= traduz('admin_link_suporte') ?></b>
-              <span><?= traduz('admin_link_suporte_desc') ?></span>
+              <b><?= traduz('admin_numero_suporte') ?></b>
+              <span><?= traduz('admin_numero_suporte_desc') ?></span>
             </div>
-            <input type="url" name="link_suporte" value="<?= htmlspecialchars($link_suporte) ?>" placeholder="https://wa.me/5215512345678" />
+            <input type="text" name="numero_suporte" value="<?= htmlspecialchars($numero_suporte) ?>" placeholder="5215512345678" />
           </div>
           <div class="config-form-item">
             <div class="config-item-info">

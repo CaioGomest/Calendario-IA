@@ -16,12 +16,16 @@ if (!empty($usuario['token_acesso_google'])) {
     exit;
 }
 
+$eh_ajax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conectar') {
-    if (MODO_DEV) {
-        header('Location: whatsapp');
+    $destino = MODO_DEV ? 'whatsapp' : geraUrlAutorizacaoGoogle();
+    if ($eh_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => true, 'data' => ['redirect' => $destino]]);
         exit;
     }
-    header('Location: ' . geraUrlAutorizacaoGoogle());
+    header('Location: ' . $destino);
     exit;
 }
 ?>
@@ -29,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conecta
 <html lang="es-MX">
 <head>
 <meta charset="UTF-8" />
+<meta name="view-transition" content="same-origin" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg" />
 <title><?= htmlspecialchars(nomeApp()) ?> - <?= traduz('google_titulo') ?></title>
@@ -46,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conecta
   </div>
   <div class="conteudo-pagina espacado centralizado">
     <div class="etapa-cabecalho" style="width:100%;">
-      <div class="progresso"><span class="completo"></span><span class="completo"></span><span class="completo"></span><span></span></div>
+      <div class="progresso"><span class="completo"></span><span class="completo"></span><span class="completo"></span><span class="completo"></span><span></span></div>
       <span class="etapa-rotulo"><?= traduz('google_step_label') ?></span>
     </div>
     <div class="icone-grande">📅</div>
@@ -61,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conecta
       </div>
     </div>
 
-    <form method="post" action="google" style="width:100%;">
+    <form method="post" action="google" class="form-transicao form-google" style="width:100%;">
       <input type="hidden" name="acao" value="conectar" />
       <button type="submit" class="botao botao-branco botao-google" style="width:100%;">
         <span class="logo-google"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"/></svg></span>
@@ -91,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conecta
     <div class="cadastro-form">
       <div class="form-area">
         <div class="cadastro-progresso">
-          <div class="cadastro-progresso-barras"><span class="completo"></span><span class="completo"></span><span class="completo"></span><span></span></div>
+          <div class="cadastro-progresso-barras"><span class="completo"></span><span class="completo"></span><span class="completo"></span><span class="completo"></span><span></span></div>
           <span class="cadastro-progresso-rotulo"><?= traduz('google_step_label') ?></span>
         </div>
         <h2 class="form-titulo"><?= traduz('google_titulo_desktop') ?></h2>
@@ -103,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conecta
             <div class="permissao denied"><span class="permissao-icone">✕</span> <?= traduz('google_perm_3') ?></div>
           </div>
         </div>
-        <form method="post" action="google">
+        <form method="post" action="google" class="form-transicao form-google">
           <input type="hidden" name="acao" value="conectar" />
           <button type="submit" class="botao botao-branco botao-google" style="width:100%;">
             <span class="logo-google"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"/></svg></span>
@@ -117,5 +122,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conecta
 </div>
 
 <script src="../assets/js/mascote.js"></script>
+<script src="../assets/js/form-ajax.js"></script>
+<script>
+document.querySelectorAll('.form-google').forEach(function (form) {
+    enviaFormularioAjax(form, function (data) {
+        navegaComTransicao(form, data.redirect);
+    }, function () {});
+});
+</script>
 </body>
 </html>

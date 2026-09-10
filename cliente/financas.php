@@ -102,6 +102,7 @@ $resultado_lista = listaTransacoes($id_usuario, [
     'mes' => $mes_atual,
     'ano' => $ano_atual,
     'pagina' => $_GET['pagina'] ?? 1,
+    'por_pagina' => 5,
 ]);
 $transacoes = $resultado_lista['transacoes'];
 $total_paginas = $resultado_lista['total_paginas'];

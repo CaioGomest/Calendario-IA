@@ -23,6 +23,18 @@ function listaIdiomasDisponiveis() {
     return $idiomas;
 }
 
+function nomeIdioma($codigo) {
+    $nomes = [
+        'pt-BR' => 'Português (Brasil)',
+        'es-MX' => 'Español (México)',
+    ];
+    return $nomes[$codigo] ?? $codigo;
+}
+
+function nomeFusoHorario($fuso) {
+    return str_replace(['_', '/'], [' ', ' / '], $fuso);
+}
+
 function listaCodigosPaisTelefone() {
     return [
         '55' => '🇧🇷 +55 Brasil',
@@ -113,6 +125,11 @@ function versaoAsset($caminho_relativo) {
 
 function linkWhatsappBot() {
     $numero = preg_replace('/\D+/', '', buscaConfiguracao('whatsapp_bot_numero') ?? '');
+    return $numero !== '' ? 'https://wa.me/' . $numero : null;
+}
+
+function linkSuporte() {
+    $numero = preg_replace('/\D+/', '', buscaConfiguracao('numero_suporte') ?? '');
     return $numero !== '' ? 'https://wa.me/' . $numero : null;
 }
 
