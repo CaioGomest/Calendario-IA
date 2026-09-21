@@ -35,6 +35,19 @@ if (usuarioLogadoId()) {
     exit;
 }
 
+// cache da landing: conteudo e publico e igual pra todo mundo (so varia por idioma),
+// muda raramente (so quando o admin mexe em plano/config) -- nao vale reprocessar/reconsultar
+// o banco a cada visita. TTL curto pra nao atrasar muito uma mudanca real do admin.
+$idioma_atual = idiomaAtual();
+$cache_ttl_segundos = 300;
+$cache_dir = __DIR__ . '/cache';
+$cache_arquivo = $cache_dir . '/landing_' . $idioma_atual . '.html';
+if (is_file($cache_arquivo) && (time() - filemtime($cache_arquivo)) < $cache_ttl_segundos) {
+    readfile($cache_arquivo);
+    exit;
+}
+ob_start();
+
 $planos_ativos = listaPlanos(['ativo' => 1]);
 $moeda = simboloMoeda();
 $max_dias_teste = 0;
@@ -48,7 +61,6 @@ $email_suporte = buscaConfiguracao('email_suporte') ?? '';
 $instagram = buscaConfiguracao('instagram') ?? '';
 $tiktok = buscaConfiguracao('tiktok') ?? '';
 $link_suporte = linkSuporte();
-$idioma_atual = idiomaAtual();
 $bandeira_mx = '<svg viewBox="0 0 30 21" width="18" height="13"><rect width="10" height="21" fill="#006341"/><rect x="10" width="10" height="21" fill="#fff"/><rect x="20" width="10" height="21" fill="#ce1126"/><circle cx="15" cy="10.5" r="3.2" fill="#c8a951"/><path d="M15 8.2c-1.3 0-2.2 1-2.2 2.3 0 1.7 2.2 2.8 2.2 2.8s2.2-1.1 2.2-2.8c0-1.3-.9-2.3-2.2-2.3z" fill="#5a3a1a"/></svg>';
 $bandeira_br = '<svg viewBox="0 0 30 21" width="18" height="13"><rect width="30" height="21" fill="#009c3b"/><polygon points="15,2 28,10.5 15,19 2,10.5" fill="#ffdf00"/><circle cx="15" cy="10.5" r="5.2" fill="#002776"/></svg>';
 
@@ -401,3 +413,10 @@ $sufixo_ciclo = [
 </script>
 </body>
 </html>
+<?php
+$html_gerado = ob_get_clean();
+if (!is_dir($cache_dir)) {
+    mkdir($cache_dir, 0755, true);
+}
+file_put_contents($cache_arquivo, $html_gerado);
+echo $html_gerado;

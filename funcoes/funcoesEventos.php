@@ -205,15 +205,10 @@ function buscaSessaoConversa($id_usuario) {
 
 function atualizaSessaoConversa($id_usuario, $contexto) {
     $pdo = conexao();
-    $sessao = buscaSessaoConversa($id_usuario);
-
-    if ($sessao) {
-        $stmt = $pdo->prepare('UPDATE sessoes_conversa SET contexto = ? WHERE id_usuario = ?');
-        $stmt->execute([$contexto, $id_usuario]);
-        return (int) $sessao['id_sessao'];
-    }
-
-    $stmt = $pdo->prepare('INSERT INTO sessoes_conversa (id_usuario, contexto) VALUES (?, ?)');
+    $stmt = $pdo->prepare(
+        'INSERT INTO sessoes_conversa (id_usuario, contexto) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE contexto = VALUES(contexto), id_sessao = LAST_INSERT_ID(id_sessao)'
+    );
     $stmt->execute([$id_usuario, $contexto]);
     return (int) $pdo->lastInsertId();
 }

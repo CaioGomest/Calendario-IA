@@ -2,18 +2,6 @@
 
 require_once __DIR__ . '/../config/conexao.php';
 
-function garanteTabelaConfiguracoes() {
-    static $criada = false;
-    if ($criada) return;
-    $pdo = conexao();
-    $pdo->exec("CREATE TABLE IF NOT EXISTS configuracoes (
-        chave VARCHAR(100) PRIMARY KEY,
-        valor VARCHAR(255) NOT NULL,
-        atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )");
-    $criada = true;
-}
-
 function listaIdiomasDisponiveis() {
     $dir = __DIR__ . '/../idiomas/';
     $idiomas = [];
@@ -81,7 +69,6 @@ function listaFusosHorariosComuns() {
 }
 
 function buscaConfiguracao($chave) {
-    garanteTabelaConfiguracoes();
     $pdo = conexao();
     $stmt = $pdo->prepare('SELECT valor FROM configuracoes WHERE chave = ?');
     $stmt->execute([$chave]);
@@ -134,7 +121,6 @@ function linkSuporte() {
 }
 
 function salvaConfiguracao($chave, $valor) {
-    garanteTabelaConfiguracoes();
     $pdo = conexao();
     $stmt = $pdo->prepare('INSERT INTO configuracoes (chave, valor) VALUES (?, ?) ON DUPLICATE KEY UPDATE valor = VALUES(valor)');
     $stmt->execute([$chave, $valor]);

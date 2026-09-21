@@ -84,6 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
         header('Location: usuarios?' . http_build_query(array_filter([
             'busca' => $_GET['busca'] ?? '',
             'plano' => $_GET['plano'] ?? '',
+            'pagina' => $_GET['pagina'] ?? '',
             'sucesso' => $msg_sucesso,
         ])));
         exit;
@@ -102,7 +103,12 @@ if (!empty($_GET['plano'])) {
     $filtro['plano'] = $_GET['plano'];
 }
 
-$usuarios = listaUsuarios($filtro);
+$por_pagina = 30;
+$pagina = max(1, (int) ($_GET['pagina'] ?? 1));
+
+$usuarios = listaUsuarios($filtro, $pagina, $por_pagina);
+$total_usuarios = contaUsuarios($filtro);
+$total_paginas = max(1, (int) ceil($total_usuarios / $por_pagina));
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -123,7 +129,7 @@ $usuarios = listaUsuarios($filtro);
     <header class="admin-barra">
       <div>
         <h1><?= traduz('admin_usuarios') ?></h1>
-        <div class="subtitulo"><?= count($usuarios) ?> <?= count($usuarios) !== 1 ? traduz('admin_usuarios_encontrados') : traduz('admin_usuario_encontrado') ?></div>
+        <div class="subtitulo"><?= $total_usuarios ?> <?= $total_usuarios !== 1 ? traduz('admin_usuarios_encontrados') : traduz('admin_usuario_encontrado') ?></div>
       </div>
       <div class="espaco"></div>
       <button type="button" class="botao-cabecalho" onclick="document.getElementById('modal-criar').classList.add('aberto')">
@@ -237,7 +243,7 @@ $usuarios = listaUsuarios($filtro);
                 <button type="button" class="botao-acao icone" title="<?= traduz('admin_editar') ?>" onclick="abrirEditar(<?= htmlspecialchars(json_encode($u, JSON_HEX_APOS | JSON_HEX_TAG)) ?>)">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                 </button>
-                <form method="post" action="usuarios?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? ''])) ?>" style="display:inline;" onsubmit="return confirm('<?= traduz('admin_confirmar_apagar') ?>')">
+                <form method="post" action="usuarios?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? '', 'pagina' => $_GET['pagina'] ?? ''])) ?>" style="display:inline;" onsubmit="return confirm('<?= traduz('admin_confirmar_apagar') ?>')">
                   <input type="hidden" name="id_usuario" value="<?= $u['id_usuario'] ?>" />
                   <button type="submit" name="acao" value="apagar" class="botao-acao icone perigo" title="<?= traduz('admin_apagar') ?>">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -248,6 +254,20 @@ $usuarios = listaUsuarios($filtro);
             <?php endforeach; ?>
           </tbody>
         </table>
+        <?php if ($total_paginas > 1): ?>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 4px 2px;">
+          <span style="font-size:12.5px;color:var(--ink-4);font-weight:600;"><?= traduz('admin_pagina') ?> <?= $pagina ?> / <?= $total_paginas ?></span>
+          <div style="display:flex;gap:8px;">
+            <?php $query_base = array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? '']); ?>
+            <?php if ($pagina > 1): ?>
+            <a class="botao-pequeno botao-fantasma" href="usuarios?<?= http_build_query(array_merge($query_base, ['pagina' => $pagina - 1])) ?>"><?= traduz('admin_anterior') ?></a>
+            <?php endif; ?>
+            <?php if ($pagina < $total_paginas): ?>
+            <a class="botao-pequeno botao-fantasma" href="usuarios?<?= http_build_query(array_merge($query_base, ['pagina' => $pagina + 1])) ?>"><?= traduz('admin_proxima') ?></a>
+            <?php endif; ?>
+          </div>
+        </div>
+        <?php endif; ?>
         <?php else: ?>
         <div class="estado-vazio">
           <div class="icone-vazio">
@@ -270,7 +290,7 @@ $usuarios = listaUsuarios($filtro);
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <form method="post" action="usuarios?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? ''])) ?>">
+    <form method="post" action="usuarios?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? '', 'pagina' => $_GET['pagina'] ?? ''])) ?>">
       <input type="hidden" name="acao" value="criar" />
       <div class="modal-body">
         <div class="campo">
@@ -325,7 +345,7 @@ $usuarios = listaUsuarios($filtro);
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <form method="post" action="usuarios?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? ''])) ?>">
+    <form method="post" action="usuarios?<?= http_build_query(array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? '', 'pagina' => $_GET['pagina'] ?? ''])) ?>">
       <input type="hidden" name="acao" value="editar" />
       <input type="hidden" name="id_usuario" id="editar-id" value="" />
       <div class="modal-body">

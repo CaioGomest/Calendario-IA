@@ -1,0 +1,7 @@
+@AGENTS.md
+
+   ## Claude Code
+   Use plan mode em mudanças dentro de api/internal/.
+   O repositório usa quebra de linha CRLF (`.gitattributes`: `* text=auto eol=crlf`). Ao criar ou editar qualquer arquivo, sempre salve com CRLF — nunca LF — pra não gerar diffs gigantes de formatação.
+   Antes de sugerir adicionar/trocar provedor de IA no fluxo do WhatsApp (`n8n/fluxo-agente-whatsapp.json`), leia `Notas/limitacoes-ia-terceiros.md` — tem restrições de conformidade (Google Limited Use Policy) que já removeram Gemini free e DeepSeek do fluxo, e as condições pra reintroduzir cada um.
+   Achados de revisão/teste (bugs, relatórios, anotações em geral) vão em `anotacoes/`, um arquivo por assunto. Achados que precisam ser analisados **antes** de publicar uma mudança de verdade (pra não quebrar o sistema depois de postado) vão em `anotacoes/urgente/` em vez da pasta geral. Decisões conscientes de adiar algo (não fazer agora porque não compensa no volume de uso atual, não porque não importa) vão em `anotacoes/observar-futuramente/`, com a condição concreta que deve disparar a revisão. Nunca apagar pasta/arquivo achado durante uma revisão só por parecer estranho — registrar em anotação pra decidir depois, não deletar de cara.

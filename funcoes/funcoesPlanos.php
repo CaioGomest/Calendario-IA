@@ -2,27 +2,7 @@
 
 require_once __DIR__ . '/../config/conexao.php';
 
-function garanteTabelaPlanos() {
-    static $criada = false;
-    if ($criada) return;
-    $pdo = conexao();
-    $pdo->exec("CREATE TABLE IF NOT EXISTS planos (
-        id_plano INT AUTO_INCREMENT PRIMARY KEY,
-        nome VARCHAR(120) NOT NULL,
-        descricao VARCHAR(255) NULL,
-        ciclo ENUM('mensal', 'trimestral', 'anual') NOT NULL DEFAULT 'mensal',
-        preco DECIMAL(10,2) NOT NULL DEFAULT 0,
-        dias_teste INT NOT NULL DEFAULT 0,
-        etiqueta_texto VARCHAR(100) NULL,
-        etiqueta_cor VARCHAR(20) NOT NULL DEFAULT 'amarelo',
-        ativo TINYINT(1) NOT NULL DEFAULT 1,
-        criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )");
-    $criada = true;
-}
-
 function inserePlano($dados) {
-    garanteTabelaPlanos();
     $pdo = conexao();
     $stmt = $pdo->prepare('INSERT INTO planos (nome, descricao, ciclo, preco, dias_teste, etiqueta_texto, etiqueta_cor, ativo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     $stmt->execute([
@@ -39,7 +19,6 @@ function inserePlano($dados) {
 }
 
 function atualizaPlano($id_plano, $dados) {
-    garanteTabelaPlanos();
     $pdo = conexao();
     $stmt = $pdo->prepare('UPDATE planos SET nome = ?, descricao = ?, ciclo = ?, preco = ?, dias_teste = ?, etiqueta_texto = ?, etiqueta_cor = ? WHERE id_plano = ?');
     $stmt->execute([
@@ -55,21 +34,18 @@ function atualizaPlano($id_plano, $dados) {
 }
 
 function atualizaAtivoPlano($id_plano, $ativo) {
-    garanteTabelaPlanos();
     $pdo = conexao();
     $stmt = $pdo->prepare('UPDATE planos SET ativo = ? WHERE id_plano = ?');
     $stmt->execute([$ativo ? 1 : 0, $id_plano]);
 }
 
 function deletaPlano($id_plano) {
-    garanteTabelaPlanos();
     $pdo = conexao();
     $stmt = $pdo->prepare('DELETE FROM planos WHERE id_plano = ?');
     $stmt->execute([$id_plano]);
 }
 
 function buscaPlanoPorId($id_plano) {
-    garanteTabelaPlanos();
     $pdo = conexao();
     $stmt = $pdo->prepare('SELECT * FROM planos WHERE id_plano = ?');
     $stmt->execute([$id_plano]);
@@ -77,7 +53,6 @@ function buscaPlanoPorId($id_plano) {
 }
 
 function listaPlanos($filtro = []) {
-    garanteTabelaPlanos();
     $pdo = conexao();
     $sql = 'SELECT * FROM planos';
     $params = [];
@@ -103,32 +78,12 @@ function listaPlanos($filtro = []) {
 }
 
 function buscaPlanoSugerido() {
-    garanteTabelaPlanos();
     $pdo = conexao();
     $stmt = $pdo->query("SELECT * FROM planos WHERE ativo = 1 ORDER BY FIELD(ciclo, 'trimestral', 'mensal', 'anual'), preco ASC LIMIT 1");
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 
-function garanteTabelaPagamentos() {
-    static $criada = false;
-    if ($criada) return;
-    $pdo = conexao();
-    $pdo->exec("CREATE TABLE IF NOT EXISTS pagamentos (
-        id_pagamento INT AUTO_INCREMENT PRIMARY KEY,
-        id_usuario INT NOT NULL,
-        id_plano INT NULL,
-        ciclo ENUM('mensal', 'trimestral', 'anual') NOT NULL DEFAULT 'mensal',
-        valor DECIMAL(10,2) NOT NULL,
-        status ENUM('pago', 'falhou', 'reembolsado') NOT NULL DEFAULT 'pago',
-        stripe_invoice_id VARCHAR(255) NULL UNIQUE,
-        criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
-    )");
-    $criada = true;
-}
-
 function registraPagamento($dados) {
-    garanteTabelaPagamentos();
     $pdo = conexao();
     $stmt = $pdo->prepare(
         'INSERT IGNORE INTO pagamentos (id_usuario, id_plano, ciclo, valor, status, stripe_invoice_id, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -146,14 +101,12 @@ function registraPagamento($dados) {
 }
 
 function marcaPagamentoReembolsado($stripe_invoice_id) {
-    garanteTabelaPagamentos();
     $pdo = conexao();
     $stmt = $pdo->prepare("UPDATE pagamentos SET status = 'reembolsado' WHERE stripe_invoice_id = ? AND status = 'pago'");
     $stmt->execute([$stripe_invoice_id]);
 }
 
 function buscaPagamentoPorInvoice($stripe_invoice_id) {
-    garanteTabelaPagamentos();
     $pdo = conexao();
     $stmt = $pdo->prepare('SELECT * FROM pagamentos WHERE stripe_invoice_id = ?');
     $stmt->execute([$stripe_invoice_id]);
@@ -161,7 +114,6 @@ function buscaPagamentoPorInvoice($stripe_invoice_id) {
 }
 
 function ehPagamentoMaisRecentePago($id_usuario, $criado_em) {
-    garanteTabelaPagamentos();
     $pdo = conexao();
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM pagamentos WHERE id_usuario = ? AND status = 'pago' AND criado_em > ?");
     $stmt->execute([$id_usuario, $criado_em]);
@@ -169,7 +121,6 @@ function ehPagamentoMaisRecentePago($id_usuario, $criado_em) {
 }
 
 function listaPagamentosUsuario($id_usuario, $limite = 20) {
-    garanteTabelaPagamentos();
     $pdo = conexao();
     $stmt = $pdo->prepare('SELECT * FROM pagamentos WHERE id_usuario = ? ORDER BY criado_em DESC LIMIT ?');
     $stmt->bindValue(1, $id_usuario, PDO::PARAM_INT);
@@ -219,7 +170,6 @@ function _condicoesPagamentos($filtro) {
 }
 
 function listaPagamentos($filtro = [], $pagina = 1, $por_pagina = 30) {
-    garanteTabelaPagamentos();
     $pdo = conexao();
     $sql = "SELECT p.*, u.nome AS nome_usuario, u.email AS email_usuario, pl.nome AS nome_plano,
             CASE
@@ -247,7 +197,6 @@ function listaPagamentos($filtro = [], $pagina = 1, $por_pagina = 30) {
 }
 
 function resumoPagamentos($filtro = []) {
-    garanteTabelaPagamentos();
     $pdo = conexao();
     [$condicoes, $params] = _condicoesPagamentos($filtro);
 
@@ -268,7 +217,6 @@ function resumoPagamentos($filtro = []) {
 }
 
 function calculaReceitaMensal() {
-    garanteTabelaPagamentos();
     $pdo = conexao();
     $stmt = $pdo->query(
         "SELECT COALESCE(SUM(
@@ -293,13 +241,11 @@ function calculaReceitaMensal() {
 }
 
 function calculaReceitaTotal() {
-    garanteTabelaPagamentos();
     $pdo = conexao();
     return (float) $pdo->query("SELECT COALESCE(SUM(valor), 0) FROM pagamentos WHERE status = 'pago'")->fetchColumn();
 }
 
 function receitaPorMes($meses = 6) {
-    garanteTabelaPagamentos();
     $pdo = conexao();
 
     $stmt = $pdo->prepare(
@@ -327,7 +273,6 @@ function receitaPorMes($meses = 6) {
 }
 
 function contaNovasAssinaturasMes() {
-    garanteTabelaPagamentos();
     $pdo = conexao();
     return (int) $pdo->query(
         "SELECT COUNT(*) FROM (
@@ -338,7 +283,6 @@ function contaNovasAssinaturasMes() {
 }
 
 function contaRenovacoesMes() {
-    garanteTabelaPagamentos();
     $pdo = conexao();
     return (int) $pdo->query(
         "SELECT COUNT(*) FROM pagamentos p
@@ -352,7 +296,6 @@ function contaRenovacoesMes() {
 }
 
 function contaFalhasMes() {
-    garanteTabelaPagamentos();
     $pdo = conexao();
     return (int) $pdo->query(
         "SELECT COUNT(*) FROM pagamentos WHERE status = 'falhou' AND criado_em >= DATE_FORMAT(NOW(), '%Y-%m-01')"
@@ -360,7 +303,6 @@ function contaFalhasMes() {
 }
 
 function contaPlanos() {
-    garanteTabelaPlanos();
     $pdo = conexao();
     return (int) $pdo->query('SELECT COUNT(*) FROM planos')->fetchColumn();
 }

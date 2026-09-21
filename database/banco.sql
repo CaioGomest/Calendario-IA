@@ -28,6 +28,10 @@ CREATE TABLE IF NOT EXISTS usuarios (
     deletado TINYINT(1) NOT NULL DEFAULT 0
 );
 
+-- indice pro telefone: e a primeira consulta em toda mensagem do WhatsApp (buscaUsuarioPorTelefone), sem isso vira
+-- varredura completa da tabela conforme a base de usuarios cresce -- ver anotacoes/14-banco-indices-escala.md
+CREATE INDEX idx_usuarios_telefone ON usuarios (telefone);
+
 -- data_inicio/data_fim sao gravados em UTC (instante absoluto), nunca no fuso do usuario -- ver funcoesEventos.php::listaEventosPendentesLembrete
 CREATE TABLE IF NOT EXISTS eventos (
     id_evento INT AUTO_INCREMENT PRIMARY KEY,
@@ -43,6 +47,10 @@ CREATE TABLE IF NOT EXISTS eventos (
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
 );
 
+-- indice pro filtro de lembretes pendentes: roda a cada 5 min pra todos os usuarios (listaEventosPendentesLembrete),
+-- sem isso vira varredura completa da tabela eventos conforme ela cresce -- ver anotacoes/14-banco-indices-escala.md
+CREATE INDEX idx_eventos_lembrete ON eventos (lembrete, lembrete_enviado);
+
 CREATE TABLE IF NOT EXISTS logs_mensagens (
     id_log INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT NOT NULL,
@@ -54,9 +62,12 @@ CREATE TABLE IF NOT EXISTS logs_mensagens (
 
 CREATE INDEX idx_logs_usuario_dia ON logs_mensagens (id_usuario, direcao, criado_em);
 
+-- id_usuario e UNIQUE de proposito: atualizaSessaoConversa() usa INSERT ... ON DUPLICATE KEY UPDATE
+-- (uma so query atomica), pra nao correr risco de duas mensagens quase simultaneas do mesmo usuario
+-- criarem duas sessoes -- ver anotacoes/14-banco-indices-escala.md
 CREATE TABLE IF NOT EXISTS sessoes_conversa (
     id_sessao INT AUTO_INCREMENT PRIMARY KEY,
-    id_usuario INT NOT NULL,
+    id_usuario INT NOT NULL UNIQUE,
     contexto TEXT NULL,
     atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)

@@ -119,9 +119,7 @@ function atualizaAntecedenciaLembrete($id_usuario, $antecedencia_min) {
     $stmt->execute([$antecedencia_min, $id_usuario]);
 }
 
-function listaUsuarios($filtro = []) {
-    $pdo = conexao();
-    $sql = 'SELECT u.*, p.nome AS nome_plano FROM usuarios u LEFT JOIN planos p ON p.id_plano = u.id_plano';
+function _condicoesUsuarios($filtro) {
     $params = [];
     $condicoes = ['u.deletado = 0'];
 
@@ -141,12 +139,33 @@ function listaUsuarios($filtro = []) {
         $params[] = $termo;
     }
 
+    return [$condicoes, $params];
+}
+
+function listaUsuarios($filtro = [], $pagina = 1, $por_pagina = 30) {
+    $pdo = conexao();
+    $sql = 'SELECT u.*, p.nome AS nome_plano FROM usuarios u LEFT JOIN planos p ON p.id_plano = u.id_plano';
+
+    [$condicoes, $params] = _condicoesUsuarios($filtro);
     $sql .= ' WHERE ' . implode(' AND ', $condicoes);
     $sql .= ' ORDER BY u.criado_em DESC';
+
+    $pagina = max(1, (int) $pagina);
+    $por_pagina = max(1, (int) $por_pagina);
+    $sql .= ' LIMIT ' . $por_pagina . ' OFFSET ' . (($pagina - 1) * $por_pagina);
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function contaUsuarios($filtro = []) {
+    $pdo = conexao();
+    [$condicoes, $params] = _condicoesUsuarios($filtro);
+    $sql = 'SELECT COUNT(*) FROM usuarios u WHERE ' . implode(' AND ', $condicoes);
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return (int) $stmt->fetchColumn();
 }
 
 function deletaUsuario($id_usuario) {

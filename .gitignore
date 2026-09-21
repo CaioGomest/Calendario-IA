@@ -5,3 +5,4 @@ config/env.php
 vendor/
 node_modules/
 escopo
+cache/
