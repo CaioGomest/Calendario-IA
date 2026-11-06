@@ -1,6 +1,7 @@
 <?php
 
 header('Content-Type: application/json');
+header_remove('X-Powered-By');
 
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../funcoes/funcoesAuth.php';
@@ -105,10 +106,18 @@ if ($metodo === 'GET') {
 
 if ($metodo === 'DELETE') {
     $id_transacao = (int) ($corpo['id_transacao'] ?? 0);
+    $id_usuario = (int) ($corpo['id_usuario'] ?? 0);
 
-    if (!$id_transacao) {
+    if (!$id_transacao || !$id_usuario) {
         http_response_code(400);
-        echo json_encode(['ok' => false, 'erro' => 'Campo obrigatório: id_transacao']);
+        echo json_encode(['ok' => false, 'erro' => 'Campo obrigatório: id_transacao e id_usuario']);
+        exit;
+    }
+
+    $transacao_existente = buscaTransacaoPorId($id_transacao);
+    if (!$transacao_existente || (int) $transacao_existente['id_usuario'] !== $id_usuario) {
+        http_response_code(404);
+        echo json_encode(['ok' => false, 'erro' => 'Transação não encontrada']);
         exit;
     }
 

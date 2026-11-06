@@ -11,6 +11,9 @@ exigeLoginCliente();
 
 $usuario = buscaUsuarioPorId(usuarioLogadoId());
 exigeAssinaturaAtiva($usuario);
+
+$erro = $_SESSION['erro_google'] ?? '';
+unset($_SESSION['erro_google']);
 if (!empty($usuario['token_acesso_google'])) {
     header('Location: whatsapp');
     exit;
@@ -66,6 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conecta
       </div>
     </div>
 
+    <?php if ($erro): ?>
+      <div class="erro-msg" style="width:100%;"><?= htmlspecialchars($erro) ?></div>
+    <?php endif; ?>
+
     <form method="post" action="google" class="form-transicao form-google" style="width:100%;">
       <input type="hidden" name="acao" value="conectar" />
       <button type="submit" class="botao botao-branco botao-google" style="width:100%;">
@@ -108,6 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'conecta
             <div class="permissao denied"><span class="permissao-icone">✕</span> <?= traduz('google_perm_3') ?></div>
           </div>
         </div>
+        <?php if ($erro): ?>
+          <div class="erro-msg" style="margin-bottom:12px;"><?= htmlspecialchars($erro) ?></div>
+        <?php endif; ?>
         <form method="post" action="google" class="form-transicao form-google">
           <input type="hidden" name="acao" value="conectar" />
           <button type="submit" class="botao botao-branco botao-google" style="width:100%;">

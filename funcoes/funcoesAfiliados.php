@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../config/conexao.php';
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/funcoesUsuarios.php';
 
 function geraCodigoAfiliadoUnico($nome) {
     $caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -99,15 +100,28 @@ function atribuiIndicacaoAfiliadoPorCookie($id_usuario) {
     }
     $codigo = validaCookieAfiliadoAssinado($_COOKIE['afiliado_ref']);
     $afiliado = $codigo ? buscaAfiliadoPorCodigo($codigo) : null;
-    if ($afiliado) {
-        insereIndicacaoAfiliado($afiliado['id_afiliado'], $id_usuario);
+    if (!$afiliado) {
+        return;
     }
+    // impede o afiliado de se auto-indicar (mesmo e-mail da conta de afiliado e da
+    // conta de cliente) pra ganhar comissao da propria assinatura
+    $usuario = buscaUsuarioPorId($id_usuario);
+    if ($usuario && strcasecmp($usuario['email'], $afiliado['email']) === 0) {
+        return;
+    }
+    insereIndicacaoAfiliado($afiliado['id_afiliado'], $id_usuario);
 }
 
 function registraComissaoAfiliado($id_indicacao, $id_pagamento, $valor) {
     $pdo = conexao();
     $stmt = $pdo->prepare('INSERT IGNORE INTO afiliados_comissoes (id_indicacao, id_pagamento, valor) VALUES (?, ?, ?)');
     $stmt->execute([$id_indicacao, $id_pagamento, $valor]);
+}
+
+function estornaComissaoPorPagamento($id_pagamento) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare("UPDATE afiliados_comissoes SET status = 'estornada' WHERE id_pagamento = ?");
+    $stmt->execute([$id_pagamento]);
 }
 
 function contaIndicacoesPorAfiliado($id_afiliado) {
@@ -120,9 +134,9 @@ function contaIndicacoesPorAfiliado($id_afiliado) {
 function somaComissoesPorAfiliado($id_afiliado) {
     $pdo = conexao();
     $stmt = $pdo->prepare(
-        'SELECT COALESCE(SUM(c.valor), 0) FROM afiliados_comissoes c
+        "SELECT COALESCE(SUM(c.valor), 0) FROM afiliados_comissoes c
          INNER JOIN afiliados_indicacoes i ON i.id_indicacao = c.id_indicacao
-         WHERE i.id_afiliado = ?'
+         WHERE i.id_afiliado = ? AND c.status = 'ativa'"
     );
     $stmt->execute([$id_afiliado]);
     return (float) $stmt->fetchColumn();
@@ -252,6 +266,26 @@ function insereSaqueAfiliado($id_afiliado, $valor, $email_paypal) {
     $stmt = $pdo->prepare('INSERT INTO afiliados_saques (id_afiliado, valor, email_paypal) VALUES (?, ?, ?)');
     $stmt->execute([$id_afiliado, $valor, $email_paypal]);
     return (int) $pdo->lastInsertId();
+}
+
+// Trava a linha do afiliado (SELECT ... FOR UPDATE) antes de checar o saldo, pra
+// duas requisicoes de saque quase simultaneas nao lerem o mesmo saldo disponivel
+// e sacarem em dobro.
+function insereSaqueSeSaldoSuficiente($id_afiliado, $valor, $email_paypal) {
+    $pdo = conexao();
+    $pdo->beginTransaction();
+
+    $stmt = $pdo->prepare('SELECT id_afiliado FROM afiliados WHERE id_afiliado = ? FOR UPDATE');
+    $stmt->execute([$id_afiliado]);
+
+    if ($valor > saldoDisponivelAfiliado($id_afiliado)) {
+        $pdo->rollBack();
+        return null;
+    }
+
+    $id_saque = insereSaqueAfiliado($id_afiliado, $valor, $email_paypal);
+    $pdo->commit();
+    return $id_saque;
 }
 
 function listaSaquesPorAfiliado($id_afiliado) {

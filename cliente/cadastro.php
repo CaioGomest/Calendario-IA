@@ -21,6 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($nome === '' || $email === '') {
         $erro = traduz('erro_campos_invalidos');
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $erro = traduz('erro_email_invalido');
     } elseif (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/', $senha)) {
         $erro = traduz('erro_senha_fraca');
     } elseif ($senha !== $confirmar_senha) {
@@ -32,18 +34,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $id_usuario = insereUsuario(['nome' => $nome, 'email' => $email, 'senha' => $senha]);
 
-        enviaEmailBoasVindas(['nome' => $nome, 'email' => $email]);
-        atribuiIndicacaoAfiliadoPorCookie($id_usuario);
+        if ($id_usuario === null) {
+            // corrida: outro cadastro com o mesmo e-mail inseriu primeiro entre a
+            // checagem la em cima e este insert
+            $erro = traduz('erro_email_existente');
+        } else {
+            enviaEmailBoasVindas(['nome' => $nome, 'email' => $email]);
+            atribuiIndicacaoAfiliadoPorCookie($id_usuario);
 
-        fazLoginCliente(['id_usuario' => $id_usuario, 'nome' => $nome, 'email' => $email]);
+            fazLoginCliente(['id_usuario' => $id_usuario, 'nome' => $nome, 'email' => $email]);
 
-        if ($eh_ajax) {
-            header('Content-Type: application/json');
-            echo json_encode(['ok' => true, 'data' => ['redirect' => 'localizacao']]);
+            if ($eh_ajax) {
+                header('Content-Type: application/json');
+                echo json_encode(['ok' => true, 'data' => ['redirect' => 'localizacao']]);
+                exit;
+            }
+            header('Location: localizacao');
             exit;
         }
-        header('Location: localizacao');
-        exit;
     }
 
     if ($eh_ajax) {

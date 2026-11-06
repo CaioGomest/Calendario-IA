@@ -100,6 +100,35 @@ function enviaEmailAssinaturaAtiva($usuario, $plano) {
     return enviaEmail($usuario['email'], $assunto, $corpo);
 }
 
+// avisos de ciclo de vida da assinatura (cancelamento, fim de teste, renovacao, autenticacao do cartao),
+// no idioma da conta: textos em idiomas/*.php como email_<evento>_assunto|texto|botao
+// com marcadores {nome}-style trocados por $dados (valor, data, plano...)
+function enviaEmailAssinaturaEvento($usuario, $evento, $dados = []) {
+    $idioma = idiomaDoUsuario($usuario);
+    $link = linkClienteBase() . '/conta';
+    // link vindo da Stripe (ex.: fatura hospedada para autenticar o cartao); so https
+    if (!empty($dados['link']) && strpos($dados['link'], 'https://') === 0) {
+        $link = $dados['link'];
+    }
+    unset($dados['link']);
+    $troca = ['{link}' => htmlspecialchars($link), '{app}' => htmlspecialchars(nomeApp())];
+    foreach ($dados as $chave => $valor) {
+        $troca['{' . $chave . '}'] = htmlspecialchars((string) $valor);
+    }
+
+    $assunto = str_replace(["\r", "\n"], ' ', strtr(traduzPara("email_{$evento}_assunto", $idioma), $troca));
+    $saudacao = strtr(traduzPara('email_saudacao', $idioma), ['{nome}' => htmlspecialchars($usuario['nome'])]);
+    $texto = strtr(traduzPara("email_{$evento}_texto", $idioma), $troca);
+    $botao = traduzPara("email_{$evento}_botao", $idioma);
+
+    $corpo = '<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;"><h2>' . $saudacao . '</h2>'
+        . $texto
+        . '<p><a href="' . $troca['{link}'] . '" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;">' . $botao . '</a></p>'
+        . '<hr style="border:none;border-top:1px solid #eee;margin:24px 0;"><p style="font-size:12px;color:#999;">' . $troca['{app}'] . '</p></div>';
+
+    return enviaEmail($usuario['email'], $assunto, $corpo);
+}
+
 function enviaEmailPlanoAlterado($usuario, $plano) {
     $link = linkClienteBase() . '/conta';
     $assunto = sprintf(traduz('email_plano_alterado_assunto'), nomeApp());

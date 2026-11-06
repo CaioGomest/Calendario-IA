@@ -1,6 +1,7 @@
 <?php
 
 header('Content-Type: application/json');
+header_remove('X-Powered-By');
 
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../funcoes/funcoesAuth.php';
@@ -48,6 +49,7 @@ echo json_encode(['ok' => true, 'data' => [
     'plano' => $usuario['plano'],
     'plano_expira_em' => $usuario['plano_expira_em'],
     'ativo' => (bool) $usuario['ativo'],
+    'plano_ativo' => planoUsuarioAtivo($usuario),
     'fuso_horario' => $usuario['fuso_horario'],
     'modo_silencio' => (bool) $usuario['modo_silencio'],
     'antecedencia_lembrete_min' => (int) $usuario['antecedencia_lembrete_min'],

@@ -64,13 +64,20 @@ if ($eh_pedido_portal) {
         desconectaGoogle(usuarioLogadoId());
     }
 
-    if ($acao === 'cancelar_plano') {
-        $usuario_cancel = buscaUsuarioPorId(usuarioLogadoId());
-        if (!MODO_DEV && !empty($usuario_cancel['stripe_subscription_id'])) {
-            cancelaAssinaturaStripe($usuario_cancel['stripe_subscription_id']);
+    // cancelar para as cobrancas futuras e mantem o acesso ate o fim do periodo ja pago (como os Termos
+    // prometem); a Stripe encerra a assinatura no vencimento e o webhook fecha o plano
+    if ($acao === 'cancelar_plano' || $acao === 'reativar_plano') {
+        $agendar = $acao === 'cancelar_plano';
+        $usuario_assin = buscaUsuarioPorId(usuarioLogadoId());
+
+        if (in_array($usuario_assin['plano'], ['ativo', 'trial'], true) && cancelamentoAgendado($usuario_assin) !== $agendar) {
+            if (alteraCancelamentoAgendadoUsuario($usuario_assin, $agendar)) {
+                $fim_periodo_texto = $usuario_assin['plano_expira_em'] ? date('d/m/Y', strtotime($usuario_assin['plano_expira_em'])) : '—';
+                enviaEmailAssinaturaEvento($usuario_assin, $agendar ? 'cancelamento_agendado' : 'cancelamento_desfeito', ['data' => $fim_periodo_texto]);
+            } else {
+                $_SESSION['erro_plano'] = traduz($agendar ? 'conta_erro_cancelar' : 'conta_erro_reativar');
+            }
         }
-        atualizaPlanoUsuario(usuarioLogadoId(), 'cancelado', null);
-        atualizaStripeUsuario(usuarioLogadoId(), $usuario_cancel['stripe_customer_id'] ?? null, null);
     }
 
     if ($acao === 'cambiar_plano' && !empty($_POST['id_plano'])) {
@@ -79,7 +86,7 @@ if ($eh_pedido_portal) {
 
         $mesmo_plano = !empty($usuario_cambiar['id_plano']) && (int) $usuario_cambiar['id_plano'] === (int) ($plano_escolhido['id_plano'] ?? 0);
 
-        if ($plano_escolhido && $plano_escolhido['ativo'] && !$mesmo_plano) {
+        if ($plano_escolhido && $plano_escolhido['ativo'] && !$mesmo_plano && !cancelamentoAgendado($usuario_cambiar)) {
             if (MODO_DEV) {
                 $expira = null;
                 if ($plano_escolhido['ciclo'] === 'mensal') {
@@ -91,7 +98,7 @@ if ($eh_pedido_portal) {
                 }
                 atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira, $plano_escolhido['id_plano']);
                 enviaEmailPlanoAlterado($usuario_cambiar, $plano_escolhido);
-            } elseif ($usuario_cambiar['plano'] === 'ativo' && !empty($usuario_cambiar['stripe_subscription_id'])) {
+            } elseif (in_array($usuario_cambiar['plano'], ['ativo', 'trial'], true) && !empty($usuario_cambiar['stripe_subscription_id'])) {
                 $assinatura_atual = buscaAssinaturaStripe($usuario_cambiar['stripe_subscription_id']);
                 $item_id = $assinatura_atual['items']['data'][0]['id'] ?? null;
 
@@ -103,13 +110,17 @@ if ($eh_pedido_portal) {
                     ]);
 
                     if (!isset($novo_preco['error'])) {
+                        // em teste gratis ainda nao houve cobranca, entao nao ha o que creditar
+                        $muda_ciclo = ($assinatura_atual['status'] ?? '') === 'active'
+                            && cicloDaAssinaturaStripe($assinatura_atual) !== $plano_escolhido['ciclo'];
                         $assinatura_atualizada = atualizaAssinaturaStripe(
-                            $usuario_cambiar['stripe_subscription_id'], $item_id, $novo_preco['id']
+                            $usuario_cambiar['stripe_subscription_id'], $item_id, $novo_preco['id'], $plano_escolhido['id_plano'], $muda_ciclo
                         );
                         if (!isset($assinatura_atualizada['error'])) {
                             $fim_periodo = fimPeriodoAssinaturaStripe($assinatura_atualizada);
                             $expira_em = $fim_periodo ? date('Y-m-d H:i:s', (int) $fim_periodo) : $usuario_cambiar['plano_expira_em'];
-                            atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em, $plano_escolhido['id_plano']);
+                            $plano_atual = mapeiaStatusStripeParaPlano($assinatura_atualizada['status'] ?? '') ?? $usuario_cambiar['plano'];
+                            atualizaPlanoUsuario(usuarioLogadoId(), $plano_atual, $expira_em, $plano_escolhido['id_plano']);
                             enviaEmailPlanoAlterado($usuario_cambiar, $plano_escolhido);
                         } else {
                             $_SESSION['erro_plano'] = traduz('conta_erro_cambiar_plano');
@@ -120,6 +131,8 @@ if ($eh_pedido_portal) {
                 } else {
                     $_SESSION['erro_plano'] = traduz('conta_erro_cambiar_plano');
                 }
+            } else {
+                $_SESSION['erro_plano'] = traduz('conta_erro_cambiar_plano');
             }
         }
     }
@@ -145,16 +158,20 @@ $sufixo_conta = [
     'trimestral' => traduz('upgrade_ciclo_trimestral'),
     'anual' => traduz('upgrade_ciclo_anual'),
 ];
+$meses_ciclo = ['mensal' => 1, 'trimestral' => 3, 'anual' => 12];
 $preco_plano_texto = $plano_conta
-    ? simboloMoeda() . number_format((float)$plano_conta['preco'], 0) . ' ' . ($sufixo_conta[$plano_conta['ciclo']] ?? '')
+    ? formataPrecoPlano($plano_conta['preco']) . ' ' . ($sufixo_conta[$plano_conta['ciclo']] ?? '')
     : '';
 
 $agora = new DateTime();
 $expirado = assinaturaExpirada($usuario);
 
+$cancelamento_agendado = cancelamentoAgendado($usuario);
+$tem_assinatura = planoUsuarioAtivo($usuario);
+
 if ($usuario['plano_expira_em']) {
     $data_expira = new DateTime($usuario['plano_expira_em']);
-    $texto_datas = sprintf(traduz('sub_dates_dinamico'), $data_expira->format('d/m/Y'));
+    $texto_datas = sprintf(traduz($cancelamento_agendado ? 'sub_cancelamento_agendado' : 'sub_dates_dinamico'), $data_expira->format('d/m/Y'));
 } else {
     $texto_datas = '';
 }
@@ -241,6 +258,7 @@ $secao_historico = function ($classe_rotulo = 'secao-rotulo') use ($historico_pa
     <span class="selo <?= $badge_cor ?>"><?= htmlspecialchars($badge_plano) ?></span>
   </div>
   <div class="conteudo-pagina espacado">
+    <?php require __DIR__ . '/_includes/banner-onboarding.php'; ?>
     <h1 class="tela-titulo"><?= traduz('conta_titulo') ?></h1>
 
     <div class="conta-cabecalho">
@@ -263,8 +281,19 @@ $secao_historico = function ($classe_rotulo = 'secao-rotulo') use ($historico_pa
         <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro_plano) ?></p>
         <?php endif; ?>
         <div class="assinatura-acoes">
+          <?php if (!$tem_assinatura): ?>
+          <a class="botao botao-primario botao-pequeno" href="pago"><?= traduz('upgrade_botao') ?></a>
+          <?php if (pagamentoPendente($usuario) && !empty($usuario['stripe_customer_id'])): ?>
           <form method="post" action="conta" style="display:inline;"><input type="hidden" name="acao" value="portal_stripe" /><button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_cambiar_tarjeta') ?></button></form>
-          <button type="button" class="botao botao-perigo botao-pequeno"><?= traduz('botao_cancelar_plan') ?></button>
+          <?php endif; ?>
+          <?php else: ?>
+          <form method="post" action="conta" style="display:inline;"><input type="hidden" name="acao" value="portal_stripe" /><button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_cambiar_tarjeta') ?></button></form>
+          <?php if ($cancelamento_agendado): ?>
+          <form method="post" action="conta" style="display:inline;"><input type="hidden" name="acao" value="reativar_plano" /><button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_reativar_plan') ?></button></form>
+          <?php else: ?>
+          <button type="button" class="botao botao-perigo botao-pequeno" onclick="abrirModal('modal-cancelar')"><?= traduz('botao_cancelar_plan') ?></button>
+          <?php endif; ?>
+          <?php endif; ?>
         </div>
       </div>
     </div>
@@ -365,6 +394,7 @@ $secao_historico = function ($classe_rotulo = 'secao-rotulo') use ($historico_pa
         <div class="espaco"></div>
       </header>
       <div class="conteudo-area">
+        <?php require __DIR__ . '/_includes/banner-onboarding.php'; ?>
         <div class="conta-grid">
           <div class="coluna">
             <div class="conta-cabecalho">
@@ -382,12 +412,26 @@ $secao_historico = function ($classe_rotulo = 'secao-rotulo') use ($historico_pa
               <?php if ($erro_portal): ?>
               <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro_portal) ?></p>
               <?php endif; ?>
+              <?php if ($erro_plano): ?>
+              <p class="dica" style="color:var(--red);"><?= htmlspecialchars($erro_plano) ?></p>
+              <?php endif; ?>
               <div class="assinatura-acoes">
-                <?php if ($planos_disponiveis): ?>
+                <?php if (!$tem_assinatura): ?>
+                <a class="botao botao-primario botao-pequeno" href="pago"><?= traduz('upgrade_botao') ?></a>
+                <?php if (pagamentoPendente($usuario) && !empty($usuario['stripe_customer_id'])): ?>
+                <form method="post" action="conta" style="display:inline;"><input type="hidden" name="acao" value="portal_stripe" /><button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_cambiar_tarjeta') ?></button></form>
+                <?php endif; ?>
+                <?php else: ?>
+                <?php if ($planos_disponiveis && !$cancelamento_agendado): ?>
                 <button type="button" class="botao botao-contorno botao-pequeno" onclick="abrirModal('modal-plano')" style="color:var(--primary);"><?= traduz('modal_cambiar_plan') ?></button>
                 <?php endif; ?>
                 <form method="post" action="conta" style="display:inline;"><input type="hidden" name="acao" value="portal_stripe" /><button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_cambiar_tarjeta') ?></button></form>
+                <?php if ($cancelamento_agendado): ?>
+                <form method="post" action="conta" style="display:inline;"><input type="hidden" name="acao" value="reativar_plano" /><button type="submit" class="botao botao-contorno botao-pequeno"><?= traduz('botao_reativar_plan') ?></button></form>
+                <?php else: ?>
                 <button type="button" class="botao botao-perigo botao-pequeno" onclick="abrirModal('modal-cancelar')"><?= traduz('botao_cancelar_plan') ?></button>
+                <?php endif; ?>
+                <?php endif; ?>
               </div>
             </div>
 
@@ -500,8 +544,8 @@ $secao_historico = function ($classe_rotulo = 'secao-rotulo') use ($historico_pa
           }
         ?>
         <div class="plano-nome"><?= htmlspecialchars($pl['nome']) ?></div>
-        <div class="plano-preco"><?= $moeda ?><?= $pl['ciclo'] === 'anual' ? (int)round($mensal/12) : (int)$mensal ?><small><?= $sufixo_ciclo['mensal'] ?></small></div>
-        <div class="plano-detalhe"><?= traduz('modal_facturacion') ?> <?= htmlspecialchars($sufixo_ciclo[$pl['ciclo']] ?? '') ?></div>
+        <div class="plano-preco"><?= formataPrecoPlano($mensal / ($meses_ciclo[$pl['ciclo']] ?? 1)) ?><small><?= $sufixo_ciclo['mensal'] ?></small></div>
+        <div class="plano-detalhe"><?= sprintf(traduz('modal_cobrado'), formataPrecoPlano($mensal) . ' ' . htmlspecialchars($sufixo_conta[$pl['ciclo']] ?? '')) ?></div>
         <?php if ($pl['ciclo'] === 'mensal'): ?>
         <div class="plano-feats">
           <span><?= traduz('lp_feat1') ?></span>

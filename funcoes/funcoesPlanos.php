@@ -1,6 +1,19 @@
 <?php
 
 require_once __DIR__ . '/../config/conexao.php';
+require_once __DIR__ . '/funcoesConfiguracao.php';
+require_once __DIR__ . '/funcoesIdioma.php';
+
+// preco como o cliente precisa le-lo antes de pagar: centavos aparecem quando existem (R$ 33,90, nao R$ 34)
+function formataValorPlano($preco, $idioma = null) {
+    $casas = ((int) round((float) $preco * 100)) % 100 === 0 ? 0 : 2;
+    $decimal = ($idioma ?? idiomaAtual()) === 'pt-BR' ? ',' : '.';
+    return number_format((float) $preco, $casas, $decimal, $decimal === ',' ? '.' : ',');
+}
+
+function formataPrecoPlano($preco, $idioma = null) {
+    return simboloMoeda() . formataValorPlano($preco, $idioma);
+}
 
 function inserePlano($dados) {
     $pdo = conexao();
@@ -45,6 +58,16 @@ function deletaPlano($id_plano) {
     $stmt->execute([$id_plano]);
 }
 
+function contaVinculosPlano($id_plano) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT
+        (SELECT COUNT(*) FROM usuarios WHERE id_plano = ?) +
+        (SELECT COUNT(*) FROM pagamentos WHERE id_plano = ?)
+    ');
+    $stmt->execute([$id_plano, $id_plano]);
+    return (int) $stmt->fetchColumn();
+}
+
 function buscaPlanoPorId($id_plano) {
     $pdo = conexao();
     $stmt = $pdo->prepare('SELECT * FROM planos WHERE id_plano = ?');
@@ -85,8 +108,17 @@ function buscaPlanoSugerido() {
 
 function registraPagamento($dados) {
     $pdo = conexao();
+    // ON DUPLICATE KEY UPDATE (em vez de INSERT IGNORE): a Stripe reusa o mesmo
+    // stripe_invoice_id entre uma tentativa que falha (invoice.payment_failed) e o
+    // retry que da certo (invoice.paid) -- sem isso, a linha ficava presa em
+    // "falhou" pra sempre e a comissao de afiliado nunca era gerada. status nunca
+    // regride de 'pago' pra outra coisa, mesmo se um evento antigo chegar atrasado.
     $stmt = $pdo->prepare(
-        'INSERT IGNORE INTO pagamentos (id_usuario, id_plano, ciclo, valor, status, stripe_invoice_id, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO pagamentos (id_usuario, id_plano, ciclo, valor, status, stripe_invoice_id, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+            id_pagamento = LAST_INSERT_ID(id_pagamento),
+            status = IF(status = \'pago\', status, VALUES(status)),
+            valor = VALUES(valor)'
     );
     $stmt->execute([
         $dados['id_usuario'],
@@ -118,6 +150,13 @@ function ehPagamentoMaisRecentePago($id_usuario, $criado_em) {
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM pagamentos WHERE id_usuario = ? AND status = 'pago' AND criado_em > ?");
     $stmt->execute([$id_usuario, $criado_em]);
     return (int) $stmt->fetchColumn() === 0;
+}
+
+function contaPagamentosEfetuadosUsuario($id_usuario) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM pagamentos WHERE id_usuario = ? AND status IN ('pago', 'reembolsado')");
+    $stmt->execute([$id_usuario]);
+    return (int) $stmt->fetchColumn();
 }
 
 function listaPagamentosUsuario($id_usuario, $limite = 20) {

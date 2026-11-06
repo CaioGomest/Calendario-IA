@@ -28,9 +28,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
     deletado TINYINT(1) NOT NULL DEFAULT 0
 );
 
--- indice pro telefone: e a primeira consulta em toda mensagem do WhatsApp (buscaUsuarioPorTelefone), sem isso vira
--- varredura completa da tabela conforme a base de usuarios cresce -- ver anotacoes/14-banco-indices-escala.md
-CREATE INDEX idx_usuarios_telefone ON usuarios (telefone);
+-- indice UNIQUE pro telefone: acelera a primeira consulta em toda mensagem do WhatsApp
+-- (buscaUsuarioPorTelefone, ver anotacoes/14-banco-indices-escala.md) E impede duas contas
+-- com o mesmo numero (a checagem de aplicacao sozinha e check-then-act, sem lock -- ver
+-- anotacoes/16-admin-usuarios-planos.md achado 3 / anotacoes/18-onboarding-cliente.md achado 3).
+-- MySQL trata varios NULL como nao-colidentes num UNIQUE, entao usuarios sem telefone continuam OK.
+CREATE UNIQUE INDEX idx_usuarios_telefone ON usuarios (telefone);
 
 -- data_inicio/data_fim sao gravados em UTC (instante absoluto), nunca no fuso do usuario -- ver funcoesEventos.php::listaEventosPendentesLembrete
 CREATE TABLE IF NOT EXISTS eventos (
@@ -205,6 +208,10 @@ CREATE TABLE IF NOT EXISTS afiliados_comissoes (
     id_indicacao INT NOT NULL,
     id_pagamento INT NOT NULL UNIQUE,
     valor DECIMAL(10,2) NOT NULL,
+    -- status: comissao vira 'estornada' quando o pagamento associado e reembolsado
+    -- (charge.refunded no stripe-webhook.php), pra nao continuar contando no saldo
+    -- sacavel do afiliado. Ver estornaComissaoPorPagamento() em funcoesAfiliados.php.
+    status ENUM('ativa', 'estornada') NOT NULL DEFAULT 'ativa',
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_indicacao) REFERENCES afiliados_indicacoes(id_indicacao),
     FOREIGN KEY (id_pagamento) REFERENCES pagamentos(id_pagamento)
@@ -233,6 +240,19 @@ CREATE TABLE IF NOT EXISTS afiliados_saques (
 );
 
 CREATE INDEX idx_afiliados_saques_afiliado ON afiliados_saques (id_afiliado);
+
+-- Controla tentativas de login por identificador (email) + papel, pra bloquear
+-- forca bruta. Ver loginBloqueado()/registraTentativaFalha()/limpaTentativasFalha()
+-- em funcoesAuth.php.
+CREATE TABLE IF NOT EXISTS login_tentativas (
+    id_tentativa INT AUTO_INCREMENT PRIMARY KEY,
+    identificador VARCHAR(255) NOT NULL,
+    tipo ENUM('cliente', 'admin', 'afiliado') NOT NULL,
+    tentativas INT NOT NULL DEFAULT 1,
+    bloqueado_ate DATETIME NULL,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_login_tentativas (identificador, tipo)
+);
 
 -- Admin padrão (email: admin@gmail.com / senha: Admin@123)
 INSERT IGNORE INTO administradores (nome, email, senha_hash) VALUES (

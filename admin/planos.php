@@ -19,9 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     if ($acao === 'criar') {
         $nome = trim($_POST['nome'] ?? '');
         $descricao = trim($_POST['descricao'] ?? '');
-        $ciclo = $_POST['ciclo'] ?? 'mensal';
+        $ciclo = in_array($_POST['ciclo'] ?? '', ['mensal', 'trimestral', 'anual'], true) ? $_POST['ciclo'] : 'mensal';
         $preco = (float) ($_POST['preco'] ?? 0);
-        $dias_teste = (int) ($_POST['dias_teste'] ?? 0);
+        $dias_teste = max(0, (int) ($_POST['dias_teste'] ?? 0));
         $etiqueta_texto = trim($_POST['etiqueta_texto'] ?? '');
         $etiqueta_cor = $_POST['etiqueta_cor'] ?? 'amarelo';
 
@@ -43,9 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     } elseif ($acao === 'editar') {
         $nome = trim($_POST['nome'] ?? '');
         $descricao = trim($_POST['descricao'] ?? '');
-        $ciclo = $_POST['ciclo'] ?? 'mensal';
+        $ciclo = in_array($_POST['ciclo'] ?? '', ['mensal', 'trimestral', 'anual'], true) ? $_POST['ciclo'] : 'mensal';
         $preco = (float) ($_POST['preco'] ?? 0);
-        $dias_teste = (int) ($_POST['dias_teste'] ?? 0);
+        $dias_teste = max(0, (int) ($_POST['dias_teste'] ?? 0));
         $etiqueta_texto = trim($_POST['etiqueta_texto'] ?? '');
         $etiqueta_cor = $_POST['etiqueta_cor'] ?? 'amarelo';
 
@@ -65,14 +65,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
             $msg_sucesso = traduz('admin_plano_atualizado');
         }
     } elseif ($acao === 'ativar') {
-        atualizaAtivoPlano($id, true);
-        $msg_sucesso = traduz('admin_plano_ativado');
+        if (!buscaPlanoPorId($id)) {
+            $msg_erro = traduz('admin_erro_nao_encontrado_plano');
+        } else {
+            atualizaAtivoPlano($id, true);
+            $msg_sucesso = traduz('admin_plano_ativado');
+        }
     } elseif ($acao === 'desativar') {
-        atualizaAtivoPlano($id, false);
-        $msg_sucesso = traduz('admin_plano_desativado');
+        if (!buscaPlanoPorId($id)) {
+            $msg_erro = traduz('admin_erro_nao_encontrado_plano');
+        } else {
+            atualizaAtivoPlano($id, false);
+            $msg_sucesso = traduz('admin_plano_desativado');
+        }
     } elseif ($acao === 'excluir') {
-        deletaPlano($id);
-        $msg_sucesso = traduz('admin_plano_excluido');
+        if (!buscaPlanoPorId($id)) {
+            $msg_erro = traduz('admin_erro_nao_encontrado_plano');
+        } else {
+            $vinculos = contaVinculosPlano($id);
+            if ($vinculos > 0) {
+                $msg_erro = sprintf(traduz('admin_erro_plano_em_uso'), $vinculos);
+            } else {
+                deletaPlano($id);
+                $msg_sucesso = traduz('admin_plano_excluido');
+            }
+        }
     }
 
     if ($msg_sucesso) {

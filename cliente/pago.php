@@ -13,10 +13,19 @@ iniciaSessao();
 exigeLoginCliente();
 
 $usuario = buscaUsuarioPorId(usuarioLogadoId());
-if ($usuario['plano'] === 'ativo' && planoUsuarioAtivo($usuario)) {
+if (planoUsuarioAtivo($usuario)) {
     header('Location: conta');
     exit;
 }
+
+$teste_elegivel = elegivelTesteGratis($usuario);
+
+// token estavel por tela de escolha de plano: se o mesmo formulario for
+// enviado duas vezes (duplo clique, duas abas), as chamadas a Stripe usam a
+// MESMA Idempotency-Key e a Stripe devolve o mesmo objeto em vez de criar
+// cliente/assinatura duplicados. Um carregamento novo da pagina gera um token
+// novo, entao uma tentativa legitima depois nao fica presa num erro antigo.
+$idempotency_escolha = $_POST['idempotency_escolha'] ?? bin2hex(random_bytes(16));
 
 $eh_ajax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
 
@@ -55,6 +64,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
         exit;
     }
 
+    $redireciona = function ($destino) use ($eh_ajax) {
+        if ($eh_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true, 'data' => ['redirect' => $destino]]);
+            exit;
+        }
+        header('Location: ' . $destino);
+        exit;
+    };
+
     $sub_id = $_POST['subscription_id'] ?? '';
     $setup_id_confirma = $_POST['setup_intent_id'] ?? '';
 
@@ -64,7 +83,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
         $stripe_customer_id = $usuario['stripe_customer_id'] ?? '';
         $setup_intent = buscaSetupIntentStripe($setup_id_confirma);
 
-        if ($plano_confirma && $stripe_customer_id && !isset($setup_intent['error'])
+        // ja existe assinatura vigente na Stripe (webhook atrasado, outra aba): alinha o banco e nao cria outra
+        $vigente = sincronizaAssinaturaVigenteUsuario($usuario);
+        if ($vigente === 'sincronizada') {
+            $redireciona('conta');
+        }
+
+        // o id vem do navegador: so vale se o SetupIntent pertence ao customer deste usuario
+        if ($vigente === null && $plano_confirma && $stripe_customer_id && !isset($setup_intent['error'])
+            && ($setup_intent['customer'] ?? '') === $stripe_customer_id
             && ($setup_intent['status'] ?? '') === 'succeeded' && !empty($setup_intent['payment_method'])) {
             definePagamentoPadraoStripe($stripe_customer_id, $setup_intent['payment_method']);
 
@@ -74,48 +101,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar'])) {
                 'ciclo' => $plano_confirma['ciclo'],
                 'id_plano' => $plano_confirma['id_plano'],
                 'id_usuario' => usuarioLogadoId(),
-                'dias_teste' => $plano_confirma['dias_teste'] ?? 0,
-            ]);
+                'dias_teste' => $teste_elegivel ? ($plano_confirma['dias_teste'] ?? 0) : 0,
+            ], $setup_id_confirma . ':subscription');
 
             if (!isset($assinatura['error']) && in_array($assinatura['status'] ?? '', ['active', 'trialing'])) {
                 $fim_periodo = fimPeriodoAssinaturaStripe($assinatura);
                 $expira_em = $fim_periodo
                     ? date('Y-m-d H:i:s', (int)$fim_periodo)
                     : date('Y-m-d H:i:s', strtotime('+1 month'));
-                atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em, $plano_confirma['id_plano']);
+                atualizaPlanoUsuario(usuarioLogadoId(), mapeiaStatusStripeParaPlano($assinatura['status']), $expira_em, $plano_confirma['id_plano']);
                 enviaEmailAssinaturaAtiva($usuario, $plano_confirma);
                 atualizaStripeUsuario(usuarioLogadoId(), $stripe_customer_id, $assinatura['id']);
                 atribuiIndicacaoAfiliadoPorCookie(usuarioLogadoId());
-                if ($eh_ajax) {
-                    header('Content-Type: application/json');
-                    echo json_encode(['ok' => true, 'data' => ['redirect' => 'google']]);
-                    exit;
-                }
-                header('Location: google');
-                exit;
+                $redireciona('google');
             }
         }
-        $erro_pago = traduz('pago_erro_stripe');
+        $erro_pago = traduz($vigente === 'pendente' ? 'pago_erro_pendente' : 'pago_erro_stripe');
     } elseif ($sub_id !== '') {
-        $id_plano_confirma = (int)($_POST['id_plano'] ?? 0);
-        $plano_confirma = $id_plano_confirma ? buscaPlanoPorId($id_plano_confirma) : null;
         $sub = buscaAssinaturaStripe($sub_id);
-        if (!isset($sub['error']) && in_array($sub['status'] ?? '', ['active', 'trialing'])) {
+        // o id vem do navegador: so vale se a assinatura pertence ao customer deste usuario;
+        // o plano contratado e o do metadata gravado na criacao, nao o que o formulario disser
+        $eh_do_usuario = !empty($usuario['stripe_customer_id']) && ($sub['customer'] ?? '') === $usuario['stripe_customer_id'];
+        if (!isset($sub['error']) && $eh_do_usuario && in_array($sub['status'] ?? '', ['active', 'trialing'])) {
+            $id_plano_sub = (int)($sub['metadata']['id_plano'] ?? 0) ?: null;
+            $plano_confirma = $id_plano_sub ? buscaPlanoPorId($id_plano_sub) : null;
             $fim_periodo = fimPeriodoAssinaturaStripe($sub);
             $expira_em = $fim_periodo
                 ? date('Y-m-d H:i:s', (int)$fim_periodo)
                 : date('Y-m-d H:i:s', strtotime('+1 month'));
-            atualizaPlanoUsuario(usuarioLogadoId(), 'ativo', $expira_em, $plano_confirma['id_plano'] ?? null);
+            atualizaPlanoUsuario(usuarioLogadoId(), mapeiaStatusStripeParaPlano($sub['status']), $expira_em, $id_plano_sub);
             if ($plano_confirma) enviaEmailAssinaturaAtiva($usuario, $plano_confirma);
-            atualizaStripeUsuario(usuarioLogadoId(), $sub['customer'] ?? '', $sub_id);
+            atualizaStripeUsuario(usuarioLogadoId(), $sub['customer'], $sub_id);
             atribuiIndicacaoAfiliadoPorCookie(usuarioLogadoId());
-            if ($eh_ajax) {
-                header('Content-Type: application/json');
-                echo json_encode(['ok' => true, 'data' => ['redirect' => 'google']]);
-                exit;
-            }
-            header('Location: google');
-            exit;
+            $redireciona('google');
         }
         $erro_pago = traduz('pago_erro_stripe');
     } else {
@@ -133,11 +151,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['escolher_plano'])) {
     $id_escolhido = (int)($_POST['id_plano'] ?? 0);
     $plano_selecionado = $id_escolhido ? buscaPlanoPorId($id_escolhido) : null;
 
+    // ja existe assinatura vigente na Stripe: nao cria outra (cobranca em duplicidade) e nao mexe no cartao dela
+    if ($plano_selecionado && !MODO_DEV) {
+        $vigente = sincronizaAssinaturaVigenteUsuario($usuario);
+        if ($vigente === 'sincronizada') {
+            header('Location: conta');
+            exit;
+        }
+        if ($vigente === 'pendente') {
+            $erro_pago = traduz('pago_erro_pendente');
+            $plano_selecionado = null;
+        }
+    }
+
     if ($plano_selecionado && !MODO_DEV) {
         $stripe_customer_id = $usuario['stripe_customer_id'] ?? '';
 
+        $idempotency_plano = $idempotency_escolha . ':' . $id_escolhido;
+
         if (empty($stripe_customer_id)) {
-            $cliente = criaClienteStripe($usuario['email'], $usuario['nome']);
+            $cliente = criaClienteStripe($usuario['email'], $usuario['nome'], $idempotency_plano . ':customer');
             if (isset($cliente['error'])) {
                 $erro_pago = traduz('pago_erro_stripe');
             } else {
@@ -148,10 +181,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['escolher_plano'])) {
             removePagamentoPadraoStripe($stripe_customer_id);
         }
 
-        $dias_teste = (int)($plano_selecionado['dias_teste'] ?? 0);
+        $dias_teste = $teste_elegivel ? (int)($plano_selecionado['dias_teste'] ?? 0) : 0;
 
         if (!$erro_pago && $dias_teste > 0) {
-            $setup_intent = criaSetupIntentStripe($stripe_customer_id);
+            $setup_intent = criaSetupIntentStripe($stripe_customer_id, $idempotency_plano . ':setup_intent');
             if (isset($setup_intent['error'])) {
                 $erro_pago = traduz('pago_erro_stripe');
             } else {
@@ -167,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['escolher_plano'])) {
                 'id_plano' => $plano_selecionado['id_plano'],
                 'id_usuario' => usuarioLogadoId(),
                 'dias_teste' => 0,
-            ]);
+            ], $idempotency_plano . ':subscription');
 
             if (isset($assinatura['error'])) {
                 $erro_pago = traduz('pago_erro_stripe');
@@ -177,7 +210,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['escolher_plano'])) {
                 $tipo_confirmacao = 'payment';
 
                 if ($client_secret === '') {
-                    cancelaAssinaturaStripe($subscription_id);
+                    if (isset(cancelaAssinaturaStripe($subscription_id)['error'])) {
+                        error_log("pago.php: assinatura {$subscription_id} sem client_secret nao foi cancelada na Stripe");
+                    }
                     $erro_pago = traduz('pago_erro_stripe');
                     $subscription_id = '';
                 }
@@ -224,7 +259,16 @@ $mostra_pagamento = $plano_selecionado !== null;
 
 <?php if ($mostra_pagamento): ?>
   <?php
-  $form_cartao = function($sufixo) use ($erro_pago, $subscription_id, $setup_intent_id, $plano_selecionado) { ?>
+  $form_cartao = function($sufixo) use ($erro_pago, $subscription_id, $setup_intent_id, $plano_selecionado, $teste_elegivel, $sufixo_pago) {
+      // divulgacao antes do pagamento: valor exato, periodicidade, renovacao automatica, data da
+      // primeira cobranca (se houver teste), como cancelar e aceite de Termos/Privacidade
+      $valor_ciclo = formataPrecoPlano($plano_selecionado['preco']) . ' ' . ($sufixo_pago[$plano_selecionado['ciclo']] ?? '');
+      $dias_teste_aviso = $teste_elegivel ? (int) $plano_selecionado['dias_teste'] : 0;
+      $aviso_cobranca = $dias_teste_aviso > 0
+          ? sprintf(traduz('pago_aviso_teste'), $dias_teste_aviso, date('d/m/Y', strtotime("+{$dias_teste_aviso} days")), $valor_ciclo)
+          : sprintf(traduz('pago_aviso_cobranca'), $valor_ciclo);
+      $rotulo_botao = traduz($dias_teste_aviso > 0 ? 'pago_botao_teste' : 'pago_botao_assinar');
+      ?>
       <?php if ($erro_pago): ?>
       <div class="erro-msg" style="margin-bottom:12px;"><?= htmlspecialchars($erro_pago) ?></div>
       <?php endif; ?>
@@ -234,7 +278,8 @@ $mostra_pagamento = $plano_selecionado !== null;
         <form method="post" action="pago">
           <input type="hidden" name="confirmar" value="1" />
           <input type="hidden" name="id_plano" value="<?= $plano_selecionado['id_plano'] ?>" />
-          <button type="submit" class="botao botao-primario botao-espaco" style="width:100%;"><?= traduz('pago_botao_checkout') ?></button>
+          <p class="dica aviso-cobranca"><?= $aviso_cobranca ?> <?= traduz('pago_aviso_cancelar') ?> <?= traduz('pago_aviso_termos') ?></p>
+          <button type="submit" class="botao botao-primario botao-espaco" style="width:100%;"><?= $rotulo_botao ?></button>
         </form>
       <?php else: ?>
         <form id="payment-form-<?= $sufixo ?>" method="post" action="pago" class="form-transicao">
@@ -251,7 +296,8 @@ $mostra_pagamento = $plano_selecionado !== null;
             <div id="card-element-<?= $sufixo ?>"></div>
             <div id="card-errors-<?= $sufixo ?>"></div>
           </div>
-          <button type="submit" id="btn-pagar-<?= $sufixo ?>" class="botao botao-primario botao-espaco" style="width:100%;"><?= traduz('pago_botao_checkout') ?></button>
+          <p class="dica aviso-cobranca"><?= $aviso_cobranca ?> <?= traduz('pago_aviso_cancelar') ?> <?= traduz('pago_aviso_termos') ?></p>
+          <button type="submit" id="btn-pagar-<?= $sufixo ?>" class="botao botao-primario botao-espaco" style="width:100%;"><?= $rotulo_botao ?></button>
         </form>
       <?php endif; ?>
       <div class="confianca" style="margin-top:12px;"><?= traduz('pago_trust') ?></div>
@@ -265,7 +311,7 @@ $mostra_pagamento = $plano_selecionado !== null;
     <div class="conteudo-pagina espacado">
       <h1 class="tela-titulo"><?= traduz('pago_titulo') ?></h1>
       <div class="plano-cartao">
-        <div class="plano-preco"><?= simboloMoeda() . number_format((float)$plano_selecionado['preco'], 0) ?> <small><?= $sufixo_pago[$plano_selecionado['ciclo']] ?? '' ?></small></div>
+        <div class="plano-preco"><?= formataPrecoPlano($plano_selecionado['preco']) ?> <small><?= $sufixo_pago[$plano_selecionado['ciclo']] ?? '' ?></small></div>
         <div style="font-weight:700;margin-bottom:8px;"><?= htmlspecialchars($plano_selecionado['nome']) ?></div>
       </div>
       <?php $form_cartao('mobile'); ?>
@@ -277,7 +323,7 @@ $mostra_pagamento = $plano_selecionado !== null;
       <div class="cadastro-marca">
         <?php renderizaMarca('white', 22); ?>
         <div class="plano-cartao" style="background:rgba(255,255,255,.12);">
-          <div class="plano-preco"><?= simboloMoeda() . number_format((float)$plano_selecionado['preco'], 0) ?> <small><?= $sufixo_pago[$plano_selecionado['ciclo']] ?? '' ?></small></div>
+          <div class="plano-preco"><?= formataPrecoPlano($plano_selecionado['preco']) ?> <small><?= $sufixo_pago[$plano_selecionado['ciclo']] ?? '' ?></small></div>
           <div style="font-weight:700;"><?= htmlspecialchars($plano_selecionado['nome']) ?></div>
           <div class="plano-recursos">
             <div><span class="plano-recurso-check">✓</span> <?= traduz('plan_feature_1') ?></div>
@@ -311,21 +357,23 @@ $mostra_pagamento = $plano_selecionado !== null;
       </div>
       <h1 class="tela-titulo"><?= traduz('pago_escolha_plano') ?></h1>
       <p class="tela-subtitulo"><?= traduz('pago_escolha_subtitulo') ?></p>
+      <?php if ($erro_pago): ?><div class="erro-msg" style="margin-bottom:12px;"><?= htmlspecialchars($erro_pago) ?></div><?php endif; ?>
 
       <div class="grade-planos-pago">
         <?php foreach ($planos_ativos as $p): ?>
         <div class="plano-opcao">
           <div class="plano-opcao-nome"><?= htmlspecialchars($p['nome']) ?></div>
-          <div class="plano-opcao-preco"><?= simboloMoeda() ?><?= number_format((float)$p['preco'], 0) ?> <small><?= $sufixo_pago[$p['ciclo']] ?? '' ?></small></div>
+          <div class="plano-opcao-preco"><?= formataPrecoPlano($p['preco']) ?> <small><?= $sufixo_pago[$p['ciclo']] ?? '' ?></small></div>
           <?php if ($p['descricao']): ?>
           <div class="plano-opcao-desc"><?= htmlspecialchars($p['descricao']) ?></div>
           <?php endif; ?>
-          <?php if ((int)$p['dias_teste'] > 0): ?>
+          <?php if ($teste_elegivel && (int)$p['dias_teste'] > 0): ?>
           <div class="plano-opcao-teste"><?= sprintf(traduz('pago_dias_teste'), (int)$p['dias_teste']) ?></div>
           <?php endif; ?>
           <form method="post" action="pago">
             <input type="hidden" name="escolher_plano" value="1" />
             <input type="hidden" name="id_plano" value="<?= $p['id_plano'] ?>" />
+            <input type="hidden" name="idempotency_escolha" value="<?= htmlspecialchars($idempotency_escolha) ?>" />
             <button type="submit" class="botao botao-primario"><?= traduz('pago_botao_escolher') ?></button>
           </form>
         </div>
@@ -351,21 +399,23 @@ $mostra_pagamento = $plano_selecionado !== null;
           </div>
           <h2 class="form-titulo"><?= traduz('pago_escolha_plano') ?></h2>
           <p class="form-subtitulo"><?= traduz('pago_escolha_subtitulo') ?></p>
+      <?php if ($erro_pago): ?><div class="erro-msg" style="margin-bottom:12px;"><?= htmlspecialchars($erro_pago) ?></div><?php endif; ?>
 
           <div class="grade-planos-pago">
             <?php foreach ($planos_ativos as $p): ?>
             <div class="plano-opcao">
               <div class="plano-opcao-nome"><?= htmlspecialchars($p['nome']) ?></div>
-              <div class="plano-opcao-preco"><?= simboloMoeda() ?><?= number_format((float)$p['preco'], 0) ?> <small><?= $sufixo_pago[$p['ciclo']] ?? '' ?></small></div>
+              <div class="plano-opcao-preco"><?= formataPrecoPlano($p['preco']) ?> <small><?= $sufixo_pago[$p['ciclo']] ?? '' ?></small></div>
               <?php if ($p['descricao']): ?>
               <div class="plano-opcao-desc"><?= htmlspecialchars($p['descricao']) ?></div>
               <?php endif; ?>
-              <?php if ((int)$p['dias_teste'] > 0): ?>
+              <?php if ($teste_elegivel && (int)$p['dias_teste'] > 0): ?>
               <div class="plano-opcao-teste"><?= sprintf(traduz('pago_dias_teste'), (int)$p['dias_teste']) ?></div>
               <?php endif; ?>
               <form method="post" action="pago">
                 <input type="hidden" name="escolher_plano" value="1" />
                 <input type="hidden" name="id_plano" value="<?= $p['id_plano'] ?>" />
+                <input type="hidden" name="idempotency_escolha" value="<?= htmlspecialchars($idempotency_escolha) ?>" />
                 <button type="submit" class="botao botao-primario"><?= traduz('pago_botao_escolher') ?></button>
               </form>
             </div>

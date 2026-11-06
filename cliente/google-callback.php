@@ -7,6 +7,17 @@ require_once __DIR__ . '/../funcoes/funcoesEmail.php';
 
 iniciaSessao();
 
+$state_esperado = $_SESSION['oauth_state'] ?? null;
+$vincular_usuario = $_SESSION['oauth_vincular_usuario'] ?? null;
+unset($_SESSION['oauth_state'], $_SESSION['oauth_vincular_usuario']);
+
+$state_recebido = $_GET['state'] ?? '';
+if (!$state_esperado || !hash_equals($state_esperado, $state_recebido)) {
+    $_SESSION['erro_google'] = traduz('erro_google_login');
+    header('Location: login');
+    exit;
+}
+
 $code = $_GET['code'] ?? '';
 
 if ($code === '') {
@@ -44,6 +55,22 @@ $token_refresh = $tokens['refresh_token'] ?? null;
 $token_expira_em = isset($tokens['expires_in'])
     ? gmdate('Y-m-d H:i:s', time() + (int)$tokens['expires_in'])
     : null;
+
+if ($vincular_usuario) {
+    // fluxo "Conectar Google Calendar" do onboarding (cliente/google.php) --
+    // usuario ja estava logado quando o fluxo comecou, entao so vincula o
+    // token na conta atual, nunca troca a sessao pra outra conta
+    $usuario_do_email = buscaUsuarioPorEmail($email);
+    if ($usuario_do_email && (int)$usuario_do_email['id_usuario'] !== (int)$vincular_usuario) {
+        $_SESSION['erro_google'] = traduz('erro_google_conta_vinculada');
+        header('Location: google');
+        exit;
+    }
+
+    atualizaTokensGoogle((int)$vincular_usuario, $token_acesso, $token_refresh, $token_expira_em);
+    header('Location: whatsapp');
+    exit;
+}
 
 $usuario = buscaUsuarioPorEmail($email);
 $novo = false;

@@ -19,15 +19,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $senha = $_POST['senha'] ?? '';
 
-    $usuario = buscaUsuarioPorEmail($email);
+    if (loginBloqueado($email, 'cliente')) {
+        $erro = traduz('login_bloqueado_temporario');
+    } else {
+        $usuario = buscaUsuarioPorEmail($email);
 
-    if ($usuario && password_verify($senha, $usuario['senha_hash'])) {
-        fazLoginCliente($usuario);
-        header('Location: home');
-        exit;
+        if ($usuario && password_verify($senha, $usuario['senha_hash'])) {
+            limpaTentativasFalha($email, 'cliente');
+            fazLoginCliente($usuario);
+            header('Location: home');
+            exit;
+        }
+
+        registraTentativaFalha($email, 'cliente');
+        $erro = traduz('erro_login_invalido');
     }
-
-    $erro = traduz('erro_login_invalido');
 }
 ?>
 <!DOCTYPE html>

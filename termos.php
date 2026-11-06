@@ -55,6 +55,11 @@ require_once __DIR__ . '/funcoes/funcoesComponentes.php';
   <section>
     <h2>4. <?= traduz('termos_s4_titulo') ?></h2>
     <p><?= traduz('termos_s4_texto') ?></p>
+    <ul>
+      <?php for ($i = 1; $i <= 7; $i++): ?>
+      <li><?= traduz('termos_s4_item' . $i) ?></li>
+      <?php endfor; ?>
+    </ul>
   </section>
 
   <section>

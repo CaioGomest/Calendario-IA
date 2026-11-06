@@ -30,3 +30,18 @@ Sem fallback funcional, quando a Groq rate-limita (acontece com mensagens rápid
 `sitemap.xml` do site ainda não foi cadastrado no Google Search Console.
 
 **Falta:** ação manual do usuário no painel do Google (fora do escopo deste repositório/Claude).
+
+
+---
+
+## Stripe e n8n: ações após a revisão de pagamento (27/10/2026)
+
+O código novo já está em produção (ver `anotacoes/revisao-pagamento-renovacao-cancelamento-2026-10-27.md`). Estas partes só o dono consegue fazer:
+
+- [ ] **Stripe, webhook:** no endpoint `https://bipoia.com/api/internal/stripe-webhook.php`, garantir os eventos `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`, `charge.refunded` e **adicionar** `customer.subscription.trial_will_end`, `invoice.upcoming`, `invoice.payment_action_required`. Sem os três novos, os avisos de fim de teste e de renovação **não saem** (o México exige aviso de renovação com pelo menos 5 dias naturais).
+- [ ] **Stripe, Billing:** em "Upcoming renewal events" manter pelo menos 5 dias (padrão 7); ligar recibos por e-mail; definir as regras de nova tentativa (Smart Retries, 2 semanas) e a ação final "cancelar assinatura"; no portal do cliente, cancelamento **ao fim do período** (não imediato).
+- [x] **n8n (feito em 27/10/2026, via API):** aplicados os 3 ajustes de `Notas/n8n-ajuste-plano-ativo.md` no workflow ao vivo (**não importar o JSON inteiro**: ele tem `COLOQUE_AQUI` no lugar das chaves e apagaria as reais) e testar com um número cancelado e outro sem cadastro. Falta so o teste real: mandar mensagem de um numero com plano cancelado e de um sem cadastro.
+- [ ] **Reembolso por arrependimento (Brasil, 7 dias):** quando alguém pedir por e-mail, fazer reembolso **total** no painel da Stripe; o sistema cancela a assinatura e estorna a comissão sozinho.
+- [ ] Cancelar as 6 assinaturas de teste órfãs do usuário 1 (ver "Assinaturas órfãs no Stripe", acima).
+- [ ] Conferir os Termos (seção 4) com um advogado e emitir nota fiscal de serviço no Brasil (fora do código).
+- [ ] **Acompanhar** a primeira renovação real e a primeira troca de ciclo real: o comportamento da Stripe nesses dois pontos foi implementado pela documentação e testado só com simulação.

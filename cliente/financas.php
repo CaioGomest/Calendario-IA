@@ -317,6 +317,7 @@ ob_start();
     </div>
   </div>
   <div class="conteudo-pagina espacado">
+    <?php require __DIR__ . '/_includes/banner-onboarding.php'; ?>
     <div style="margin-bottom:14px;">
       <h1 class="tela-titulo" style="margin:0;"><?= traduz('fin_titulo') ?></h1>
       <p class="tela-subtitulo" style="margin:4px 0 0;"><?= traduz('fin_subtitulo') ?></p>
@@ -342,6 +343,7 @@ ob_start();
         </div>
       </header>
       <div class="conteudo-area">
+        <?php require __DIR__ . '/_includes/banner-onboarding.php'; ?>
         <?= $conteudo_financas ?>
       </div>
     </div>

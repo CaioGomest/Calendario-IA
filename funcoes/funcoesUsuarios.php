@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../config/conexao.php';
 require_once __DIR__ . '/funcoesConfiguracao.php';
 require_once __DIR__ . '/funcoesGoogle.php';
+require_once __DIR__ . '/funcoesPlanos.php';
 
 function fusoHorarioPadrao() {
     return buscaConfiguracao('fuso_horario_padrao') ?? 'America/Mexico_City';
@@ -10,7 +11,7 @@ function fusoHorarioPadrao() {
 
 function buscaUsuarioPorEmail($email) {
     $pdo = conexao();
-    $stmt = $pdo->prepare('SELECT * FROM usuarios WHERE email = ?');
+    $stmt = $pdo->prepare('SELECT * FROM usuarios WHERE email = ? AND deletado = 0');
     $stmt->execute([$email]);
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 }
@@ -38,18 +39,37 @@ function buscaUsuarioPorId($id_usuario) {
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 
+// a carencia (HORAS_CARENCIA_ASSINATURA) cobre a virada da renovacao: o periodo vence
+// antes da Stripe terminar de processar o pagamento, e nesse intervalo o cliente
+// nao pode cair em "sem plano" (a tela de pagamento criaria uma assinatura duplicada)
 function planoUsuarioAtivo($usuario) {
     $plano = $usuario['plano'] ?? '';
     if ($plano === 'ativo') {
-        if (empty($usuario['plano_expira_em'])) {
-            return true;
-        }
-        return new DateTime($usuario['plano_expira_em']) >= new DateTime();
+        return !assinaturaExpirada($usuario);
     }
     if ($plano === 'trial' && !empty($usuario['id_plano']) && !empty($usuario['plano_expira_em'])) {
-        return new DateTime($usuario['plano_expira_em']) >= new DateTime();
+        return !assinaturaExpirada($usuario);
     }
     return false;
+}
+
+// "pagamento pendente" so faz sentido enquanto a assinatura existe: depois do cancelamento nao ha mais
+// cobranca a acertar, e a marca da cobranca que falhou fica so como historico
+function pagamentoPendente($usuario) {
+    return !empty($usuario["pagamento_falhou"]) && ($usuario["plano"] ?? "") !== "cancelado";
+}
+
+// cancelamento pedido pelo cliente que ainda nao venceu: plano segue ativo ate o fim do periodo pago
+function cancelamentoAgendado($usuario) {
+    return in_array($usuario['plano'] ?? '', ['ativo', 'trial'], true) && !empty($usuario['cancelado_em']);
+}
+
+// teste gratis so na primeira contratacao: nunca assinou, nunca cancelou, nunca pagou
+function elegivelTesteGratis($usuario) {
+    return ($usuario['plano'] ?? '') === 'trial'
+        && empty($usuario['id_plano'])
+        && empty($usuario['cancelado_em'])
+        && contaPagamentosEfetuadosUsuario((int) $usuario['id_usuario']) === 0;
 }
 
 function exigeAssinaturaAtiva($usuario) {
@@ -59,21 +79,47 @@ function exigeAssinaturaAtiva($usuario) {
     }
 }
 
+// devolve a proxima etapa nao concluida do onboarding (pago/google/whatsapp),
+// ou null se a conta ja completou tudo -- usado so pra mostrar um aviso, nao
+// bloqueia navegacao (diferente de exigeAssinaturaAtiva, que redireciona sempre)
+function proximaEtapaOnboarding($usuario) {
+    if (!planoUsuarioAtivo($usuario)) {
+        return 'pago';
+    }
+    if (empty($usuario['token_acesso_google'])) {
+        return 'google';
+    }
+    if (empty($usuario['telefone'])) {
+        return 'whatsapp';
+    }
+    return null;
+}
+
 function insereUsuario($dados) {
     $pdo = conexao();
     $stmt = $pdo->prepare('INSERT INTO usuarios (nome, email, senha_hash, fuso_horario) VALUES (?, ?, ?, ?)');
-    $stmt->execute([
-        $dados['nome'],
-        $dados['email'],
-        password_hash($dados['senha'], PASSWORD_DEFAULT),
-        fusoHorarioPadrao(),
-    ]);
+    try {
+        $stmt->execute([
+            $dados['nome'],
+            $dados['email'],
+            password_hash($dados['senha'], PASSWORD_DEFAULT),
+            fusoHorarioPadrao(),
+        ]);
+    } catch (PDOException $e) {
+        // corrida: dois cadastros com o mesmo e-mail quase ao mesmo tempo passam
+        // pela checagem previa antes de qualquer um inserir -- o UNIQUE do banco
+        // barra o segundo, mas sem isso vira erro fatal em vez da mensagem amigavel
+        if ($e->getCode() === '23000') {
+            return null;
+        }
+        throw $e;
+    }
     return (int) $pdo->lastInsertId();
 }
 
-function atualizaPlanoUsuario($id_usuario, $plano, $plano_expira_em, $id_plano = null) {
+function atualizaPlanoUsuario($id_usuario, $plano, $plano_expira_em, $id_plano = null, $cancelamento_agendado = false) {
     $pdo = conexao();
-    $cancelado_em = $plano === 'cancelado' ? date('Y-m-d H:i:s') : null;
+    $cancelado_em = ($plano === 'cancelado' || $cancelamento_agendado) ? date('Y-m-d H:i:s') : null;
     if ($id_plano !== null) {
         $stmt = $pdo->prepare('UPDATE usuarios SET plano = ?, plano_expira_em = ?, cancelado_em = ?, id_plano = ? WHERE id_usuario = ?');
         $stmt->execute([$plano, $plano_expira_em, $cancelado_em, $id_plano, $id_usuario]);
@@ -121,7 +167,7 @@ function atualizaAntecedenciaLembrete($id_usuario, $antecedencia_min) {
 
 function _condicoesUsuarios($filtro) {
     $params = [];
-    $condicoes = ['u.deletado = 0'];
+    $condicoes = [!empty($filtro['deletado']) ? 'u.deletado = 1' : 'u.deletado = 0'];
 
     if (!empty($filtro['plano'])) {
         $condicoes[] = 'u.plano = ?';
@@ -172,6 +218,26 @@ function deletaUsuario($id_usuario) {
     $pdo = conexao();
     $stmt = $pdo->prepare('UPDATE usuarios SET deletado = 1 WHERE id_usuario = ?');
     $stmt->execute([$id_usuario]);
+    return $stmt->rowCount() > 0;
+}
+
+function reativaUsuario($id_usuario) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('UPDATE usuarios SET deletado = 0 WHERE id_usuario = ?');
+    $stmt->execute([$id_usuario]);
+    return $stmt->rowCount() > 0;
+}
+
+function buscaUsuarioPorEmailIncluindoApagados($email) {
+    $pdo = conexao();
+    $stmt = $pdo->prepare('SELECT * FROM usuarios WHERE email = ?');
+    $stmt->execute([$email]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function normalizaTelefoneLivre($telefone) {
+    $digitos = preg_replace('/\D+/', '', $telefone ?? '');
+    return $digitos !== '' ? '+' . $digitos : '';
 }
 
 function assinaturaExpirada($usuario, $horas_carencia = HORAS_CARENCIA_ASSINATURA) {
@@ -288,6 +354,12 @@ function atualizaStripeUsuario($id_usuario, $stripe_customer_id, $stripe_subscri
     $pdo = conexao();
     $stmt = $pdo->prepare('UPDATE usuarios SET stripe_customer_id = ?, stripe_subscription_id = ? WHERE id_usuario = ?');
     $stmt->execute([$stripe_customer_id, $stripe_subscription_id, $id_usuario]);
+}
+
+function existeAssinaturaStripeAtiva() {
+    $pdo = conexao();
+    $stmt = $pdo->query("SELECT COUNT(*) FROM usuarios WHERE stripe_subscription_id IS NOT NULL AND deletado = 0");
+    return (int) $stmt->fetchColumn() > 0;
 }
 
 function atualizaPagamentoFalhouUsuario($id_usuario, $pagamento_falhou) {

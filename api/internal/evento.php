@@ -1,6 +1,7 @@
 <?php
 
 header('Content-Type: application/json');
+header_remove('X-Powered-By');
 
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../funcoes/funcoesAuth.php';
@@ -43,19 +44,27 @@ if ($metodo === 'POST') {
 if ($metodo === 'PUT') {
     $id_evento = (int) ($corpo['id_evento'] ?? 0);
     $id_google_event = trim($corpo['id_google_event'] ?? '');
+    $id_usuario = (int) ($corpo['id_usuario'] ?? 0);
 
     if (!$id_evento && $id_google_event !== '') {
         $evento = buscaEventoPorGoogleEventId($id_google_event);
         $id_evento = $evento ? (int) $evento['id_evento'] : 0;
     }
 
-    if (!$id_evento) {
+    if (!$id_evento || !$id_usuario) {
         http_response_code(400);
-        echo json_encode(['ok' => false, 'erro' => 'Campo obrigatório: id_evento ou id_google_event']);
+        echo json_encode(['ok' => false, 'erro' => 'Campo obrigatório: id_evento (ou id_google_event) e id_usuario']);
         exit;
     }
 
-    unset($corpo['id_evento'], $corpo['id_google_event']);
+    $evento_existente = buscaEventoPorId($id_evento);
+    if (!$evento_existente || (int) $evento_existente['id_usuario'] !== $id_usuario) {
+        http_response_code(404);
+        echo json_encode(['ok' => false, 'erro' => 'Evento não encontrado ou nenhum campo alterado']);
+        exit;
+    }
+
+    unset($corpo['id_evento'], $corpo['id_google_event'], $corpo['id_usuario']);
     $atualizado = atualizaEvento($id_evento, $corpo);
 
     if (!$atualizado) {
@@ -70,10 +79,18 @@ if ($metodo === 'PUT') {
 
 if ($metodo === 'DELETE') {
     $id_evento = (int) ($corpo['id_evento'] ?? 0);
+    $id_usuario = (int) ($corpo['id_usuario'] ?? 0);
 
-    if (!$id_evento) {
+    if (!$id_evento || !$id_usuario) {
         http_response_code(400);
-        echo json_encode(['ok' => false, 'erro' => 'Campo obrigatório: id_evento']);
+        echo json_encode(['ok' => false, 'erro' => 'Campo obrigatório: id_evento e id_usuario']);
+        exit;
+    }
+
+    $evento_existente = buscaEventoPorId($id_evento);
+    if (!$evento_existente || (int) $evento_existente['id_usuario'] !== $id_usuario) {
+        http_response_code(404);
+        echo json_encode(['ok' => false, 'erro' => 'Evento não encontrado']);
         exit;
     }
 

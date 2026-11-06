@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../funcoes/funcoesAuth.php';
 require_once __DIR__ . '/../funcoes/funcoesConfiguracao.php';
 require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
+require_once __DIR__ . '/../funcoes/funcoesUsuarios.php';
 
 iniciaSessao();
 exigeLoginAdmin();
@@ -30,12 +31,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     }
 
     if ($_POST['acao'] === 'salvar_geral') {
-        $nome_app = trim($_POST['nome_app'] ?? '');
+        $nome_app = preg_replace('/[\r\n]+/', ' ', trim($_POST['nome_app'] ?? ''));
         if ($nome_app !== '') {
             salvaConfiguracao('nome_app', $nome_app);
         }
         $moeda_post = $_POST['moeda'] ?? 'BRL';
         if (in_array($moeda_post, ['BRL', 'USD', 'MXN'], true)) {
+            // trocar a moeda muda o que qualquer assinatura NOVA/trocada cobra de
+            // verdade na Stripe a partir de agora, sem converter o valor nominal
+            // do plano -- com assinatura real ja em andamento, isso pode gerar
+            // cobranca distorcida (ex: MXN virar USD, ~20x mais caro). Bloqueia a
+            // troca nesse caso; sem assinatura real ainda, segue liberado (setup
+            // inicial do sistema).
+            if ($moeda_post !== moedaSistema() && existeAssinaturaStripeAtiva()) {
+                header('Location: configuracao?erro=moeda_travada');
+                exit;
+            }
             salvaConfiguracao('moeda', $moeda_post);
         }
         header('Location: configuracao?sucesso=1');
@@ -45,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     if ($_POST['acao'] === 'salvar_limites') {
         $limite = (int) ($_POST['limite_diario_mensagens'] ?? 40);
         if ($limite < 1) $limite = 1;
+        if ($limite > 500) $limite = 500;
         salvaConfiguracao('limite_diario_mensagens', (string) $limite);
         header('Location: configuracao?sucesso=1');
         exit;
@@ -53,10 +65,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     if ($_POST['acao'] === 'salvar_contato') {
         $email_remetente = trim($_POST['email_remetente'] ?? '');
         $email_suporte = trim($_POST['email_suporte'] ?? '');
-        $instagram = trim($_POST['instagram'] ?? '');
-        $tiktok = trim($_POST['tiktok'] ?? '');
+        $instagram = preg_replace('/[\r\n]+/', ' ', trim($_POST['instagram'] ?? ''));
+        $tiktok = preg_replace('/[\r\n]+/', ' ', trim($_POST['tiktok'] ?? ''));
         $numero_suporte = preg_replace('/\D+/', '', $_POST['numero_suporte'] ?? '');
         $whatsapp_bot_numero = preg_replace('/\D+/', '', $_POST['whatsapp_bot_numero'] ?? '');
+
+        if (($email_remetente !== '' && !filter_var($email_remetente, FILTER_VALIDATE_EMAIL))
+            || ($email_suporte !== '' && !filter_var($email_suporte, FILTER_VALIDATE_EMAIL))) {
+            header('Location: configuracao?erro=email_invalido');
+            exit;
+        }
 
         salvaConfiguracao('email_remetente', $email_remetente);
         salvaConfiguracao('email_suporte', $email_suporte);
@@ -71,6 +89,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
 }
 
 $msg_sucesso = !empty($_GET['sucesso']) ? traduz('admin_prefs_salvas') : '';
+$msg_erro = '';
+if (($_GET['erro'] ?? '') === 'moeda_travada') {
+    $msg_erro = 'Não é possível trocar a moeda com assinaturas Stripe já ativas — isso cobraria o valor errado das próximas renovações. Fale com o suporte técnico se precisar mudar mesmo assim.';
+} elseif (($_GET['erro'] ?? '') === 'email_invalido') {
+    $msg_erro = 'E-mail de remetente ou de suporte inválido. Confira o formato e tente de novo.';
+}
 
 $idioma_atual = buscaConfiguracao('idioma_padrao') ?? IDIOMA_PADRAO;
 $fuso_atual = buscaConfiguracao('fuso_horario_padrao') ?? 'America/Mexico_City';
@@ -121,6 +145,9 @@ $variaveis = [
 
       <?php if ($msg_sucesso): ?>
       <div class="sucesso-msg"><?= htmlspecialchars($msg_sucesso) ?></div>
+      <?php endif; ?>
+      <?php if ($msg_erro): ?>
+      <div class="erro-msg"><?= htmlspecialchars($msg_erro) ?></div>
       <?php endif; ?>
 
       <!-- Nome do app -->

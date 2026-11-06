@@ -65,7 +65,7 @@ $saudacao = str_replace('Mariana', $usuario['nome'], traduz('home_saludo'));
 $google_conectado = !empty($usuario['token_acesso_google']);
 $whatsapp_conectado = !empty($usuario['telefone']);
 $destino_assistente = $whatsapp_conectado ? (linkWhatsappBot() ?? '#') : 'whatsapp';
-$pagamento_falhou = !empty($usuario['pagamento_falhou']);
+$pagamento_falhou = pagamentoPendente($usuario);
 ?>
 <!DOCTYPE html>
 <html lang="es-MX">
@@ -87,6 +87,7 @@ $pagamento_falhou = !empty($usuario['pagamento_falhou']);
     <span class="selo <?= $badge_cor ?>"><?= htmlspecialchars($badge_plano) ?></span>
   </div>
   <div class="conteudo-pagina espacado">
+    <?php require __DIR__ . '/_includes/banner-onboarding.php'; ?>
     <div>
       <h1 class="saudacao"><?= htmlspecialchars($saudacao) ?></h1>
       <p class="saudacao-subtitulo"><?= traduz('home_subtitulo') ?></p>
@@ -155,6 +156,7 @@ $pagamento_falhou = !empty($usuario['pagamento_falhou']);
         <span class="selo <?= $badge_cor ?>"><?= htmlspecialchars($badge_plano) ?></span>
       </header>
       <div class="conteudo-area">
+        <?php require __DIR__ . '/_includes/banner-onboarding.php'; ?>
         <div class="grid-duas-colunas">
           <div class="coluna">
             <?php if ($pagamento_falhou): ?>
@@ -176,8 +178,8 @@ $pagamento_falhou = !empty($usuario['pagamento_falhou']);
               <div class="secao-rotulo-desktop"><?= traduz('home_eventos_titulo') ?></div>
               <?php foreach ($proximos_eventos as $evento): ?>
               <div class="evento">
-                <div class="evento-data"><b><?= $evento['dia'] ?></b><span><?= $evento['mes'] ?></span></div>
-                <div class="evento-info"><b><?= $evento['titulo'] ?></b><span><?= $evento['detalhe'] ?></span></div>
+                <div class="evento-data"><b><?= htmlspecialchars($evento['dia']) ?></b><span><?= htmlspecialchars($evento['mes']) ?></span></div>
+                <div class="evento-info"><b><?= htmlspecialchars($evento['titulo']) ?></b><span><?= htmlspecialchars($evento['detalhe']) ?></span></div>
               </div>
               <?php endforeach; ?>
             </div>

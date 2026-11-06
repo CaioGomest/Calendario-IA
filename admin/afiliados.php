@@ -22,12 +22,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
     $nome = trim($_POST['nome'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $senha = $_POST['senha'] ?? '';
-    $comissao_percentual = $_POST['comissao_percentual'] ?? '10';
+    $comissao_percentual = (float) ($_POST['comissao_percentual'] ?? 10);
 
     if (!$nome || !$email || !$senha) {
         $msg_erro = 'Preencha todos os campos.';
     } elseif (strlen($senha) < 6) {
         $msg_erro = 'A senha deve ter ao menos 6 caracteres.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $msg_erro = 'E-mail em formato inválido.';
+    } elseif ($comissao_percentual < 0 || $comissao_percentual > 100) {
+        $msg_erro = 'Comissão deve estar entre 0% e 100%.';
     } elseif (buscaAfiliadoPorEmail($email)) {
         $msg_erro = 'Já existe um afiliado com este e-mail.';
     } else {

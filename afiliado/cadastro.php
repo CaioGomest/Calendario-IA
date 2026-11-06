@@ -17,6 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($nome === '' || $email === '') {
         $erro = 'Preencha todos os campos.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $erro = 'Informe um e-mail válido.';
     } elseif (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$/', $senha)) {
         $erro = 'A senha deve ter ao menos 8 caracteres, com maiúscula, minúscula, número e símbolo.';
     } elseif ($senha !== $confirmar_senha) {

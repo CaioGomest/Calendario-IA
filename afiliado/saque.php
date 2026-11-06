@@ -25,8 +25,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($valor > $saldo_disponivel) {
         $msg_erro = 'Valor maior que o saldo disponível ($' . number_format($saldo_disponivel, 2) . ').';
     } else {
-        insereSaqueAfiliado($afiliado['id_afiliado'], $valor, $email_paypal);
-        $msg_sucesso = 'Solicitação de saque enviada com sucesso.';
+        $id_saque = insereSaqueSeSaldoSuficiente($afiliado['id_afiliado'], $valor, $email_paypal);
+        if ($id_saque === null) {
+            $msg_erro = 'Valor maior que o saldo disponível ($' . number_format($saldo_disponivel, 2) . ').';
+        } else {
+            $msg_sucesso = 'Solicitação de saque enviada com sucesso.';
+        }
     }
 
     if ($msg_sucesso) {

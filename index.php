@@ -233,7 +233,7 @@ $sufixo_ciclo = [
       <div class="nome-plano"><?= htmlspecialchars($plano['nome']) ?></div>
       <div class="montante">
         <span class="moeda"><?= $moeda ?></span>
-        <span class="valor"><?= (int)$plano['preco'] ?></span>
+        <span class="valor"><?= formataValorPlano($plano['preco']) ?></span>
         <span class="periodo"><?= $sufixo_ciclo[$plano['ciclo']] ?? $sufixo_ciclo['mensal'] ?></span>
       </div>
       <?php if ($plano['descricao']): ?>

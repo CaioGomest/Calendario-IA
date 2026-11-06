@@ -1,6 +1,7 @@
 <?php
 
 header('Content-Type: application/json');
+header_remove('X-Powered-By');
 
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../funcoes/funcoesAuth.php';
@@ -56,10 +57,18 @@ if ($metodo === 'GET') {
 
 if ($metodo === 'DELETE') {
     $id_recorrencia = (int) ($corpo['id_recorrencia'] ?? 0);
+    $id_usuario = (int) ($corpo['id_usuario'] ?? 0);
 
-    if (!$id_recorrencia) {
+    if (!$id_recorrencia || !$id_usuario) {
         http_response_code(400);
-        echo json_encode(['ok' => false, 'erro' => 'Campo obrigatório: id_recorrencia']);
+        echo json_encode(['ok' => false, 'erro' => 'Campo obrigatório: id_recorrencia e id_usuario']);
+        exit;
+    }
+
+    $recorrencia_existente = buscaRecorrenciaPorId($id_recorrencia);
+    if (!$recorrencia_existente || (int) $recorrencia_existente['id_usuario'] !== $id_usuario) {
+        http_response_code(404);
+        echo json_encode(['ok' => false, 'erro' => 'Recorrência não encontrada']);
         exit;
     }
 

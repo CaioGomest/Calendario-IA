@@ -17,18 +17,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $senha = $_POST['senha'] ?? '';
 
-    $afiliado = buscaAfiliadoPorEmail($email);
-
-    if ($afiliado && password_verify($senha, $afiliado['senha_hash'])) {
-        if (!$afiliado['ativo']) {
-            $erro = 'Seu cadastro ainda está em análise. Aguarde a aprovação do administrador.';
-        } else {
-            fazLoginAfiliado($afiliado);
-            header('Location: painel');
-            exit;
-        }
+    if (loginBloqueado($email, 'afiliado')) {
+        $erro = 'Muitas tentativas. Tente novamente em alguns minutos.';
     } else {
-        $erro = 'E-mail ou senha inválidos.';
+        $afiliado = buscaAfiliadoPorEmail($email);
+
+        if ($afiliado && password_verify($senha, $afiliado['senha_hash'])) {
+            if (!$afiliado['ativo']) {
+                $erro = 'Seu cadastro ainda está em análise. Aguarde a aprovação do administrador.';
+            } else {
+                limpaTentativasFalha($email, 'afiliado');
+                fazLoginAfiliado($afiliado);
+                header('Location: painel');
+                exit;
+            }
+        } else {
+            registraTentativaFalha($email, 'afiliado');
+            $erro = 'E-mail ou senha inválidos.';
+        }
     }
 }
 ?>

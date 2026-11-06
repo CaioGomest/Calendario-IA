@@ -5,6 +5,7 @@ require_once __DIR__ . '/../funcoes/funcoesIdioma.php';
 require_once __DIR__ . '/../funcoes/funcoesPlanos.php';
 require_once __DIR__ . '/../funcoes/funcoesConfiguracao.php';
 require_once __DIR__ . '/../funcoes/funcoesEventos.php';
+require_once __DIR__ . '/../funcoes/funcoesStripe.php';
 
 iniciaSessao();
 exigeLoginAdmin();
@@ -12,19 +13,38 @@ exigeLoginAdmin();
 $pagina_atual = 'usuarios';
 $msg_sucesso = '';
 $msg_erro = '';
-$planos_catalogo = listaPlanos();
+$planos_catalogo = listaPlanos(['ativo' => 1]);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     $acao = $_POST['acao'];
     $id = (int) ($_POST['id_usuario'] ?? 0);
 
     if ($acao === 'apagar') {
-        deletaUsuario($id);
-        $msg_sucesso = traduz('admin_usuario_apagado');
+        $usuario_apagar = buscaUsuarioPorId($id);
+        if (!$usuario_apagar) {
+            $msg_erro = traduz('admin_erro_nao_encontrado');
+        } else {
+            // apagar no admin nao pode deixar a cobranca correndo numa conta que
+            // ele acha que removeu -- cancela a assinatura real na Stripe tambem
+            // qualquer plano com assinatura (inclusive em teste) e so apaga se a Stripe confirmar
+            $cancelamento = !empty($usuario_apagar['stripe_subscription_id']) ? cancelaAssinaturaStripe($usuario_apagar['stripe_subscription_id']) : [];
+            if (isset($cancelamento['error']) && ($cancelamento['code'] ?? '') !== 'resource_missing') {
+                $msg_erro = traduz('admin_erro_cancelar_stripe');
+            } else {
+                deletaUsuario($id);
+                $msg_sucesso = traduz('admin_usuario_apagado');
+            }
+        }
+    } elseif ($acao === 'reativar') {
+        if (reativaUsuario($id)) {
+            $msg_sucesso = traduz('admin_usuario_reativado');
+        } else {
+            $msg_erro = traduz('admin_erro_nao_encontrado');
+        }
     } elseif ($acao === 'criar') {
         $nome = trim($_POST['nome'] ?? '');
         $email = trim($_POST['email'] ?? '');
-        $telefone = trim($_POST['telefone'] ?? '');
+        $telefone = normalizaTelefoneLivre($_POST['telefone'] ?? '');
         $senha = $_POST['senha'] ?? '';
         $plano = $_POST['plano'] ?? 'trial';
 
@@ -32,8 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
             $msg_erro = traduz('admin_erro_campos');
         } elseif (strlen($senha) < 6) {
             $msg_erro = traduz('admin_erro_senha_curta');
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $msg_erro = traduz('admin_erro_email_invalido');
         } elseif (buscaUsuarioPorEmail($email)) {
             $msg_erro = traduz('admin_erro_email_existe');
+        } elseif (buscaUsuarioPorEmailIncluindoApagados($email)) {
+            $msg_erro = traduz('admin_erro_email_apagado');
         } elseif ($telefone !== '' && buscaUsuarioPorTelefone($telefone)) {
             $msg_erro = traduz('admin_erro_telefone_existe');
         } else {
@@ -49,13 +73,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
     } elseif ($acao === 'editar') {
         $nome = trim($_POST['nome'] ?? '');
         $email = trim($_POST['email'] ?? '');
-        $telefone = trim($_POST['telefone'] ?? '');
+        $telefone = normalizaTelefoneLivre($_POST['telefone'] ?? '');
         $plano = $_POST['plano'] ?? 'trial';
         $plano_expira_em = $_POST['plano_expira_em'] ?? '';
         $id_plano = (int) ($_POST['id_plano'] ?? 0);
 
-        if (!$nome || !$email) {
+        $usuario_editar = buscaUsuarioPorId($id);
+        if (!$usuario_editar) {
+            $msg_erro = traduz('admin_erro_nao_encontrado');
+        } elseif (!$nome || !$email) {
             $msg_erro = traduz('admin_erro_nome_email');
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $msg_erro = traduz('admin_erro_email_invalido');
+        } elseif ($id_plano && !buscaPlanoPorId($id_plano)) {
+            $msg_erro = traduz('admin_erro_plano_invalido');
         } else {
             $existente = buscaUsuarioPorEmail($email);
             if ($existente && (int)$existente['id_usuario'] !== $id) {
@@ -95,12 +126,17 @@ if (!empty($_GET['sucesso'])) {
     $msg_sucesso = $_GET['sucesso'];
 }
 
+$mostrar_apagados = !empty($_GET['apagados']);
+
 $filtro = [];
 if (!empty($_GET['busca'])) {
     $filtro['busca'] = $_GET['busca'];
 }
 if (!empty($_GET['plano'])) {
     $filtro['plano'] = $_GET['plano'];
+}
+if ($mostrar_apagados) {
+    $filtro['deletado'] = 1;
 }
 
 $por_pagina = 30;
@@ -128,14 +164,19 @@ $total_paginas = max(1, (int) ceil($total_usuarios / $por_pagina));
   <div class="admin-conteudo">
     <header class="admin-barra">
       <div>
-        <h1><?= traduz('admin_usuarios') ?></h1>
+        <h1><?= traduz('admin_usuarios') ?><?= $mostrar_apagados ? ' — ' . traduz('admin_apagados') : '' ?></h1>
         <div class="subtitulo"><?= $total_usuarios ?> <?= $total_usuarios !== 1 ? traduz('admin_usuarios_encontrados') : traduz('admin_usuario_encontrado') ?></div>
       </div>
       <div class="espaco"></div>
+      <a href="usuarios<?= $mostrar_apagados ? '' : '?apagados=1' ?>" class="botao-cabecalho botao-cabecalho-secundario">
+        <?= $mostrar_apagados ? traduz('admin_ver_ativos') : traduz('admin_ver_apagados') ?>
+      </a>
+      <?php if (!$mostrar_apagados): ?>
       <button type="button" class="botao-cabecalho" onclick="document.getElementById('modal-criar').classList.add('aberto')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <?= traduz('admin_novo_usuario') ?>
       </button>
+      <?php endif; ?>
     </header>
     <div class="admin-area">
 
@@ -152,6 +193,7 @@ $total_paginas = max(1, (int) ceil($total_usuarios / $por_pagina));
           <h2 class="painel-titulo"><?= traduz('admin_lista_usuarios') ?></h2>
           <div class="espacador"></div>
           <form method="get" action="usuarios" style="display:flex;gap:8px;align-items:center;">
+            <?php if ($mostrar_apagados): ?><input type="hidden" name="apagados" value="1" /><?php endif; ?>
             <div class="caixa-busca">
               <span class="icone"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
               <input type="text" name="busca" placeholder="<?= traduz('admin_buscar') ?>" value="<?= htmlspecialchars($_GET['busca'] ?? '') ?>" />
@@ -193,11 +235,19 @@ $total_paginas = max(1, (int) ceil($total_usuarios / $por_pagina));
                       default => 'neutro',
                   };
 
-                  if ($u['plano'] === 'trial' && $u['plano_expira_em']) {
+                  // renova = a Stripe vai cobrar de novo; cancelamento agendado e plano dado a mao (sem assinatura) nao cobram
+                  $agendado = cancelamentoAgendado($u);
+                  $renova = !$agendado && !empty($u['stripe_subscription_id']) && !empty($u['plano_expira_em'])
+                      && in_array($u['plano'], ['ativo', 'trial'], true);
+
+                  if ($agendado && $u['plano_expira_em']) {
+                      $rotulo_data = traduz('admin_acesso_ate');
+                      $valor_data = date('d/m/Y H:i', strtotime($u['plano_expira_em']));
+                  } elseif ($u['plano'] === 'trial' && $u['plano_expira_em']) {
                       $rotulo_data = traduz('admin_trial_termina');
                       $valor_data = date('d/m/Y H:i', strtotime($u['plano_expira_em']));
                   } elseif ($u['plano'] === 'ativo' && $u['plano_expira_em']) {
-                      $rotulo_data = traduz('admin_proxima_cobranca');
+                      $rotulo_data = traduz($renova ? 'admin_proxima_cobranca' : 'admin_vence_em');
                       $valor_data = date('d/m/Y H:i', strtotime($u['plano_expira_em']));
                   } elseif ($u['plano'] === 'cancelado' && !empty($u['cancelado_em'])) {
                       $rotulo_data = traduz('admin_cancelado_em');
@@ -212,6 +262,8 @@ $total_paginas = max(1, (int) ceil($total_usuarios / $por_pagina));
                           'data' => date('d/m/Y', strtotime($p['criado_em'])),
                           'valor' => simboloMoeda() . number_format((float) $p['valor'], 2, ',', '.'),
                           'ciclo' => ucfirst($p['ciclo']),
+                          'status_rotulo' => traduz('admin_' . $p['status']),
+                          'cor_status' => ['pago' => 'verde', 'falhou' => 'vermelho', 'reembolsado' => 'ambar'][$p['status']] ?? 'neutro',
                       ];
                   }, listaPagamentosUsuario($u['id_usuario']));
 
@@ -223,6 +275,8 @@ $total_paginas = max(1, (int) ceil($total_usuarios / $por_pagina));
                   $u_visualizar['cor_plano'] = $cor_plano;
                   $u_visualizar['rotulo_data'] = $rotulo_data;
                   $u_visualizar['valor_data'] = $valor_data;
+                  $u_visualizar['rotulo_proxima'] = traduz('admin_proxima_cobranca');
+                  $u_visualizar['proxima_cobranca'] = $renova ? date('d/m/Y', strtotime($u['plano_expira_em'])) : '—';
                   $u_visualizar['cadastro_fmt'] = date('d/m/Y', strtotime($u['criado_em']));
                   $u_visualizar['pagamentos'] = $pagamentos_usuario;
                   $u_visualizar['mensagens_hoje'] = $mensagens_hoje_usuario;
@@ -237,6 +291,14 @@ $total_paginas = max(1, (int) ceil($total_usuarios / $por_pagina));
               <td><span class="selo <?= $cor_msgs ?>"><?= $mensagens_hoje_usuario ?>/<?= $limite_mensagens_usuario ?></span></td>
               <td><?= date('d/m/Y', strtotime($u['criado_em'])) ?></td>
               <td style="text-align:right;display:flex;gap:2px;justify-content:flex-end;">
+                <?php if ($mostrar_apagados): ?>
+                <form method="post" action="usuarios?apagados=1" style="display:inline;">
+                  <input type="hidden" name="id_usuario" value="<?= $u['id_usuario'] ?>" />
+                  <button type="submit" name="acao" value="reativar" class="botao-acao icone" title="<?= traduz('admin_reativar') ?>">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/></svg>
+                  </button>
+                </form>
+                <?php else: ?>
                 <button type="button" class="botao-acao icone" title="<?= traduz('admin_visualizar') ?>" onclick="abrirVisualizar(<?= htmlspecialchars(json_encode($u_visualizar, JSON_HEX_APOS | JSON_HEX_TAG)) ?>)">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
@@ -249,6 +311,7 @@ $total_paginas = max(1, (int) ceil($total_usuarios / $por_pagina));
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                   </button>
                 </form>
+                <?php endif; ?>
               </td>
             </tr>
             <?php endforeach; ?>
@@ -258,7 +321,7 @@ $total_paginas = max(1, (int) ceil($total_usuarios / $por_pagina));
         <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 4px 2px;">
           <span style="font-size:12.5px;color:var(--ink-4);font-weight:600;"><?= traduz('admin_pagina') ?> <?= $pagina ?> / <?= $total_paginas ?></span>
           <div style="display:flex;gap:8px;">
-            <?php $query_base = array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? '']); ?>
+            <?php $query_base = array_filter(['busca' => $_GET['busca'] ?? '', 'plano' => $_GET['plano'] ?? '', 'apagados' => $mostrar_apagados ? '1' : '']); ?>
             <?php if ($pagina > 1): ?>
             <a class="botao-pequeno botao-fantasma" href="usuarios?<?= http_build_query(array_merge($query_base, ['pagina' => $pagina - 1])) ?>"><?= traduz('admin_anterior') ?></a>
             <?php endif; ?>
@@ -418,6 +481,7 @@ $total_paginas = max(1, (int) ceil($total_usuarios / $por_pagina));
       <div class="resumo-linha"><span><?= traduz('admin_telefone') ?></span><b id="ver-telefone"></b></div>
       <div class="resumo-linha"><span><?= traduz('admin_plano') ?></span><b id="ver-plano"></b></div>
       <div class="resumo-linha"><span id="ver-rotulo-data"></span><b id="ver-valor-data"></b></div>
+      <div class="resumo-linha" id="ver-linha-proxima"><span id="ver-rotulo-proxima"></span><b id="ver-valor-proxima"></b></div>
       <div class="resumo-linha"><span><?= traduz('admin_msgs_hoje') ?></span><b id="ver-msgs-hoje"></b></div>
       <div class="resumo-linha"><span><?= traduz('admin_cadastro') ?></span><b id="ver-cadastro"></b></div>
       <div style="margin-top:16px;">
@@ -428,6 +492,7 @@ $total_paginas = max(1, (int) ceil($total_usuarios / $por_pagina));
               <th><?= traduz('admin_data') ?></th>
               <th><?= traduz('admin_valor') ?></th>
               <th><?= traduz('admin_ciclo') ?></th>
+              <th><?= traduz('admin_status') ?></th>
             </tr>
           </thead>
           <tbody id="ver-pagamentos-body"></tbody>
@@ -451,6 +516,10 @@ function abrirVisualizar(u) {
     document.getElementById('ver-plano').innerHTML = (u.nome_plano || '—') + ' &middot; <span class="selo ' + u.cor_plano + '">' + u.plano.charAt(0).toUpperCase() + u.plano.slice(1) + '</span>';
     document.getElementById('ver-rotulo-data').textContent = u.rotulo_data || '—';
     document.getElementById('ver-valor-data').textContent = u.valor_data || '—';
+    // a linha da proxima cobranca so aparece quando a linha acima nao e ela mesma
+    document.getElementById('ver-rotulo-proxima').textContent = u.rotulo_proxima || '—';
+    document.getElementById('ver-valor-proxima').textContent = u.proxima_cobranca || '—';
+    document.getElementById('ver-linha-proxima').style.display = (u.rotulo_data === u.rotulo_proxima) ? 'none' : '';
     document.getElementById('ver-msgs-hoje').textContent = (u.mensagens_hoje ?? '—') + '/' + (u.limite_mensagens ?? '—');
     document.getElementById('ver-cadastro').textContent = u.cadastro_fmt || '—';
 
@@ -459,7 +528,7 @@ function abrirVisualizar(u) {
     if (u.pagamentos && u.pagamentos.length) {
         u.pagamentos.forEach(function (p) {
             var tr = document.createElement('tr');
-            tr.innerHTML = '<td>' + p.data + '</td><td>' + p.valor + '</td><td>' + p.ciclo + '</td>';
+            tr.innerHTML = '<td>' + p.data + '</td><td>' + p.valor + '</td><td>' + p.ciclo + '</td><td><span class="selo ' + p.cor_status + '">' + p.status_rotulo + '</span></td>';
             tbody.appendChild(tr);
         });
         document.getElementById('ver-tabela-pagamentos').style.display = '';

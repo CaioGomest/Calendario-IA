@@ -73,7 +73,7 @@ function insereEvento($dados) {
 
 function listaEventosPendentesLembrete() {
     $pdo = conexao();
-    $stmt = $pdo->query(
+    $stmt = $pdo->prepare(
         "SELECT e.*, u.telefone, u.antecedencia_lembrete_min, u.modo_silencio, u.fuso_horario, u.idioma
          FROM eventos e
          JOIN usuarios u ON e.id_usuario = u.id_usuario
@@ -81,8 +81,11 @@ function listaEventosPendentesLembrete() {
            AND e.lembrete_enviado = 0
            AND u.deletado = 0
            AND u.ativo = 1
+           AND u.plano <> 'cancelado'
+           AND (u.plano_expira_em IS NULL OR u.plano_expira_em >= ?)
          ORDER BY e.data_inicio ASC"
     );
+    $stmt->execute([(new DateTime())->modify('-' . HORAS_CARENCIA_ASSINATURA . ' hours')->format('Y-m-d H:i:s')]);
     $eventos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     return array_values(array_filter($eventos, function ($e) {

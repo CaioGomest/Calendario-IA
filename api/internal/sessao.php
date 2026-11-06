@@ -1,6 +1,7 @@
 <?php
 
 header('Content-Type: application/json');
+header_remove('X-Powered-By');
 
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../funcoes/funcoesAuth.php';

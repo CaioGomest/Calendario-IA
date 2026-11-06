@@ -15,15 +15,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $senha = $_POST['senha'] ?? '';
 
-    $admin = buscaAdminPorEmail($email);
+    if (loginBloqueado($email, 'admin')) {
+        $erro = traduz('login_bloqueado_temporario');
+    } else {
+        $admin = buscaAdminPorEmail($email);
 
-    if ($admin && password_verify($senha, $admin['senha_hash'])) {
-        fazLoginAdmin($admin);
-        header('Location: dashboard');
-        exit;
+        if ($admin && password_verify($senha, $admin['senha_hash'])) {
+            limpaTentativasFalha($email, 'admin');
+            fazLoginAdmin($admin);
+            header('Location: dashboard');
+            exit;
+        }
+
+        registraTentativaFalha($email, 'admin');
+        $erro = traduz('admin_login_erro');
     }
-
-    $erro = traduz('admin_login_erro');
 }
 ?>
 <!DOCTYPE html>

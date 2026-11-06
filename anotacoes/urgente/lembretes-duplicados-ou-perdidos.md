@@ -24,3 +24,7 @@ Isso exige:
 ## Por que não é urgente agora
 
 Com ~6 usuários ativos e pouco volume, a chance de uma rodada realmente ultrapassar 5 minutos é baixa — hoje é risco teórico, não real. Fica registrado aqui pra não esquecer e reavaliar **quando o volume de usuários/lembretes crescer**.
+
+## Decisão (30/09)
+
+Confirmado com o usuário: não vale fazer a correção "rápida" de só inverter a ordem (marcar antes de enviar) — troca duplicidade por perda silenciosa, não resolve de verdade, só troca um problema por outro equivalente. Fica pendente aqui até ter volume real que justifique implementar a correção completa (estado "em processamento" com timeout, descrita acima).

@@ -2,8 +2,23 @@
 
 require_once __DIR__ . '/../config/conexao.php';
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/funcoesUsuarios.php';
+require_once __DIR__ . '/funcoesAuth.php';
 
 function geraUrlAutorizacaoGoogle() {
+    // static: se a mesma pagina chamar essa funcao mais de uma vez (ex: versao
+    // mobile e desktop do mesmo link), os dois hrefs tem que carregar o MESMO
+    // state, senao o segundo clique invalida o state salvo pelo primeiro
+    static $state = null;
+    if ($state === null) {
+        $state = bin2hex(random_bytes(32));
+        $_SESSION['oauth_state'] = $state;
+        // guarda quem estava logado ao iniciar o fluxo: usado no callback pra
+        // distinguir "conectar Google Calendar" (usuario ja logado, so vincula
+        // token na conta atual) de "cadastro/login com Google" (usuario anonimo)
+        $_SESSION['oauth_vincular_usuario'] = usuarioLogadoId();
+    }
+
     $params = http_build_query([
         'client_id' => GOOGLE_CLIENT_ID,
         'redirect_uri' => GOOGLE_REDIRECT_URI,
@@ -11,6 +26,7 @@ function geraUrlAutorizacaoGoogle() {
         'scope' => 'openid email profile https://www.googleapis.com/auth/calendar.events',
         'access_type' => 'offline',
         'prompt' => 'consent',
+        'state' => $state,
     ]);
     return 'https://accounts.google.com/o/oauth2/v2/auth?' . $params;
 }
